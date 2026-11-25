@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BLADDER, DIGESTION, ENERGY, HUNGER, SCORE, TREAT, ZONE } from '../src/config';
-import { LEVEL_1 } from '../src/levels/level1';
+import { GREEN_ZONE_ROAD, LEVEL_1 } from '../src/levels/level1';
 import { Bladder, Digestion, Energy, Hunger } from '../src/systems/needs';
 import { placeTreats } from '../src/systems/placement';
 import { finalHealth, formatScore, formatTime, starBonus, starsFromHealth, timeBonus } from '../src/systems/scoring';
@@ -111,13 +111,81 @@ describe('scoring and stars', () => {
   });
 });
 
+/**
+ * Where (x, y) is relative to Level 1's road: distance to it, how far along it the nearest point
+ * is (0 = start, 1 = exit), and its side (-1: the west of the screen, x < y; 1: the east).
+ */
+function onRoad(x: number, y: number): { dist: number; along: number; side: number } {
+  const road = GREEN_ZONE_ROAD.map((p) => ({ x: p.x + 0.5, y: p.y + 0.5 }));
+  let length = 0;
+  for (let k = 1; k < road.length; k++) length += Math.hypot(road[k]!.x - road[k - 1]!.x, road[k]!.y - road[k - 1]!.y);
+  let best = { dist: Infinity, along: 0, side: 0 };
+  let walked = 0;
+  for (let k = 1; k < road.length; k++) {
+    const a = road[k - 1]!;
+    const b = road[k]!;
+    const vx = b.x - a.x;
+    const vy = b.y - a.y;
+    const seg = Math.hypot(vx, vy);
+    const t = Math.max(0, Math.min(1, ((x - a.x) * vx + (y - a.y) * vy) / (seg * seg)));
+    const dist = Math.hypot(a.x + vx * t - x, a.y + vy * t - y);
+    if (dist < best.dist) best = { dist, along: (walked + t * seg) / length, side: Math.sign(vx * (y - a.y) - vy * (x - a.x)) };
+    walked += seg;
+  }
+  return best;
+}
+
 describe('treat placement', () => {
   const map = new GameMap(loadLevel(LEVEL_1));
   const treats = placeTreats(map, LEVEL_1.spawns.treats, LEVEL_1.seed);
+  const { count, maxOffset, minSpacing, side = 0 } = LEVEL_1.spawns.treats;
 
   it('places most of the requested treats, deterministically', () => {
     expect(treats.length).toBeGreaterThanOrEqual(LEVEL_1.spawns.treats.count * 0.8);
     expect(placeTreats(map, LEVEL_1.spawns.treats, LEVEL_1.seed)).toEqual(treats);
+    expect(placeTreats(map, LEVEL_1.spawns.treats, LEVEL_1.seed + 1)).not.toEqual(treats);
+  });
+
+  it('places every trail and side treat of Level 1 (more than the 30 of before)', () => {
+    expect(treats.length).toBe(count + side);
+    expect(treats.length).toBeGreaterThanOrEqual(40);
+  });
+
+  it('lays the trail on the road, a treat every few tiles from start to exit', () => {
+    const trail = treats.map((t) => onRoad(t.x, t.y)).filter((r) => r.dist <= maxOffset + 0.5);
+    expect(trail.length).toBe(count);
+    for (let band = 0; band < 10; band++) {
+      expect(trail.some((r) => r.along >= band / 10 && r.along < (band + 1) / 10), `road band ${band}`).toBe(true);
+    }
+    // No stretch of road longer than 5 tiles without food (the trail is ~3.8 tiles apart).
+    const along = trail.map((r) => r.along).sort((a, b) => a - b);
+    const length = GREEN_ZONE_ROAD.slice(1).reduce((sum, p, k) => sum + Math.hypot(p.x - GREEN_ZONE_ROAD[k]!.x, p.y - GREEN_ZONE_ROAD[k]!.y), 0);
+    for (let k = 1; k < along.length; k++) expect((along[k]! - along[k - 1]!) * length).toBeLessThan(5);
+  });
+
+  it('puts the side treats out on the loops and the spine, on both sides of the road', () => {
+    const away = treats.filter((t) => onRoad(t.x, t.y).dist >= 6);
+    expect(away.length).toBe(side);
+    for (const t of away) expect(map.groundAt(Math.floor(t.x), Math.floor(t.y))).toBe(Ground.Path);
+    const west = away.filter((t) => onRoad(t.x, t.y).side < 0);
+    const east = away.filter((t) => onRoad(t.x, t.y).side > 0);
+    expect(west.length).toBeGreaterThanOrEqual(2);
+    expect(east.length).toBeGreaterThanOrEqual(2);
+    // West of the road means x < y on this diagonal park (the spine); east means x > y (loops).
+    for (const t of west) expect(t.x).toBeLessThan(t.y);
+    for (const t of east) expect(t.x).toBeGreaterThan(t.y);
+  });
+
+  it('places exactly as before for a level without a route', () => {
+    const old = placeTreats(map, { count: 30, maxOffset, minSpacing }, LEVEL_1.seed);
+    expect(old.map((p) => [+p.x.toFixed(2), +p.y.toFixed(2)])).toEqual([
+      [87.58, 90.55], [81.42, 90.59], [76.36, 90.38], [75.39, 85.43], [73.49, 82.42],
+      [68.41, 81.45], [64.58, 79.44], [62.42, 76.52], [59.55, 73.36], [57.4, 70.5], [51.52, 70.37],
+      [45.55, 70.37], [40.6, 70.56], [37.57, 67.56], [37.46, 62.45], [37.58, 56.58],
+      [37.46, 50.35], [34.48, 48.45], [32.37, 44.56], [31.36, 40.49], [27.47, 38.46],
+      [21.48, 38.6], [18.56, 36.46], [15.57, 33.63], [13.44, 30.64], [13.57, 24.59], [7.49, 24.65],
+      [5.61, 21.56], [4.59, 16.51], [4.65, 11.48],
+    ]);
   });
 
   it('keeps them on walkable land near the path, spaced out', () => {

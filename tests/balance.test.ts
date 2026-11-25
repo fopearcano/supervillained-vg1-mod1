@@ -1,24 +1,31 @@
 import { describe, expect, it } from 'vitest';
 import { DIGESTION, HUNGER, PLAYER, TREAT } from '../src/config';
-import { LEVEL_1 } from '../src/levels/level1';
+import { GREEN_ZONE_ROAD, LEVEL_1 } from '../src/levels/level1';
 import { Hunger } from '../src/systems/needs';
 import { placeTreats } from '../src/systems/placement';
-import { loadLevel } from '../src/world/level';
+import { loadLevel, type SpawnSettings } from '../src/world/level';
 import { GameMap } from '../src/world/map';
 
+/** The road's corners in world units (its tile coordinates name tile centres). */
+const ROAD = GREEN_ZONE_ROAD.map((p) => ({ x: p.x + 0.5, y: p.y + 0.5 }));
+const ROAD_LENGTH = ROAD.slice(1).reduce((sum, p, k) => sum + Math.hypot(p.x - ROAD[k]!.x, p.y - ROAD[k]!.y), 0);
+
 /**
- * Balancing sanity check: a simple bot walks Level 1 from S to E at walking speed, following the
- * BFS gradient to the exit and detouring to treats within `greed` tiles.
+ * Balancing sanity check: a simple bot walks Level 1 from S to E at walking speed, detouring to
+ * treats within `greed` tiles. The 'spine' bot follows the BFS gradient to the exit (west first,
+ * so it takes the gravel spine along the park's west and south edges); the 'road' bot follows
+ * the main road, the diagonal a player holding "up" walks.
  */
-function simulate(greed: number) {
+function simulate(greed: number, walker: 'spine' | 'road' = 'spine', treatSettings: SpawnSettings['treats'] = LEVEL_1.spawns.treats) {
   const map = new GameMap(loadLevel(LEVEL_1));
-  const treats = placeTreats(map, LEVEL_1.spawns.treats, LEVEL_1.seed);
+  const treats = placeTreats(map, treatSettings, LEVEL_1.seed);
   const hunger = new Hunger();
   let x = map.start.x;
   let y = map.start.y;
   let t = 0;
   let eaten = 0;
   let minHunger: number = HUNGER.MAX;
+  let corner = 1;
   const dt = 0.05;
   while (t < 400) {
     if (Math.hypot(x - map.exit.x, y - map.exit.y) < 0.8) break;
@@ -28,6 +35,10 @@ function simulate(greed: number) {
     if (near) {
       tx = near.x;
       ty = near.y;
+    } else if (walker === 'road') {
+      while (corner < ROAD.length - 1 && Math.hypot(ROAD[corner]!.x - x, ROAD[corner]!.y - y) < 0.3) corner++;
+      tx = ROAD[corner]!.x;
+      ty = ROAD[corner]!.y;
     } else {
       const i = Math.floor(x);
       const j = Math.floor(y);
@@ -78,11 +89,26 @@ describe('level 1 balance (bot)', () => {
   });
 
   it('eating treats along the way keeps Zampanò alive, at the cost of a few poops', () => {
-    const r = simulate(2.5);
-    expect(r.minHunger).toBeGreaterThan(0);
-    expect(r.eaten).toBeGreaterThanOrEqual(4);
-    expect(r.poops).toBeGreaterThanOrEqual(1);
-    expect(r.poops).toBeLessThanOrEqual(8);
-    expect(r.time).toBeLessThan(LEVEL_1.parTime);
+    // Measured: the spine bot eats 10 (2 poops; the side treats out on the spine and a few road
+    // treats near S and E), the road bot all 32 on the trail (8 poops: 32 × 26 / 100). The road
+    // bot sits on the poop bound on purpose: more food on the road should not quietly mean more
+    // poops than a player can clean.
+    for (const walker of ['spine', 'road'] as const) {
+      const r = simulate(2.5, walker);
+      expect(r.minHunger, walker).toBeGreaterThan(0);
+      expect(r.eaten, walker).toBeGreaterThanOrEqual(4);
+      expect(r.poops, walker).toBeGreaterThanOrEqual(1);
+      expect(r.poops, walker).toBeLessThanOrEqual(8);
+      expect(r.time, walker).toBeLessThan(LEVEL_1.parTime);
+    }
+  });
+
+  it('a dog walking the road meets a treat about every 4 tiles', () => {
+    // Fails on the old placement: every treat lay on the spine and this walk found one.
+    const r = simulate(2.5, 'road');
+    expect(r.eaten * 4.5).toBeGreaterThanOrEqual(ROAD_LENGTH);
+    // Why the level names its road: the shortest-route trail alone still misses the road.
+    const { count, maxOffset, minSpacing } = LEVEL_1.spawns.treats;
+    expect(simulate(2.5, 'road', { count, maxOffset, minSpacing }).eaten).toBeLessThan(r.eaten / 3);
   });
 });

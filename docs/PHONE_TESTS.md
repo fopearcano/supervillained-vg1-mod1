@@ -10,6 +10,8 @@ Or install the debug APK (see README → Android).
 - No pinch-zoom, no page scroll, no long-press menu. Text and pixels look crisp (not blurry).
 
 ## M2 — Core loop and HUD
+- Walk up the main gravel road: a bone every few steps all the way to the exit; a few more wait
+  out on the side lanes (the loops, the quiet lane along the west and south edges).
 - Eat bones: TREATS goes up, the hunger bar refills; after ~4 bones a poop bubble appears, then a
   poop: try doing it on the path (big brown stain) vs. in a bush/tall grass (tiny stain).
 - Press PEE on a stain: the area turns green again; next to a tree/pole/bush you get "MARKING!".

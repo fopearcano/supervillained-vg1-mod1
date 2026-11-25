@@ -268,6 +268,14 @@ export const TREAT = {
   DIGESTION: 26,
   SCORE: 50,
   PICKUP_RADIUS: 0.55,
+  /** Placement along a level's route: no trail treat within this distance of the start or exit. */
+  ROUTE_END_GAP: 2.5,
+  /** Random sideways wander (tiles) of a trail treat, so the trail weaves on the gravel. */
+  ROUTE_WANDER: 0.6,
+  /** Side treats lie on gravel at least this far (tiles) from the route: the loops and spine. */
+  SIDE_MIN_ROUTE_DISTANCE: 6,
+  /** Level progress range split into one band per side treat (one treat per band). */
+  SIDE_PROGRESS: [0.05, 0.95],
 } as const;
 
 export const DIGESTION = {

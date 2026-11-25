@@ -31,11 +31,20 @@ export interface Palette {
 
 export interface SpawnSettings {
   treats: {
+    /** Treats on the main trail (the route when there is one, else the shortest walk). */
     count: number;
     /** Max lateral distance (tiles) of a treat from the path. */
     maxOffset: number;
     /** Min distance (tiles) between treats. */
     minSpacing: number;
+    /**
+     * The road the main trail follows: corners of a polyline in tile coordinates (column, row;
+     * the line runs through tile centres), from the start to the exit. Without it, treats follow
+     * the BFS shortest route, which in a broad park can be a lane nobody walks.
+     */
+    route?: readonly { readonly x: number; readonly y: number }[];
+    /** Extra treats spread over the gravel side lanes, away from the route (needs `route`). */
+    side?: number;
   };
   cats: {
     /** Seconds before the first cat. */

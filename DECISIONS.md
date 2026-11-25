@@ -1097,3 +1097,26 @@ poop everywhere.
   Checks: `tests/ambush.test.ts`, `npm run smoke -- walk` (the whole sequence in the real game),
   `npm run screens -- ambush` (five pictures). Jack's and Watson's squat waits for their animation
   delivery (`ASSETS.md`).
+
+## More treats, spread over the road and the loops
+
+- **Level 1 has 44 treats instead of 30**, and they are where the player walks. The trail
+  followed one BFS shortest route, which (taking west before north) hugs the park's west and
+  south edges: all 30 treats lay on that gravel spine and none on the designed diagonal road,
+  the one holding "up" follows. A bot walking the road ate 1 treat.
+- **32 on the road** (`GREEN_ZONE_ROAD` in `levels/level1.ts`, now a module constant: the map
+  is painted from it exactly as before, the rows are byte-identical): even spacing along the
+  road, about one every 3.8 tiles from 2.5 tiles after the start to 2.5 before the exit, each
+  wandering a little across the gravel and nudged sideways only off water, solid props or a
+  treat too close. **12 on the side lanes**: progress 0.05–0.95 split into 12 bands, one treat
+  per band on the gravel tile at least 6 tiles from the road that is farthest from every treat
+  already placed. They land on the spine and the loops on both sides (9 west, 3 east), a reward
+  for a detour. Level data: `spawns.treats.route` and `side`; the distances in `TREAT`
+  (`config.ts`). A level without a route places exactly as before (a test pins the positions).
+- **Balance** (`tests/balance.test.ts`, walking speed, detours within 2.5 tiles): the spine bot
+  now eats 10 treats (2 poops, hunger never below 74), the new road bot all 32 on the trail
+  (8 poops, the test's bound, hunger never below 96). Eating every treat in the park means about
+  11 poops (44 × 26 / 100) instead of 7: more food, and more to clean, by the player's choice.
+  Measured on the way (already true before this change): walking the road straight to the exit
+  without eating arrives with about 17 hunger, so on the road it is the stops (peeing, barking,
+  chases, the pug) that make food necessary, not the distance alone.

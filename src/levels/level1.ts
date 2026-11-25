@@ -6,6 +6,28 @@ interface Point {
 }
 
 /**
+ * The park's main gravel road, start (90, 90) to exit (4, 4), in tile coordinates. The map is
+ * painted around it, and the treat trail follows it (`spawns.treats.route`): it is the road a
+ * player walks, holding "up" follows its diagonal.
+ */
+export const GREEN_ZONE_ROAD: readonly Point[] = [
+  { x: 90, y: 90 },
+  { x: 84, y: 84 },
+  { x: 76, y: 76 },
+  { x: 69, y: 70 },
+  { x: 63, y: 61 },
+  { x: 57, y: 57 },
+  { x: 51, y: 48 },
+  { x: 43, y: 43 },
+  { x: 36, y: 36 },
+  { x: 29, y: 31 },
+  { x: 22, y: 23 },
+  { x: 15, y: 17 },
+  { x: 8, y: 7 },
+  { x: 4, y: 4 },
+];
+
+/**
  * Builds the Green Zone as a chain of recognisable park districts instead of one long corridor.
  * Broad lawns make room for chases, while linked rings provide meaningful route choices: the
  * direct gravel path is quick but exposed, and the garden loops offer water and cover.
@@ -41,22 +63,6 @@ export function buildGreenZoneRows(): readonly string[] {
     }
   };
 
-  const mainRoute: readonly Point[] = [
-    { x: 90, y: 90 },
-    { x: 84, y: 84 },
-    { x: 76, y: 76 },
-    { x: 69, y: 70 },
-    { x: 63, y: 61 },
-    { x: 57, y: 57 },
-    { x: 51, y: 48 },
-    { x: 43, y: 43 },
-    { x: 36, y: 36 },
-    { x: 29, y: 31 },
-    { x: 22, y: 23 },
-    { x: 15, y: 17 },
-    { x: 8, y: 7 },
-    { x: 4, y: 4 },
-  ];
   const loops: readonly (readonly Point[])[] = [
     [
       { x: 90, y: 90 }, { x: 92, y: 82 }, { x: 86, y: 76 }, { x: 78, y: 79 },
@@ -93,7 +99,7 @@ export function buildGreenZoneRows(): readonly string[] {
     ],
   ];
 
-  paintLine(mainRoute, 7.4, '.');
+  paintLine(GREEN_ZONE_ROAD, 7.4, '.');
   for (const loop of loops) paintLine(loop, 4.8, '.');
   for (const hub of [
     { x: 87, y: 84 },
@@ -122,7 +128,7 @@ export function buildGreenZoneRows(): readonly string[] {
   ]) paintEllipse(patch.x, patch.y, patch.rx, patch.ry, ',', lawn);
 
   const open = new Set(['.', ',', 'W']);
-  paintLine(mainRoute, 1.55, '=', open);
+  paintLine(GREEN_ZONE_ROAD, 1.55, '=', open);
   for (const loop of loops) paintLine(loop, 1.05, '=', open);
 
   // Formal plazas punctuate the journey with wide, navigable chase arenas.
@@ -154,9 +160,10 @@ export function buildGreenZoneRows(): readonly string[] {
     if (cells[y]![x] === '.' || cells[y]![x] === ',' || cells[y]![x] === 'W') cells[y]![x] = ch;
   }
 
-  // Complete the visual spine along the actual unweighted shortest route. Broad plazas have many
-  // equally short crossings; this breadcrumb removes ambiguity and keeps survival pickups on the
-  // same route that navigation and automation choose.
+  // A gravel spine along one unweighted shortest route: traced from the start taking the first
+  // neighbour that gets closer (west before north), it hugs the park's south and west edges, a
+  // second, quieter lane to the exit. The treat trail follows the main road instead; some side
+  // treats land out here (`spawns.treats.side`).
   const distance = new Int32Array(size * size).fill(-1);
   const queue: number[] = [4 * size + 4];
   distance[queue[0]!] = 0;
@@ -209,7 +216,8 @@ export const LEVEL_1: LevelDef = {
     flowers: ['#ffe14a', '#ff7ad9', '#ffffff'],
   },
   spawns: {
-    treats: { count: 30, maxOffset: 3, minSpacing: 2.2 },
+    // A treat every ~3.8 tiles on the road, plus one per progress band out on the loops and spine.
+    treats: { count: 32, maxOffset: 3, minSpacing: 2.2, route: GREEN_ZONE_ROAD, side: 12 },
     cats: { first: 16, interval: [16, 27], max: 2 },
     balls: { first: 28, interval: [22, 34], max: 2 },
   },
