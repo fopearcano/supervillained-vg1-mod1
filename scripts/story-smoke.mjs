@@ -303,6 +303,115 @@ async function menuChecks(page) {
   return fails;
 }
 
+/**
+ * The word mini-games with the keyboard only: 5.4 (the letter) is played to the 'named' outcome
+ * through every kind of button (change a word, send, write it again, accept), 6.2 (the rumour)
+ * to the end. Returns the number of failures.
+ */
+async function keyChecks(page) {
+  let fails = 0;
+  const check = (ok, what) => {
+    if (!ok) fails++;
+    console.log(`${ok ? 'ok  ' : 'FAIL'} keys: ${what}`);
+  };
+  const errors = [];
+  const onError = (e) => errors.push(e.message);
+  page.on('pageerror', onError);
+  /** The scene, and the mini-game it is running (its buttons and the highlighted one). */
+  const state = () =>
+    page.evaluate(() => {
+      const top = window.__sv.top();
+      if (!top.debugState) return { scene: top.constructor.name };
+      const d = top.debugState();
+      const g = top.current?.game;
+      const ids = g?.buttons?.map((b) => b.id) ?? [];
+      const k = g?.picker ? g.picker.cursor.current(ids.length) : -1;
+      return {
+        scene: top.constructor.name,
+        sub: d.sub,
+        step: d.step,
+        minis: [...d.metrics.minis],
+        flags: { ...top.state.flags },
+        game: g ? { name: g.constructor.name, ids, lit: k >= 0 ? ids[k] : null, picks: g.picks ? [...g.picks] : null, placed: g.placed?.length ?? null } : null,
+      };
+    });
+  /** Starts a sub-level and skips its steps until a mini-game runs. */
+  const toMini = async (id) => {
+    await page.evaluate((s) => window.__sv.flow.story.debugPlay(s), id);
+    await wait(600);
+    for (let k = 0; k < 40; k++) {
+      const s = await state();
+      if (s.step === 'MiniGameStep' && s.game) return s;
+      await page.evaluate(() => window.__sv.top().debugSkip?.());
+      await wait(150);
+    }
+    return state();
+  };
+  /** Presses a key, then waits (a little) for what it should do. */
+  const press = async (key, done) => {
+    await page.keyboard.press(key);
+    for (let k = 0; k < 30; k++) {
+      await wait(50);
+      const s = await state();
+      if (done(s)) return s;
+    }
+    return state();
+  };
+  const ended = (name) => (s) => s.minis.includes(`${name}:won`) && s.step !== 'MiniGameStep';
+
+  // 5.4: write, send, write it again with the debt named, send, hear the answer out.
+  let s = await toMini('5.4');
+  check(s.game?.name === 'LetterGame', `5.4 reaches the letter (${s.step})`);
+  if (s.game?.name === 'LetterGame') {
+    await wait(300);
+    s = await state();
+    check(s.game.lit === null, 'no highlight before a direction key (touch players see nothing new)');
+    s = await press('ArrowDown', (q) => q.game?.lit === 'slot0');
+    check(s.game?.lit === 'slot0', `the first arrow shows the highlight on the first word (${s.game?.lit})`);
+    s = await press('ArrowUp', (q) => q.game?.lit === 'send');
+    check(s.game?.lit === 'send', `up from the first button wraps to READ IT ALOUD AND SEND IT (${s.game?.lit})`);
+    s = await press('Enter', (q) => q.game?.ids.includes('again'));
+    check(s.game?.ids.join() === 'again,accept', `Enter sends the letter (${s.game?.ids})`);
+    s = await press('ArrowUp', (q) => q.game?.lit === 'again');
+    s = await press('KeyJ', (q) => q.game?.ids.includes('send'));
+    check(s.game?.ids.includes('slot1'), 'J on WRITE IT AGAIN goes back to the writing table');
+    s = await press('ArrowRight', (q) => q.game?.lit === 'slot1');
+    s = await press('Space', (q) => q.game?.picks?.[1] === 1);
+    check(s.game?.picks?.[1] === 1, `Space on the second word changes it to the debt (${s.game?.picks})`);
+    s = await press('ArrowDown', (q) => q.game?.lit === 'slot2');
+    s = await press('ArrowDown', (q) => q.game?.lit === 'send');
+    s = await press('KeyX', (q) => q.game?.ids.includes('accept'));
+    s = await press('Enter', ended('LetterGame'));
+    check(s.flags.letter === 'named', `the debt is named (letter: ${s.flags.letter})`);
+    check(ended('LetterGame')(s), `the scene moves on past the mini-game (${s.step}; ${s.minis})`);
+  }
+
+  // 6.2: put the pieces in order as they arrive, with the arrows and the confirm keys.
+  s = await toMini('6.2');
+  check(s.game?.name === 'RumourGame', `6.2 reaches the rumour (${s.step})`);
+  if (s.game?.name === 'RumourGame') {
+    check(s.game.lit === null, 'no highlight before a direction key');
+    const confirms = ['Enter', 'Space', 'KeyJ', 'KeyX'];
+    for (let k = 0; k < 120 && s.game?.name === 'RumourGame'; k++) {
+      const { ids, lit, placed } = s.game;
+      const target = ids.indexOf(String(placed));
+      if (target < 0) {
+        await wait(200);
+        s = await state();
+      } else if (lit === null) s = await press('ArrowDown', (q) => q.game?.lit != null);
+      else if (ids.indexOf(lit) !== target) {
+        const key = ids.indexOf(lit) < target ? 'ArrowDown' : 'ArrowUp';
+        s = await press(key, (q) => q.game?.lit !== lit || q.game?.ids.join() !== ids.join());
+      } else s = await press(confirms[placed % confirms.length], (q) => !q.game || q.game.placed !== placed);
+    }
+    check(ended('RumourGame')(s), `the pieces in order with the keyboard only, and the scene moves on (${s.step}; ${s.minis})`);
+  }
+  check(errors.length === 0, `no page errors (${errors.join(' | ') || 'none'})`);
+  page.off('pageerror', onError);
+  await page.evaluate(() => localStorage.clear());
+  return fails;
+}
+
 const server = await startServer();
 const browser = await chromium.launch();
 let failures = 0;
@@ -318,7 +427,7 @@ try {
   await page.waitForFunction(() => window.__sv && window.__sv.top(), null, { timeout: 30000 });
   await page.evaluate(() => localStorage.clear());
   const all = await page.evaluate(() => window.__sv.storyIds());
-  const GROUPS = ['progress', 'menus'];
+  const GROUPS = ['progress', 'menus', 'keys'];
   const named = process.argv.slice(2).filter((a) => !GROUPS.includes(a));
   const groups = process.argv.slice(2).length ? GROUPS.filter((g) => process.argv.includes(g)) : GROUPS;
   const ids = named.length ? named : groups.length && process.argv.slice(2).length ? [] : all;
@@ -366,6 +475,7 @@ try {
   // real pause menu and the real save.
   if (groups.includes('progress')) failures += await progressChecks(page);
   if (groups.includes('menus')) failures += await menuChecks(page);
+  if (groups.includes('keys')) failures += await keyChecks(page);
   await page.close();
 } catch (err) {
   console.error(err);

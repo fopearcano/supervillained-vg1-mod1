@@ -1,4 +1,5 @@
 import { Graphics } from 'pixi.js';
+import type { Input } from '../../core/input';
 import { PixelText } from '../../ui/pixelText';
 import { C, frameRect, hex } from '../../ui/retro';
 import { STORY } from '../../config';
@@ -15,10 +16,84 @@ interface Button {
   id: string;
 }
 
+/**
+ * The keyboard highlight over a list of buttons (pure: tests/wordGames.test.ts). Hidden until a
+ * direction key is used, so touch players never see it: the first key only shows it, the next
+ * ones move it in reading order (up / left back, down / right on), wrapping around.
+ */
+export class KeyCursor {
+  /** A direction key was used: the highlight is drawn. */
+  shown = false;
+  private index = 0;
+
+  /** The highlighted button among `count` (the list may have shrunk since), or -1 while hidden. */
+  current(count: number): number {
+    return this.shown && count > 0 ? Math.min(this.index, count - 1) : -1;
+  }
+
+  move(delta: number, count: number): void {
+    if (count <= 0) return;
+    const i = Math.min(this.index, count - 1);
+    this.index = this.shown ? (((i + delta) % count) + count) % count : i;
+    this.shown = true;
+  }
+
+  /** A tap picked button `i`: the highlight follows it (and stays hidden if it was). */
+  select(i: number): void {
+    this.index = i;
+  }
+}
+
+const MOVES = [
+  ['up', -1],
+  ['left', -1],
+  ['down', 1],
+  ['right', 1],
+] as const;
+
+/**
+ * Taps and keys over the word games' buttons (listed top to bottom, so list order is reading
+ * order). A tap picks the button under it, as it always did; the arrows move the highlight and
+ * Space / Enter / J / X pick the highlighted button, or `unlit` while no highlight is shown.
+ */
+class ButtonPicker {
+  readonly cursor = new KeyCursor();
+
+  pick(input: Input, buttons: readonly Button[], unlit: string | null = null): string | null {
+    let id: string | null = null;
+    for (const tap of input.consumeTaps()) {
+      const k = buttons.findIndex((q) => tap.x >= q.x && tap.x <= q.x + q.w && tap.y >= q.y && tap.y <= q.y + q.h);
+      if (k >= 0) {
+        this.cursor.select(k);
+        id = buttons[k]!.id;
+        break;
+      }
+    }
+    for (const [action, delta] of MOVES) if (input.consume(action)) this.cursor.move(delta, buttons.length);
+    if (input.consumeAny(['confirm', 'action', 'pee'])) {
+      const lit = this.cursor.current(buttons.length);
+      id = lit >= 0 ? buttons[lit]!.id : (unlit ?? id);
+    }
+    return id;
+  }
+
+  /** The highlight (as ui/menu.ts draws its selection), over the button's box and under its label. */
+  draw(g: Graphics, buttons: readonly Button[], time: number): void {
+    const lit = this.cursor.current(buttons.length);
+    if (lit < 0) return;
+    const b = buttons[lit]!;
+    const blink = Math.floor(time * 4) % 2 === 0;
+    g.rect(b.x, b.y, b.w, b.h).fill({ color: 0x3a1050, alpha: 0.75 });
+    frameRect(g, b.x, b.y, b.w, b.h, hex(C.red));
+    frameRect(g, b.x + 1, b.y + 1, b.w - 1, b.h - 1, hex(blink ? C.white : C.yellow), 0.9);
+  }
+}
+
 /** Tappable text buttons (shared by the word games). */
 abstract class WordGame extends MiniGame {
   protected readonly g = new Graphics();
   protected buttons: Button[] = [];
+  protected readonly picker = new ButtonPicker();
   protected readonly head = new PixelText('', { color: C.yellow, shadow: '#000000', align: 'center', lineGap: 3 }).setOrigin(0.5, 0);
   protected readonly body = new PixelText('', { color: '#3a2410', lineGap: 4 });
 
@@ -47,15 +122,12 @@ abstract class WordGame extends MiniGame {
       frameRect(this.g, b.x, b.y, b.w, b.h, hex(C.red));
       frameRect(this.g, b.x + 1, b.y + 1, b.w - 1, b.h - 1, hex(C.yellow), 0.9);
     }
+    this.picker.draw(this.g, this.buttons, this.time);
   }
 
-  /** Index of the tapped button (or keyboard selection), else null. */
+  /** Id of the button picked this step, by a tap or with the keyboard (arrows, then Space / Enter / J / X), else null. */
   protected tapped(ctx: StoryScene): string | null {
-    for (const tap of ctx.game.input.consumeTaps()) {
-      const b = this.buttons.find((q) => tap.x >= q.x && tap.x <= q.x + q.w && tap.y >= q.y && tap.y <= q.y + q.h);
-      if (b) return b.id;
-    }
-    return null;
+    return this.picker.pick(ctx.game.input, this.buttons);
   }
 }
 
@@ -83,7 +155,8 @@ export class LetterGame extends MiniGame {
   private readonly picks = [0, 0, 0];
   private sent = 0;
   private phase: 'write' | 'answer' = 'write';
-  private buttons: Array<{ id: string; x: number; y: number; w: number; h: number; t: PixelText }> = [];
+  private buttons: Button[] = [];
+  private readonly picker = new ButtonPicker();
 
   constructor() {
     super();
@@ -124,12 +197,8 @@ export class LetterGame extends MiniGame {
 
   update(_dt: number, ctx: StoryScene): MiniResult {
     const { w } = this;
-    let pick: string | null = null;
-    for (const tap of ctx.game.input.consumeTaps()) {
-      const b = this.buttons.find((q) => tap.x >= q.x && tap.x <= q.x + q.w && tap.y >= q.y && tap.y <= q.y + q.h);
-      if (b) pick = b.id;
-    }
-    if (ctx.game.input.consume('confirm')) pick = this.phase === 'write' ? 'send' : 'accept';
+    // Without the highlight, a confirm key sends the letter, then hears the answer out.
+    const pick = this.picker.pick(ctx.game.input, this.buttons, this.phase === 'write' ? 'send' : 'accept');
     if (pick) ctx.game.audio.play('click');
     if (pick?.startsWith('slot')) {
       const k = Number(pick.slice(4));
@@ -156,6 +225,7 @@ export class LetterGame extends MiniGame {
       g.rect(b.x, b.y, b.w, b.h).fill({ color: 0x000000, alpha: 0.65 });
       frameRect(g, b.x, b.y, b.w, b.h, hex(C.red));
     }
+    this.picker.draw(g, this.buttons, this.time);
     const letter = SLOTS.map((s, k) => `${s.before}${s.options[this.picks[k]!]}`).join('') + '.';
     this.text.setText(letter);
     this.text.setStyle({ maxWidth: w - 32 });
