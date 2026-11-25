@@ -155,13 +155,14 @@ and launch images come from the logo too: `npm run ios:icons` (the same script a
 npm run build      # typecheck + production build (dist/)
 npm test           # unit tests (Vitest)
 npm run screens    # Playwright screenshots into docs/screens/
-npm run smoke      # runs every story script start to finish (skipping steps)
+npm run smoke      # runs every story script start to finish (skipping steps), then the flow checks
 npm run playtest   # the autopilot plays the whole campaign for real; report in docs/PLAYTEST.md
 ```
 
-See `CLAUDE.md` for the architecture, `ASSETS.md` to replace the placeholder art (and how the
-replaced art is kept as the old version), and
-`DECISIONS.md` for design decisions.
+See `CLAUDE.md` for the architecture and where each kind of change goes ("Common changes", with
+the checks to run after it), `ASSETS.md` to replace the placeholder art (and how the replaced art
+is kept as the old version), `DECISIONS.md` for design decisions, and `docs/BACKLOG.md` for known
+bugs and the work left.
 
 ## License notes
 
