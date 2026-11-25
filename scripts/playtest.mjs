@@ -28,7 +28,7 @@ const FROM = args.from ?? '1.1';
 const TO = args.to ?? '';
 const OUT = args.out ?? '';
 const MAX_SUB_SECONDS = Number(args.max ?? 420);
-const PORT = 5196;
+const PORT = Number(process.env.SV_PORT ?? 5196); // SV_PORT: run two checks side by side
 const STEPS = 600; // 10 s of game time per call
 
 async function startServer() {

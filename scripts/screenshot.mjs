@@ -10,7 +10,7 @@ import { spawn } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
 import { chromium, devices } from 'playwright';
 
-const PORT = 5199;
+const PORT = Number(process.env.SV_PORT ?? 5199); // SV_PORT: run two checks side by side
 const OUT = 'docs/screens';
 const VIEWPORT = { width: 400, height: 860 };
 

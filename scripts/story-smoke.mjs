@@ -14,7 +14,7 @@ import { spawn } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
 import { chromium } from 'playwright';
 
-const PORT = 5198;
+const PORT = Number(process.env.SV_PORT ?? 5198); // SV_PORT: run two checks side by side
 const SHOTS = process.env.SMOKE_SHOTS ?? '';
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
