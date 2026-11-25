@@ -66,7 +66,7 @@ sub-level), `?auto=1` (the autopilot plays the story; `&skill=0.7&ending=knight|
   gestures: swipe up / down and double tap, bound by the CONTROLS settings; RUN held or toggled;
   actions `action` (the round button), `bark`, `strike`, `guard`, `switch`; `consumeContinue()` is
   the one rule for continue / confirm / pick: Space, Enter, J, X, taps aside), `settings.ts`
-  (sound, text speed, lives, `controls`),
+  (sound on/off, the `music` and `sounds` levels, text speed, lives, `controls`),
   `scene.ts` (scene stack; a scene's optional `back()` is what the Android Back button does on it),
   `display.ts` (logical resolution + integer scale), `assets.ts`
   (texture registry + atlas packer), `storage.ts` (guarded localStorage), `rng.ts`.

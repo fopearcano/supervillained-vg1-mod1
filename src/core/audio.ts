@@ -15,12 +15,34 @@ interface Clip {
   offset: number;
 }
 
+/** The gains of the three buses: master (SOUND on/off), music and sound effects. */
+export interface BusGains {
+  master: number;
+  music: number;
+  sfx: number;
+}
+
+/**
+ * What each bus should be set to: SOUND: OFF silences the master; the music is the track's base
+ * loudness × the MUSIC level × the ducking (pause menu, "under attack"); the effects are their
+ * base loudness × the SOUNDS level. Pure (tested).
+ */
+export function busGains(settings: Pick<Settings, 'muted' | 'music' | 'sounds'>, track: MusicTrack, duck: number): BusGains {
+  const base = track === 'medieval' ? AUDIO.MUSIC_VOLUME : AUDIO.MUSIC_FILE_VOLUME;
+  return {
+    master: settings.muted ? 0 : 1,
+    music: base * settings.music * duck,
+    sfx: AUDIO.SFX_VOLUME * settings.sounds,
+  };
+}
+
 /**
  * WebAudio output. Recorded sound effects (assets/sounds) are fetched and decoded once when audio
  * is unlocked; the remaining effects are synthesized into buffers on first use. Recorded music
- * (assets/music) is streamed through an <audio> element routed into the same graph, so volume,
- * mute and ducking apply to everything. The context starts on the first user gesture (autoplay
- * rules) and everything is paused while the app is in the background.
+ * (assets/music) is streamed through an <audio> element routed into the same graph, so the MUSIC
+ * and SOUNDS levels, mute and ducking apply to everything (GainNodes, never element.volume, which
+ * iOS ignores). The context starts on the first user gesture (autoplay rules) and everything is
+ * paused while the app is in the background.
  */
 export class AudioEngine {
   private ctx: AudioContext | null = null;
@@ -71,12 +93,14 @@ export class AudioEngine {
         this.master = this.ctx.createGain();
         this.sfx = this.ctx.createGain();
         this.music = this.ctx.createGain();
-        this.sfx.gain.value = AUDIO.SFX_VOLUME;
-        this.music.gain.value = this.musicLevel();
+        // Levels changed before the first tap apply from the first sound.
+        const g = this.gains();
+        this.master.gain.value = g.master;
+        this.sfx.gain.value = g.sfx;
+        this.music.gain.value = g.music;
         this.sfx.connect(this.master);
         this.music.connect(this.master);
         this.master.connect(this.ctx.destination);
-        this.applySettings(this.settings);
         void this.loadFiles();
       }
       if (this.ctx.state !== 'running') void this.ctx.resume().catch(() => {});
@@ -105,11 +129,20 @@ export class AudioEngine {
     for (const [name, state] of this.loops) if (state === 'pending') this.startLoop(name as FileSoundName);
   }
 
+  /** SOUND on/off, MUSIC and SOUNDS (Game.updateSettings): every bus fades to its new gain. */
   applySettings(s: Settings): void {
     this.settings = s;
-    if (this.master && this.ctx) {
-      this.master.gain.setTargetAtTime(s.muted ? 0 : s.volume, this.ctx.currentTime, 0.02);
-    }
+    if (!this.ctx || !this.master || !this.sfx || !this.music) return;
+    const g = this.gains();
+    const now = this.ctx.currentTime;
+    this.master.gain.setTargetAtTime(g.master, now, 0.02);
+    this.sfx.gain.setTargetAtTime(g.sfx, now, 0.02);
+    this.music.gain.setTargetAtTime(g.music, now, 0.02);
+  }
+
+  /** The buses' gains now (settings, track, ducking). */
+  private gains(): BusGains {
+    return busGains(this.settings, this.track, this.duck);
   }
 
   private buffer(name: SoundName): Clip | null {
@@ -127,7 +160,8 @@ export class AudioEngine {
   /** Plays a sound effect. `delay` in seconds; `volume` multiplies the file's own trim. */
   play(name: SoundName, opts: { volume?: number; rate?: number; delay?: number } = {}): void {
     const ctx = this.ctx;
-    if (!ctx || !this.sfx || this.settings.muted || ctx.state !== 'running') return;
+    // Muted or SOUNDS: OFF would play it at gain 0: skip the nodes altogether.
+    if (!ctx || !this.sfx || this.settings.muted || this.settings.sounds <= 0 || ctx.state !== 'running') return;
     const now = ctx.currentTime;
     if (now - (this.lastPlayed.get(name) ?? -1) < 0.045) return;
     this.lastPlayed.set(name, now);
@@ -208,15 +242,11 @@ export class AudioEngine {
     }
   }
 
-  private musicLevel(): number {
-    return (this.track === 'medieval' ? AUDIO.MUSIC_VOLUME : AUDIO.MUSIC_FILE_VOLUME) * this.duck;
-  }
-
   /** Lowers the music (e.g. 0.4 during "under attack" or the pause menu). */
   setDuck(amount: number): void {
     if (Math.abs(amount - this.duck) < 0.01) return;
     this.duck = amount;
-    if (this.music && this.ctx) this.music.gain.setTargetAtTime(this.musicLevel(), this.ctx.currentTime, 0.15);
+    if (this.music && this.ctx) this.music.gain.setTargetAtTime(this.gains().music, this.ctx.currentTime, 0.15);
   }
 
   /** Switches the music: 'intro' (reading screens), a level's own track, 'medieval' (the other dream levels). */
@@ -225,7 +255,7 @@ export class AudioEngine {
     const wasPlaying = this.musicSource !== null || this.playingElement !== null;
     this.stopCurrent();
     this.track = track;
-    if (this.music && this.ctx) this.music.gain.setTargetAtTime(this.musicLevel(), this.ctx.currentTime, 0.05);
+    if (this.music && this.ctx) this.music.gain.setTargetAtTime(this.gains().music, this.ctx.currentTime, 0.05);
     if (wasPlaying || this.wantMusic) this.ensureMusicPlaying();
   }
 

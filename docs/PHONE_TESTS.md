@@ -20,7 +20,7 @@ Or install the debug APK (see README → Android).
 
 ## M3 — Scenes
 - Title (glitch entrance) → tap → briefing → tap → play. MENU (top right): resume, restart,
-  sound, volume, quit. Switch app / lock the screen during play: it comes back paused.
+  sound, music, sounds, quit. Switch app / lock the screen during play: it comes back paused.
 - Reach the EXIT flag (top of the map): stars pop one by one, bonuses, NEXT/RETRY; best score
   shows on the title. Starve twice → GAME OVER → RETRY.
 
@@ -33,7 +33,9 @@ Or install the debug APK (see README → Android).
 
 ## M5 — Polish
 - Sound starts after the first tap: barks, pee, poop, treats, alarm, stars, game over, music.
-  Check the SOUND and VOLUME items in the pause menu (saved across restarts).
+  Check the SOUND, MUSIC and SOUNDS items in the pause menu and in OPTIONS (saved across
+  restarts): MUSIC changes only the music, SOUNDS only the effects (with a click at the new
+  level), OFF silences each alone, SOUND: OFF silences both.
 - Feel: shake on poop/hits, squash on eating, dust when running, leaves in bushes, splashes.
 - Balance: a full walk should take 2–3 minutes and you should need several treats.
 

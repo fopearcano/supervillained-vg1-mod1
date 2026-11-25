@@ -7,13 +7,26 @@ import { storage } from './storage';
 export type TextSpeed = 'slow' | 'normal' | 'fast' | 'instant';
 export const TEXT_SPEEDS: readonly TextSpeed[] = ['slow', 'normal', 'fast', 'instant'];
 
-/** The volumes OPTIONS and the pause menu step through. */
-export const VOLUME_STEPS: readonly number[] = [0.25, 0.5, 0.7, 1];
+/** The MUSIC and SOUNDS levels OPTIONS and the walk's pause menu step through (0 is OFF). */
+export const LEVEL_STEPS: readonly number[] = [0, 0.25, 0.5, 0.7, 1];
 
-/** The next volume step (after the loudest, the quietest). Pure (tested). */
-export function nextVolume(volume: number): number {
-  const i = VOLUME_STEPS.findIndex((v) => v >= volume - 0.01);
-  return VOLUME_STEPS[(i + 1) % VOLUME_STEPS.length]!;
+/**
+ * The next MUSIC / SOUNDS level: the next step up, and after the loudest, OFF. A level between
+ * steps (hand-edited storage) goes to the step just above it. Pure (tested).
+ */
+export function nextLevel(level: number): number {
+  const i = LEVEL_STEPS.findIndex((v) => v > level + 0.01);
+  return LEVEL_STEPS[i < 0 ? 0 : i]!;
+}
+
+/** How a level reads in the menus: OFF, 25%, 50%, 70%, 100%. Pure (tested). */
+export function levelLabel(level: number): string {
+  return level < 0.005 ? 'OFF' : `${Math.round(level * 100)}%`;
+}
+
+/** A saved level, or `fallback` when it is missing or not a number; kept within 0..1. */
+function validLevel(v: unknown, fallback: number): number {
+  return typeof v === 'number' && Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : fallback;
 }
 
 /** The next story text speed (after INSTANT, SLOW). Pure (tested). */
@@ -67,8 +80,12 @@ export function validControls(raw: unknown): ControlSettings {
 }
 
 export interface Settings {
+  /** SOUND: OFF silences everything; MUSIC and SOUNDS keep their levels for when it is back on. */
   muted: boolean;
-  volume: number;
+  /** The music's level, 0 (OFF) to 1. */
+  music: number;
+  /** The sound effects' level, 0 (OFF) to 1. */
+  sounds: number;
   /** Story dialogue typewriter speed. */
   textSpeed: TextSpeed;
   /** Lives for the Green Zone walk (the title's counter): more lives, less speed. */
@@ -84,10 +101,15 @@ export interface LevelRecord {
 }
 
 export function loadSettings(): Settings {
-  const s = storage.get<Partial<Settings>>('settings', {});
+  const raw = storage.get<unknown>('settings', {});
+  const s = (raw && typeof raw === 'object' ? raw : {}) as Partial<Settings> & { volume?: unknown };
+  // Older saves had one VOLUME for everything: both levels start from it, so the player hears
+  // what he heard before (the next save drops `volume`).
+  const before = validLevel(s.volume, AUDIO.DEFAULT_VOLUME);
   return {
     muted: typeof s.muted === 'boolean' ? s.muted : false,
-    volume: typeof s.volume === 'number' ? Math.max(0, Math.min(1, s.volume)) : AUDIO.DEFAULT_VOLUME,
+    music: validLevel(s.music, before),
+    sounds: validLevel(s.sounds, before),
     textSpeed: TEXT_SPEEDS.includes(s.textSpeed as TextSpeed) ? (s.textSpeed as TextSpeed) : 'normal',
     lives: clampLives(typeof s.lives === 'number' ? s.lives : LIVES.START),
     controls: validControls(s.controls),

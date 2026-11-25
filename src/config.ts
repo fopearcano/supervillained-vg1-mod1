@@ -479,7 +479,13 @@ export const FX = {
 } as const;
 
 export const AUDIO = {
+  /** MUSIC and SOUNDS level with nothing saved (and the old single VOLUME's default). */
   DEFAULT_VOLUME: 0.7,
+  /**
+   * The click that lets the player hear a new SOUNDS level waits this long (s), until the sound
+   * bus has faded to the new level (about three of its 0.02 s time constants).
+   */
+  LEVEL_CLICK_DELAY: 0.06,
   /** Synthesized music (the dream's medieval loop). */
   MUSIC_VOLUME: 0.32,
   /** Recorded music (intro, Green Zone, levels 2-4). */

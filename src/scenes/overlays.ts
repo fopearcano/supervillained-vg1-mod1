@@ -11,7 +11,7 @@ import { Menu, type MenuItem } from '../ui/menu';
 import { PixelText, type Span } from '../ui/pixelText';
 import { logoTexture, logoWidth, type LogoStyle } from '../ui/logo';
 import { C, frameRect, hex, retroBox } from '../ui/retro';
-import { DEFAULT_CONTROLS, nextBinding, type ControlSettings, type GestureBinding } from '../core/settings';
+import { DEFAULT_CONTROLS, levelLabel, nextBinding, type ControlSettings, type GestureBinding } from '../core/settings';
 import { clampLives, nextLives } from '../systems/lives';
 import { spriteName } from '../assets/manifest';
 import type { LevelDef } from '../world/level';
@@ -451,6 +451,33 @@ export class BriefingScene extends Overlay {
   }
 }
 
+/** What the SOUND, MUSIC and SOUNDS rows read and do (OPTIONS and the walk's pause menu). */
+interface SoundActions {
+  toggleSound: () => void;
+  muted: () => boolean;
+  music: () => number;
+  cycleMusic: () => void;
+  sounds: () => number;
+  cycleSounds: () => void;
+}
+
+/** The SOUND: ON/OFF, MUSIC: x and SOUNDS: x rows; `refresh` redraws the labels after a change. */
+function soundItems(actions: SoundActions, refresh: () => void): MenuItem[] {
+  const row = (label: () => string, change: () => void): MenuItem => ({
+    label,
+    action: () => {
+      change();
+      refresh();
+    },
+    color: C.cyan,
+  });
+  return [
+    row(() => (actions.muted() ? 'SOUND: OFF' : 'SOUND: ON'), actions.toggleSound),
+    row(() => `MUSIC: ${levelLabel(actions.music())}`, actions.cycleMusic),
+    row(() => `SOUNDS: ${levelLabel(actions.sounds())}`, actions.cycleSounds),
+  ];
+}
+
 /** Pause menu (MENU button, Esc, or app sent to background). */
 export class PauseScene extends Overlay {
   private readonly box = new Graphics();
@@ -459,36 +486,17 @@ export class PauseScene extends Overlay {
 
   constructor(
     game: Game,
-    private readonly actions: {
+    private readonly actions: SoundActions & {
       resume: () => void;
       restart: () => void;
-      toggleSound: () => void;
       quit: () => void;
-      muted: () => boolean;
-      volume: () => number;
-      cycleVolume: () => void;
     },
   ) {
     super(game, 0.5);
     const items: MenuItem[] = [
       { label: 'RESUME', action: actions.resume, color: C.green },
       { label: 'RESTART', action: actions.restart, color: C.yellow },
-      {
-        label: () => (actions.muted() ? 'SOUND: OFF' : 'SOUND: ON'),
-        action: () => {
-          actions.toggleSound();
-          this.menu.refreshLabels();
-        },
-        color: C.cyan,
-      },
-      {
-        label: () => `VOLUME: ${Math.round(actions.volume() * 100)}%`,
-        action: () => {
-          actions.cycleVolume();
-          this.menu.refreshLabels();
-        },
-        color: C.cyan,
-      },
+      ...soundItems(actions, () => this.menu.refreshLabels()),
       { label: 'QUIT TO TITLE', action: actions.quit, color: C.pink },
     ];
     this.menu = new Menu(items, 132, 18, 6);
@@ -690,7 +698,7 @@ export class GameOverScene extends Overlay {
   }
 }
 
-/** OPTIONS from the title: sound, volume, text speed, replaying levels, the book. */
+/** OPTIONS from the title: sound on/off, music and sounds levels, text speed, replaying levels, the book. */
 export class OptionsScene extends Overlay {
   private readonly heading = big('OPTIONS', C.yellow, 2);
   private readonly menu: Menu;
@@ -698,11 +706,7 @@ export class OptionsScene extends Overlay {
 
   constructor(
     game: Game,
-    actions: {
-      toggleSound: () => void;
-      muted: () => boolean;
-      cycleVolume: () => void;
-      volume: () => number;
+    actions: SoundActions & {
       cycleTextSpeed: () => void;
       textSpeed: () => string;
       controls: () => void;
@@ -716,22 +720,7 @@ export class OptionsScene extends Overlay {
     this.onBack = actions.back;
     this.menu = new Menu(
       [
-        {
-          label: () => (actions.muted() ? 'SOUND: OFF' : 'SOUND: ON'),
-          action: () => {
-            actions.toggleSound();
-            this.menu.refreshLabels();
-          },
-          color: C.cyan,
-        },
-        {
-          label: () => `VOLUME: ${Math.round(actions.volume() * 100)}%`,
-          action: () => {
-            actions.cycleVolume();
-            this.menu.refreshLabels();
-          },
-          color: C.cyan,
-        },
+        ...soundItems(actions, () => this.menu.refreshLabels()),
         {
           label: () => `TEXT: ${actions.textSpeed()}`,
           action: () => {

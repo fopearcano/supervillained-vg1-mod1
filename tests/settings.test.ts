@@ -1,5 +1,21 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { addCoins, bestFor, DEFAULT_CONTROLS, GESTURE_BINDINGS, loadCoins, loadSettings, nextBinding, nextTextSpeed, nextVolume, saveRecord, saveSettings, validControls, VOLUME_STEPS } from '../src/core/settings';
+import { AUDIO } from '../src/config';
+import {
+  addCoins,
+  bestFor,
+  DEFAULT_CONTROLS,
+  GESTURE_BINDINGS,
+  LEVEL_STEPS,
+  levelLabel,
+  loadCoins,
+  loadSettings,
+  nextBinding,
+  nextLevel,
+  nextTextSpeed,
+  saveRecord,
+  saveSettings,
+  validControls,
+} from '../src/core/settings';
 import { storage } from '../src/core/storage';
 
 class MemoryStorage {
@@ -45,12 +61,48 @@ describe('settings, records and coins', () => {
     (globalThis as { localStorage?: unknown }).localStorage = new MemoryStorage();
   });
 
-  it('persists mute, volume, text speed and lives', () => {
+  it('persists mute, the music and sounds levels, text speed and lives', () => {
     expect(loadSettings().muted).toBe(false);
     expect(loadSettings().textSpeed).toBe('normal');
     expect(loadSettings().lives).toBe(2);
-    saveSettings({ muted: true, volume: 0.3, textSpeed: 'fast', lives: 5, controls: DEFAULT_CONTROLS });
-    expect(loadSettings()).toEqual({ muted: true, volume: 0.3, textSpeed: 'fast', lives: 5, controls: DEFAULT_CONTROLS });
+    saveSettings({ muted: true, music: 0.25, sounds: 1, textSpeed: 'fast', lives: 5, controls: DEFAULT_CONTROLS });
+    expect(loadSettings()).toEqual({ muted: true, music: 0.25, sounds: 1, textSpeed: 'fast', lives: 5, controls: DEFAULT_CONTROLS });
+  });
+
+  it('with nothing saved, music and sounds both start at the default level', () => {
+    const s = loadSettings();
+    expect(s.music).toBe(AUDIO.DEFAULT_VOLUME);
+    expect(s.sounds).toBe(AUDIO.DEFAULT_VOLUME);
+    expect(s).not.toHaveProperty('volume');
+  });
+
+  it('an old save with one VOLUME gives that level to both music and sounds, and the next save drops it', () => {
+    // What the game saved before MUSIC and SOUNDS: mute, one volume, text speed, lives, controls.
+    const old = { muted: false, volume: 0.5, textSpeed: 'slow', lives: 3, controls: { ...DEFAULT_CONTROLS, hand: 'left' } };
+    localStorage.setItem('supervillained:settings', JSON.stringify(old));
+    const s = loadSettings();
+    expect(s).toEqual({ muted: false, music: 0.5, sounds: 0.5, textSpeed: 'slow', lives: 3, controls: { ...DEFAULT_CONTROLS, hand: 'left' } });
+    saveSettings(s);
+    const saved = JSON.parse(localStorage.getItem('supervillained:settings')!);
+    expect(saved).not.toHaveProperty('volume');
+    expect(saved).toMatchObject({ music: 0.5, sounds: 0.5 });
+    // An old VOLUME out of range is clamped; a level already saved wins over it.
+    localStorage.setItem('supervillained:settings', JSON.stringify({ volume: 3 }));
+    expect(loadSettings()).toMatchObject({ music: 1, sounds: 1 });
+    localStorage.setItem('supervillained:settings', JSON.stringify({ volume: 0.25, music: 0 }));
+    expect(loadSettings()).toMatchObject({ music: 0, sounds: 0.25 });
+  });
+
+  it('repairs corrupted levels one by one', () => {
+    localStorage.setItem('supervillained:settings', JSON.stringify({ music: 'loud', sounds: -2 }));
+    expect(loadSettings()).toMatchObject({ music: AUDIO.DEFAULT_VOLUME, sounds: 0 });
+    localStorage.setItem('supervillained:settings', JSON.stringify({ volume: 'max', music: null, sounds: 7 }));
+    expect(loadSettings()).toMatchObject({ music: AUDIO.DEFAULT_VOLUME, sounds: 1 });
+    // A save that is not an object at all.
+    for (const raw of ['null', '0.5', '"loud"', '[1, 2]']) {
+      localStorage.setItem('supervillained:settings', raw);
+      expect(loadSettings(), raw).toMatchObject({ muted: false, music: AUDIO.DEFAULT_VOLUME, sounds: AUDIO.DEFAULT_VOLUME });
+    }
   });
 
   it('persists the controls, and old saves get the default controls', () => {
@@ -98,15 +150,33 @@ describe('settings, records and coins', () => {
 });
 
 describe('stepping through a setting (OPTIONS, the pause menus, CONTROLS)', () => {
-  it('cycles the volume through its steps, the loudest back to the quietest', () => {
-    expect(nextVolume(0.25)).toBe(0.5);
-    expect(nextVolume(0.5)).toBe(0.7);
-    expect(nextVolume(0.7)).toBe(1);
-    expect(nextVolume(1)).toBe(0.25);
-    // A volume between steps (an older default) moves to the step after the next one up.
-    expect(nextVolume(0.6)).toBe(1);
-    expect(nextVolume(0)).toBe(0.5);
-    for (const v of VOLUME_STEPS) expect(VOLUME_STEPS).toContain(nextVolume(v));
+  it('cycles a MUSIC / SOUNDS level upward, the loudest back to OFF', () => {
+    expect(nextLevel(0)).toBe(0.25);
+    expect(nextLevel(0.25)).toBe(0.5);
+    expect(nextLevel(0.5)).toBe(0.7);
+    expect(nextLevel(0.7)).toBe(1);
+    expect(nextLevel(1)).toBe(0);
+    // A level between steps (hand-edited storage) goes to the step just above it.
+    expect(nextLevel(0.6)).toBe(0.7);
+    expect(nextLevel(0.1)).toBe(0.25);
+    // From any step, five presses come back to it.
+    for (const v of LEVEL_STEPS) {
+      let l = v;
+      for (let k = 0; k < LEVEL_STEPS.length; k++) {
+        l = nextLevel(l);
+        expect(LEVEL_STEPS).toContain(l);
+      }
+      expect(l).toBe(v);
+    }
+  });
+
+  it('labels a level as the menus show it, short enough for the pause menu', () => {
+    expect(LEVEL_STEPS.map(levelLabel)).toEqual(['OFF', '25%', '50%', '70%', '100%']);
+    // The pause menu's buttons are 132 px wide; the pixel font is 8 px a glyph.
+    for (const v of LEVEL_STEPS) {
+      expect(`MUSIC: ${levelLabel(v)}`.length * 8).toBeLessThanOrEqual(132);
+      expect(`SOUNDS: ${levelLabel(v)}`.length * 8).toBeLessThanOrEqual(132);
+    }
   });
 
   it('cycles the text speed and the gesture bindings in their listed order', () => {

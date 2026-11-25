@@ -29,8 +29,8 @@ pilgrims to their oath himself at the sack. The story, scene by scene, is in
 [`docs/STORY.md`](docs/STORY.md); its sources and what is invented, in
 [`docs/STORY-SOURCES.md`](docs/STORY-SOURCES.md). Saves from the earlier version of the dream are
 migrated (the walk and the unchanged Level 1 scenes are kept; the old save is kept aside). Progress is saved after every scene; OPTIONS has
-sound, volume, text speed, the character art (NEW: the delivered sprite sheets; OLD: the art they
-replaced, kept), level replays and the book.
+sound on/off, separate MUSIC and SOUNDS (sound effects) levels (OFF, 25, 50, 70, 100 %), text
+speed, the controls, level replays and the book.
 
 ## Run it
 

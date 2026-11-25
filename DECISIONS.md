@@ -1120,3 +1120,37 @@ poop everywhere.
   Measured on the way (already true before this change): walking the road straight to the exit
   without eating arrives with about 17 hunger, so on the road it is the stops (peeing, barking,
   chases, the pug) that make food necessary, not the distance alone.
+
+## Separate MUSIC and SOUNDS levels
+
+The owner asked for two levels in the settings, one for the music and one for the sounds, instead
+of the single VOLUME.
+
+- **Settings**: `music` and `sounds` (0..1) replace `volume`. SOUND: ON/OFF (`muted`) stays the
+  master switch and keeps both levels for when it is back on. Each level steps OFF, 25, 50, 70,
+  100 % and wraps (100 % → OFF); `nextLevel` and `levelLabel` (pure, tested) replace
+  `nextVolume`. A level between steps (hand-edited storage) goes to the step just above it (the
+  old `nextVolume` skipped one).
+- **Old saves**: no version is needed. `loadSettings` gives a save without `music` / `sounds` its
+  old `volume` for both (clamped), so a player hears exactly what he heard before (the old master
+  gain moves onto the two buses: the product is the same); the next save drops `volume`. With
+  nothing saved both start at `AUDIO.DEFAULT_VOLUME` (70 %). A save that is not an object (`null`,
+  a number) now loads the defaults instead of throwing.
+- **Audio**: the graph is unchanged (effects bus and music bus into the master). The master is
+  0 or 1; the effects bus is `SFX_VOLUME` × SOUNDS; the music bus is the track's base × MUSIC × the
+  ducking, so the pause menu, "under attack" and track changes keep the level. The arithmetic is
+  one pure function, `busGains(settings, track, duck)` (tested), used at unlock, by
+  `applySettings` (which now fades all three buses, so a level changed before the first tap
+  applies from the first sound), `setDuck` and `setTrack`. Still GainNodes, never
+  `element.volume`, which iOS ignores. With SOUNDS: OFF an effect is not played at all.
+- **Menus**: OPTIONS reads SOUND, MUSIC, SOUNDS, TEXT, CONTROLS, LEVELS (REPLAY), MERAVIGLIA
+  BOOK, BACK (8 rows: on the shortest screen, 192 × 310, the last ends at 285); the walk's pause
+  menu RESUME, RESTART, SOUND, MUSIC, SOUNDS, QUIT TO TITLE. Labels like "SOUNDS: 100%" and
+  "MUSIC: OFF" fit the pause menu's 132-px buttons. Changing SOUNDS plays a click at the new level
+  (delayed `AUDIO.LEVEL_CLICK_DELAY`, 0.06 s, until the bus has faded to it); changing MUSIC
+  plays nothing (the music is heard). The story's pause menu keeps SOUND alone.
+- Checks: unit tests for the old-save migration, defaults, corrupted values, the steps and
+  labels, `busGains`, and the engine's buses over a stand-in AudioContext (applySettings retargets
+  music and effects, levels set before unlock apply at unlock, ducking and track changes keep the
+  level); `npm run smoke -- menus` follows the new rows and changes MUSIC and SOUNDS from the
+  keyboard in OPTIONS, then checks the save, the audio's settings and the labels.

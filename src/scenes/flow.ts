@@ -1,7 +1,7 @@
 import { BlurFilter } from 'pixi.js';
 import type { Game } from '../core/game';
 import type { Scene } from '../core/scene';
-import { nextTextSpeed, nextVolume, saveRecord } from '../core/settings';
+import { nextLevel, nextTextSpeed, saveRecord } from '../core/settings';
 import { LEVELS, levelByNumber } from '../levels';
 import { finalHealth, starBonus, starsFromHealth, timeBonus } from '../systems/scoring';
 import type { LevelDef } from '../world/level';
@@ -129,12 +129,13 @@ export class Flow {
       new OptionsScene(this.game, {
         toggleSound: () => this.toggleSound(),
         muted: () => s.muted,
-        cycleVolume: () => this.cycleVolume(),
-        volume: () => s.volume,
+        cycleMusic: () => this.cycleMusic(),
+        music: () => s.music,
+        cycleSounds: () => this.cycleSounds(),
+        sounds: () => s.sounds,
         cycleTextSpeed: () => this.game.updateSettings((st) => (st.textSpeed = nextTextSpeed(st.textSpeed))),
         textSpeed: () => s.textSpeed.toUpperCase(),
         controls: () => this.game.scenes.push(new ControlsScene(this.game, () => this.game.scenes.pop())),
-        // The character art: the new sheets, or the old version they replaced.
         levels: () => this.glitch(() => this.story.openMenu()),
         book: () => this.game.scenes.push(new BookScene(this.game, this.story.state, () => this.game.scenes.pop())),
         back: () => this.closeOverTitle(),
@@ -215,8 +216,10 @@ export class Flow {
         quit: () => this.quitToTitle(),
         toggleSound: () => this.toggleSound(),
         muted: () => this.game.settings.muted,
-        volume: () => this.game.settings.volume,
-        cycleVolume: () => this.cycleVolume(),
+        music: () => this.game.settings.music,
+        cycleMusic: () => this.cycleMusic(),
+        sounds: () => this.game.settings.sounds,
+        cycleSounds: () => this.cycleSounds(),
       }),
     );
   }
@@ -226,10 +229,15 @@ export class Flow {
     this.game.updateSettings((s) => (s.muted = !s.muted));
   }
 
-  /** VOLUME: the next step, with a click to hear it. */
-  private cycleVolume(): void {
-    this.game.updateSettings((s) => (s.volume = nextVolume(s.volume)));
-    this.game.audio.play('click');
+  /** MUSIC: the next level. No click: the music itself is heard at the new level. */
+  private cycleMusic(): void {
+    this.game.updateSettings((s) => (s.music = nextLevel(s.music)));
+  }
+
+  /** SOUNDS: the next level, with a click at the new level to hear it. */
+  private cycleSounds(): void {
+    this.game.updateSettings((s) => (s.sounds = nextLevel(s.sounds)));
+    this.game.audio.play('click', { delay: AUDIO.LEVEL_CLICK_DELAY });
   }
 
   resume(): void {

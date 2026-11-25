@@ -4,8 +4,9 @@
  * bad sprite key...). Then four groups of checks through the real menus and keys: `progress`
  * (what a scene saves on restart / quit / skip), `menus` (double presses during a transition,
  * Escape and the Android Back button on each kind of screen, the MENU button after a resize, the
- * continue / confirm keys), `keys` (the letter and rumour mini-games played from the keyboard) and
- * `walk` (the Green Zone: Bagnaskiz's band's ambush half way).
+ * continue / confirm keys, OPTIONS' MUSIC and SOUNDS levels), `keys` (the letter and rumour
+ * mini-games played from the keyboard) and `walk` (the Green Zone: Bagnaskiz's band's ambush half
+ * way).
  *
  *   npm run smoke                 all sub-levels, then the four groups of checks
  *   npm run smoke -- 7.3 8.1      selected sub-levels
@@ -169,7 +170,7 @@ async function menuChecks(page) {
   await androidBack();
   check((await top()) === 'GameScene', 'Back resumes the walk');
   await androidBack();
-  await press('ArrowDown', 4);
+  await press('ArrowDown', 5); // RESUME, RESTART, SOUND, MUSIC, SOUNDS, QUIT TO TITLE
   await page.keyboard.press('Enter');
   await wait(30);
   await page.keyboard.press('Enter');
@@ -179,7 +180,7 @@ async function menuChecks(page) {
   // Over the title: OPTIONS, CONTROLS, CONFIRM close with Back.
   await page.evaluate(() => window.__sv.top().actions.options());
   await wait(500);
-  await press('ArrowDown', 3);
+  await press('ArrowDown', 4); // SOUND, MUSIC, SOUNDS, TEXT, CONTROLS
   await page.keyboard.press('Enter');
   await wait(400);
   check((await top()) === 'ControlsScene', 'OPTIONS > CONTROLS opens');
@@ -187,6 +188,32 @@ async function menuChecks(page) {
   check((await top()) === 'OptionsScene', 'Back closes CONTROLS');
   await androidBack();
   check((await top()) === 'TitleScene' && (await page.evaluate(() => window.__sv.top().root.visible)), 'Back closes OPTIONS and shows the title again');
+
+  // OPTIONS: MUSIC and SOUNDS are two levels, saved apart and given to the audio apart. From 70%
+  // each: MUSIC once (100%), SOUNDS twice (100%, then OFF).
+  await page.evaluate(() => window.__sv.game.updateSettings((st) => ((st.music = 0.7), (st.sounds = 0.7))));
+  await page.evaluate(() => window.__sv.top().actions.options());
+  await wait(500);
+  await press('ArrowDown'); // MUSIC
+  await press('Enter');
+  await press('ArrowDown'); // SOUNDS
+  await press('Enter', 2);
+  await wait(200);
+  const levels = await page.evaluate(() => {
+    const saved = JSON.parse(localStorage.getItem('supervillained:settings') ?? 'null');
+    const heard = window.__sv.game.audio.settings;
+    const rows = window.__sv.top().menu.rows.map((r) => r.text.content.map((s) => s.text).join(''));
+    return { saved, heard: { music: heard.music, sounds: heard.sounds }, rows: rows.slice(0, 3) };
+  });
+  check(
+    levels.saved?.music === 1 && levels.saved?.sounds === 0 && !('volume' in (levels.saved ?? {})),
+    `OPTIONS saves MUSIC and SOUNDS apart (${JSON.stringify(levels.saved && { music: levels.saved.music, sounds: levels.saved.sounds, volume: levels.saved.volume })})`,
+  );
+  check(levels.heard.music === 1 && levels.heard.sounds === 0, `the audio gets both levels (${JSON.stringify(levels.heard)})`);
+  check(levels.rows[1] === 'MUSIC: 100%' && levels.rows[2] === 'SOUNDS: OFF', `the rows show the new levels (${levels.rows.join(' | ')})`);
+  await press('Escape');
+  await wait(300);
+  await page.evaluate(() => window.__sv.game.updateSettings((st) => ((st.music = 0.7), (st.sounds = 0.7))));
 
   // The story menu's level list: Escape and Back return to the story menu, once.
   await page.evaluate(() => window.__sv.flow.story.openMenu());
