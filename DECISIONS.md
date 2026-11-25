@@ -1110,11 +1110,12 @@ poop everywhere.
   wandering a little across the gravel and nudged sideways only off water, solid props or a
   treat too close. **12 on the side lanes**: progress 0.05–0.95 split into 12 bands, one treat
   per band on the gravel tile at least 6 tiles from the road that is farthest from every treat
-  already placed. They land on the spine and the loops on both sides (9 west, 3 east), a reward
-  for a detour. Level data: `spawns.treats.route` and `side`; the distances in `TREAT`
+  already placed, on alternate sides of the road (a review found the first version put 9 of 12
+  in the west: the farthest tile is usually there). They land on the spine and the loops, 7 west
+  and 5 east (near the exit only the west has lanes), a reward for a detour. Level data: `spawns.treats.route` and `side`; the distances in `TREAT`
   (`config.ts`). A level without a route places exactly as before (a test pins the positions).
 - **Balance** (`tests/balance.test.ts`, walking speed, detours within 2.5 tiles): the spine bot
-  now eats 10 treats (2 poops, hunger never below 74), the new road bot all 32 on the trail
+  now eats 9 treats (2 poops, hunger never below 77), the new road bot all 32 on the trail
   (8 poops, the test's bound, hunger never below 96). Eating every treat in the park means about
   11 poops (44 × 26 / 100) instead of 7: more food, and more to clean, by the player's choice.
   Measured on the way (already true before this change): walking the road straight to the exit
@@ -1142,7 +1143,7 @@ of the single VOLUME.
   one pure function, `busGains(settings, track, duck)` (tested), used at unlock, by
   `applySettings` (which now fades all three buses, so a level changed before the first tap
   applies from the first sound), `setDuck` and `setTrack`. Still GainNodes, never
-  `element.volume`, which iOS ignores. With SOUNDS: OFF an effect is not played at all.
+  `element.volume`, which iOS ignores. With SOUNDS: OFF a one-shot effect is not played at all; a loop (the attack's siren) still runs, silent, on the effects bus at gain 0.
 - **Menus**: OPTIONS reads SOUND, MUSIC, SOUNDS, TEXT, CONTROLS, LEVELS (REPLAY), MERAVIGLIA
   BOOK, BACK (8 rows: on the shortest screen, 192 × 310, the last ends at 285); the walk's pause
   menu RESUME, RESTART, SOUND, MUSIC, SOUNDS, QUIT TO TITLE. Labels like "SOUNDS: 100%" and

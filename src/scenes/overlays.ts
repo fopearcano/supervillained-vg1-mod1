@@ -743,8 +743,10 @@ export class OptionsScene extends Overlay {
 
   protected layout(): void {
     const { w, h } = this;
-    this.heading.position.set(Math.round(w / 2), Math.round(h * 0.22));
-    this.menu.layout(w / 2, Math.round(h * 0.32));
+    // A third of the way down, raised on short screens so the last row (BACK) stays on screen.
+    const top = Math.max(32, Math.min(Math.round(h * 0.32), h - this.menu.height - 8));
+    this.heading.position.set(Math.round(w / 2), Math.min(Math.round(h * 0.22), top - 24));
+    this.menu.layout(w / 2, top);
   }
 
   /** Android Back: BACK to the title. */

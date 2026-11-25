@@ -197,7 +197,7 @@ export function buildGreenZoneRows(): readonly string[] {
   return cells.map((row) => row.join(''));
 }
 
-/** Level 1 — a five-district park with a fast spine, garden loops and pollution waves. */
+/** Level 1 — a five-district park with a fast diagonal road, garden loops and pollution waves. */
 export const LEVEL_1: LevelDef = {
   id: 'level1',
   number: 1,

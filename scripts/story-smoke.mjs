@@ -201,15 +201,30 @@ async function menuChecks(page) {
   await wait(200);
   const levels = await page.evaluate(() => {
     const saved = JSON.parse(localStorage.getItem('supervillained:settings') ?? 'null');
-    const heard = window.__sv.game.audio.settings;
     const rows = window.__sv.top().menu.rows.map((r) => r.text.content.map((s) => s.text).join(''));
-    return { saved, heard: { music: heard.music, sounds: heard.sounds }, rows: rows.slice(0, 3) };
+    return { saved, rows: rows.slice(0, 3) };
   });
   check(
     levels.saved?.music === 1 && levels.saved?.sounds === 0 && !('volume' in (levels.saved ?? {})),
     `OPTIONS saves MUSIC and SOUNDS apart (${JSON.stringify(levels.saved && { music: levels.saved.music, sounds: levels.saved.sounds, volume: levels.saved.volume })})`,
   );
-  check(levels.heard.music === 1 && levels.heard.sounds === 0, `the audio gets both levels (${JSON.stringify(levels.heard)})`);
+  // What is actually heard: the engine's music and effects buses (WebAudio gain nodes). A bus's
+  // gain only moves while sound flows through it (Chromium does not process an idle node, so its
+  // reading stays where the last sound left it): a near-silent siren loop keeps the effects bus
+  // running while it is read. SOUNDS: OFF silences the effects; MUSIC: 100% is the title track's
+  // full level (AUDIO.MUSIC_FILE_VOLUME 0.55; it was 0.385 at 70 %).
+  await page.evaluate(() => window.__sv.game.audio.loop('siren', { volume: 0.01 }));
+  await wait(700);
+  const gains = await page.evaluate(() => {
+    const a = window.__sv.game.audio;
+    const g = { music: a.music?.gain.value ?? null, sfx: a.sfx?.gain.value ?? null, master: a.master?.gain.value ?? null };
+    a.stopLoop('siren');
+    return g;
+  });
+  check(
+    gains.sfx !== null && gains.sfx < 0.01 && gains.music > 0.5 && gains.master > 0.99,
+    `the audio buses follow both levels (${JSON.stringify(gains, (_k, v) => (typeof v === 'number' ? +v.toFixed(3) : v))})`,
+  );
   check(levels.rows[1] === 'MUSIC: 100%' && levels.rows[2] === 'SOUNDS: OFF', `the rows show the new levels (${levels.rows.join(' | ')})`);
   await press('Escape');
   await wait(300);
