@@ -401,11 +401,6 @@ async function menuChecks(page) {
 }
 
 /**
- * The word mini-games with the keyboard only: 5.4 (the letter) is played to the 'named' outcome
- * through every kind of button (change a word, send, write it again, accept), 6.2 (the rumour)
- * to the end. Returns the number of failures.
- */
-/**
  * The Green Zone walk (story 1.0): Bagnaskiz's band waits half way. Their voices from a quarter
  * of the way, NOW! at the middle, Zampano frozen with fright, the band's poop piles (not his),
  * the band gone, Bagnaskiz's usual attack held meanwhile; and no ambush when he jumps past it.
@@ -442,16 +437,33 @@ async function walkChecks(page) {
   await wait(1200);
   await page.evaluate(() => {
     window.__voices = [];
-    window.__sv.scene().events.on('ambushVoice', (e) => window.__voices.push(e.text));
+    window.__heard = { now: [], barks: 0 };
+    const ev = window.__sv.scene().events;
+    ev.on('ambushVoice', (e) => window.__voices.push(e.text));
+    ev.on('ambushNow', (e) => window.__heard.now.push(e.text));
+    ev.on('ambushBark', () => window.__heard.barks++);
   });
   let st = await state();
   check(st.phase === 'waiting' && st.band === 3, `the band waits from the start (${st.phase}, ${st.band} of them)`);
+  // Just short of a quarter of the way: still silent.
+  await page.evaluate(() => window.__sv.scene().teleport(71.5, 71.5)); // on the road, about 22 %
+  await wait(2500);
+  st = await state();
+  check(st.phase === 'waiting' && st.voices.length === 0, `silent before a quarter of the way (${st.phase}, ${st.voices.length} voices)`);
   // A third of the way up the road: their voices.
   await page.evaluate(() => window.__sv.scene().teleport(58.9, 57.5));
   for (let k = 0; k < 40 && !(await state()).voices.length; k++) await wait(150);
   st = await state();
   check(st.phase === 'voices' && st.voices.length > 0, `their voices from a quarter of the way (${st.voices.join(' / ') || 'none'})`);
-  check(!st.pug && st.attack === 'calm' && st.held, "Bagnaskiz's usual attack waits while he waits with his band");
+  // Dirty the zone well below the attack threshold: without the hold, Bagnaskiz would come now.
+  const dirty = await page.evaluate(() => {
+    const s = window.__sv.scene();
+    for (let a = -3; a <= 3; a++) for (let b = -3; b <= 3; b++) s.map.stampDirt(s.player.gx + a * 4, s.player.gy + b * 4, 3, 1);
+    window.__sv.step(90);
+    return +s.map.health().toFixed(3);
+  });
+  st = await state();
+  check(dirty < 0.95 && !st.pug && st.attack === 'calm' && st.held, `Bagnaskiz's usual attack waits while he waits with his band, even with the zone dirty (health ${dirty})`);
   // Up the road to the middle.
   await page.evaluate(() => window.__sv.scene().teleport(51.1, 48.6));
   await wait(300);
@@ -467,7 +479,60 @@ async function walkChecks(page) {
   st = await state();
   check(st.phase === 'done' && st.band === 0 && st.player === 'free', `then they run off and he can move again (${st.phase}, ${st.band} left, ${st.player})`);
   check(st.piles >= 6 && st.own === 0, `they pooped all around him; none counted as his (${st.piles} piles, his POOPS ${st.own})`);
+  const spread = await page.evaluate(() => {
+    const s = window.__sv.scene();
+    const d = s.rules.poops.map((p) => Math.hypot(p.gx - s.player.gx, p.gy - s.player.gy));
+    return { min: +Math.min(...d).toFixed(1), max: +Math.max(...d).toFixed(1), heard: window.__heard };
+  });
+  check(spread.max > 2.5, `the piles are spread, not in one pee's reach (${spread.min} to ${spread.max} tiles)`);
+  check(spread.heard.now.join() === 'NOW!' && spread.heard.barks >= 4, `Bagnaskiz shouted NOW! and they barked around him (${spread.heard.now.join()} / ${spread.heard.barks} barks)`);
   check(st.held && !st.pug, 'a grace period before Bagnaskiz comes back on his own');
+  // Bagnaskiz comes back alone later (the scripted attack, 70 %), once the grace is over.
+  await page.evaluate(() => {
+    const s = window.__sv.scene();
+    s.teleport(27.5, 29.5); // on the road at 72 %
+    window.__sv.step(60 * 9);
+  });
+  await wait(300);
+  st = await state();
+  check(st.attack === 'attack' && st.pug && !st.held, `Bagnaskiz comes back alone after the grace, at 70 % (${st.attack}, pug: ${st.pug})`);
+
+  // He walks away at the shout: they still run him down (they chase where he is now).
+  await page.evaluate(() => window.__sv.flow.play(1));
+  await wait(900);
+  await page.evaluate(() => window.__sv.scene().teleport(51.1, 48.6));
+  await wait(300);
+  await page.keyboard.down('KeyW');
+  for (let k = 0; k < 60 && (await state()).phase === 'voices'; k++) await wait(40);
+  await page.keyboard.up('KeyW');
+  await page.keyboard.down('KeyS');
+  for (let k = 0; k < 60 && (await state()).phase !== 'scare'; k++) await wait(40);
+  await page.keyboard.up('KeyS');
+  const near = await page.evaluate(() => {
+    const s = window.__sv.scene();
+    return s.ambush.band.map((m) => +Math.hypot(m.actor.gx - s.player.gx, m.actor.gy - s.player.gy).toFixed(1));
+  });
+  check((await state()).phase === 'scare' && near.every((d) => d < 3.6), `walking away at NOW!, he is still caught (band at ${near.join(', ')} tiles)`);
+
+  // On the west trail, far from where they wait: they pop up ahead of him, clear of hedges.
+  await page.evaluate(() => window.__sv.flow.play(1));
+  await wait(900);
+  await page.evaluate(() => window.__sv.scene().teleport(38.5, 58.5));
+  await wait(300);
+  await page.keyboard.down('KeyW');
+  for (let k = 0; k < 60 && (await state()).phase === 'voices'; k++) await wait(40);
+  await page.keyboard.up('KeyW');
+  for (let k = 0; k < 60 && (await state()).phase !== 'scare'; k++) await wait(50);
+  const west = await page.evaluate(() => {
+    const s = window.__sv.scene();
+    return {
+      phase: s.ambush.director.phase,
+      stuck: s.ambush.band.filter((m) => s.map.circleBlocked(m.actor.gx, m.actor.gy, 0.25)).length,
+      far: s.ambush.band.map((m) => +Math.hypot(m.actor.gx - s.player.gx, m.actor.gy - s.player.gy).toFixed(1)),
+    };
+  });
+  check(west.phase === 'scare' && west.stuck === 0 && west.far.every((d) => d < 3.6), `from the west trail they pop up ahead and reach him (${west.phase}, band at ${west.far.join(', ')}, stuck ${west.stuck})`);
+
   // Jumping past the middle (a teleport): no ambush, nothing held.
   await page.evaluate(() => window.__sv.flow.play(1));
   await wait(900);
@@ -481,6 +546,11 @@ async function walkChecks(page) {
   return fails;
 }
 
+/**
+ * The word mini-games with the keyboard only: 5.4 (the letter) is played to the 'named' outcome
+ * through every kind of button (change a word, send, write it again, accept), 6.2 (the rumour)
+ * to the end. Returns the number of failures.
+ */
 async function keyChecks(page) {
   let fails = 0;
   const check = (ok, what) => {

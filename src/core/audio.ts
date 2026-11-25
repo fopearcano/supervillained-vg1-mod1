@@ -158,12 +158,13 @@ export class AudioEngine {
   }
 
   /** Plays a sound effect. `delay` in seconds; `volume` multiplies the file's own trim. */
-  play(name: SoundName, opts: { volume?: number; rate?: number; delay?: number } = {}): void {
+  /** `always`: a cue that must be heard even right after the same sound (not throttled). */
+  play(name: SoundName, opts: { volume?: number; rate?: number; delay?: number; always?: boolean } = {}): void {
     const ctx = this.ctx;
     // Muted or SOUNDS: OFF would play it at gain 0: skip the nodes altogether.
     if (!ctx || !this.sfx || this.settings.muted || this.settings.sounds <= 0 || ctx.state !== 'running') return;
     const now = ctx.currentTime;
-    if (now - (this.lastPlayed.get(name) ?? -1) < 0.045) return;
+    if (!opts.always && now - (this.lastPlayed.get(name) ?? -1) < 0.045) return;
     this.lastPlayed.set(name, now);
     const clip = this.buffer(name);
     if (!clip) return;

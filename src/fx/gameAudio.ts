@@ -39,7 +39,8 @@ export function bindGameAudio(events: Emitter<GameEvents>, audio: AudioEngine): 
     audio.play('bark', { rate: bandRate(e.who), volume: quiet + (loud - quiet) * e.loud });
   });
   events.on('ambushNow', (e) => {
-    audio.play('bark', { rate: bandRate(e.who) * 0.92 });
+    // A voice may have barked a step before: the shout's bark must not be throttled away.
+    audio.play('bark', { rate: bandRate(e.who) * 0.92, always: true });
     audio.play('hit', { delay: 0.05 });
   });
   events.on('ambushJump', () => audio.play('swish'));

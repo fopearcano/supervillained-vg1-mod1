@@ -71,9 +71,11 @@ is to be changed.** The Green Zone walk got the band's ambush and more treats fi
 
 ## 5. Polish and release
 
-1. **The Green Zone ambush needs playing by a person**: its numbers (`AMBUSH` in `config.ts`:
-   when the voices start, how often, the fright's length, six poop piles) were set by eye and
-   checked by scripts, not by play. Jack's and Watson's squat and sit wait for their animation
+1. **The Green Zone ambush needs playing by a person**: its numbers were set by eye and checked
+   by scripts, not by play. Timings in `AMBUSH` (`config.ts`: how often the voices come, the
+   fright's length, six poop piles, the grace before Bagnaskiz comes back); where it starts and
+   springs (25 % / 50 %), the band's spot and the lines in the level data
+   (`LEVEL_1.events.ambush`). Jack's and Watson's squat and sit wait for their animation
    delivery (`ASSETS.md`); the voices are barks until recorded lines exist.
 2. **Android release signing**: `android:release` signs with the debug key
    (`android/app/build.gradle`, `signingConfig signingConfigs.debug`). A store upload needs a

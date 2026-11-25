@@ -1,6 +1,7 @@
 import { AMBUSH } from '../config';
 import { Rng } from '../core/rng';
-import type { CharacterKey } from '../assets/manifest';
+import { animationDuration } from '../assets/animationTiming';
+import { CHARACTERS, type CharacterKey } from '../assets/manifest';
 import { Actor } from '../entities/actor';
 import type { AmbushSettings } from '../world/level';
 import { Ground } from '../world/tiles';
@@ -18,6 +19,9 @@ interface Member {
   poopIn: number;
   poopsLeft: number;
 }
+
+/** A band member's body radius for placement checks (an Actor moves as a 0.25 circle). */
+const BODY = 0.3;
 
 /** Where each one waits, around the band's spot (grid tiles): the leader in front. */
 const WAIT_OFFSETS = [
@@ -50,13 +54,12 @@ export class Ambush {
       { warnFrom: settings.warnFrom, at: settings.at, until: settings.until, lines: settings.voices.length },
       this.rng,
     );
-    const map = world.map;
     settings.band.forEach((key, k) => {
       const off = WAIT_OFFSETS[k % WAIT_OFFSETS.length]!;
       let x = settings.spot.x + off.x;
       let y = settings.spot.y + off.y;
-      if (!this.standable(Math.floor(x), Math.floor(y))) {
-        const s = randomSpotNear(map, settings.spot.x, settings.spot.y, 0.5, 2.2, this.rng, (i, j) => this.standable(i, j));
+      if (!this.clearAt(x, y)) {
+        const s = this.clearSpotNear(settings.spot.x, settings.spot.y, 0.5, 2.2);
         if (s) ({ x, y } = s);
       }
       const actor = new Actor(`band-${key}`, key as CharacterKey, x, y);
@@ -84,6 +87,8 @@ export class Ambush {
     const arrived = this.band.every((m) => m.actor.arrived || this.distance(m.actor) <= AMBUSH.RING + 0.5);
     for (const s of this.director.update(dt, progress, arrived)) this.handle(s);
     const phase = this.director.phase;
+    // They run at where he is now, not where he stood at the shout.
+    if (phase === 'jump') for (const m of this.band) m.actor.setBehavior({ kind: 'goto', to: this.ringPoint(m.angle), speed: AMBUSH.JUMP_SPEED, run: true });
     if (phase === 'scare') this.scareStep(dt);
     if (phase === 'leave') {
       // They vanish in the second half of their run.
@@ -188,8 +193,14 @@ export class Ambush {
       ({ x, y } = s);
     }
     this.rules.dropPoop(x, y);
-    // The squat, for whoever has it drawn (Bagnaskiz; Jack and Watson once their sheets have it).
-    a.playAction('poop', 0.45);
+    // The squat, for whoever has it drawn (Bagnaskiz; Jack and Watson once their sheets have it):
+    // the whole clip, sped up to fit, and no bark until it is over.
+    const clip = CHARACTERS[m.key as CharacterKey]?.anims.poop;
+    if (clip && a.animator) {
+      a.playAction('poop', AMBUSH.POOP_SQUAT);
+      a.animator.speed = animationDuration(clip) / AMBUSH.POOP_SQUAT;
+      m.barkIn = Math.max(m.barkIn, AMBUSH.POOP_SQUAT + 0.05);
+    }
     this.world.events.emit('bandPoop', { x, y, who: m.key });
   }
 
@@ -200,16 +211,30 @@ export class Ambush {
     const ahead = (i: number, j: number) => this.standable(i, j) && map.progressAt(i + 0.5, j + 0.5) > here;
     const d = AMBUSH.APPEAR_AT;
     const spot =
-      randomSpotNear(map, player.gx, player.gy, d - 1, d + 1, this.rng, ahead) ??
-      randomSpotNear(map, player.gx, player.gy, d - 1, d + 1, this.rng, (i, j) => this.standable(i, j));
+      this.clearSpotNear(player.gx, player.gy, d - 1, d + 1, ahead) ?? this.clearSpotNear(player.gx, player.gy, d - 1, d + 1);
     if (!spot) return;
     this.band.forEach((m, k) => {
       const off = WAIT_OFFSETS[k % WAIT_OFFSETS.length]!;
       const x = spot.x + off.x;
       const y = spot.y + off.y;
-      if (this.standable(Math.floor(x), Math.floor(y))) m.actor.setPosition(x, y);
+      // Never half inside a hedge or a tree: they could not move again.
+      if (this.clearAt(x, y)) m.actor.setPosition(x, y);
       else m.actor.setPosition(spot.x, spot.y);
     });
+  }
+
+  /** A band member fits here: solid dry ground, its body clear of hedges, trees and water. */
+  private clearAt(x: number, y: number): boolean {
+    return this.standable(Math.floor(x), Math.floor(y)) && !this.world.map.circleBlocked(x, y, BODY);
+  }
+
+  /** A spot near (x, y) where a band member fits (randomSpotNear checks only the tile). */
+  private clearSpotNear(x: number, y: number, minD: number, maxD: number, accept = (i: number, j: number) => this.standable(i, j)): { x: number; y: number } | null {
+    for (let k = 0; k < 6; k++) {
+      const s = randomSpotNear(this.world.map, x, y, minD, maxD, this.rng, accept);
+      if (s && this.clearAt(s.x, s.y)) return s;
+    }
+    return null;
   }
 
   private ringPoint(angle: number, radius: number = AMBUSH.RING): { x: number; y: number } {

@@ -431,7 +431,9 @@ export const AMBUSH = {
   LEAVE_TIME: 2.2,
   LEAVE_SPEED: 6,
   /** Bagnaskiz's usual attack waits while the band waits, and this long after it leaves (s). */
-  ATTACK_GRACE: 12,
+  ATTACK_GRACE: 8,
+  /** Seconds a band member squats to poop (its whole clip, sped up to fit). */
+  POOP_SQUAT: 0.6,
   /** Camera shake at the jump and at the fright. */
   SHAKE: 5,
 } as const;

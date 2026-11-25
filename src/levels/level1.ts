@@ -222,7 +222,8 @@ export const LEVEL_1: LevelDef = {
     balls: { first: 28, interval: [22, 34], max: 2 },
   },
   events: {
-    underAttack: { scriptedProgress: 0.56, bagnaskizHits: 3 },
+    // After the band's ambush at the middle, Bagnaskiz comes back alone later in the walk.
+    underAttack: { scriptedProgress: 0.7, bagnaskizHits: 3 },
     pollutionWaves: [
       { progress: 0.2, count: 2, radius: 2.4, strength: 0.72, distance: [3, 7] },
       { progress: 0.43, count: 2, radius: 2.8, strength: 0.82, distance: [3, 8] },

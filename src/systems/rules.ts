@@ -245,7 +245,8 @@ export class Rules {
       return;
     }
     this.hunger.value = HUNGER.REFILL_ON_LIFE_LOST;
-    player.startAction('hurt', 0.6);
+    // Frozen with fright (the band's ambush) he stays frozen: the flinch would let him walk off.
+    if (player.state !== 'scared') player.startAction('hurt', 0.6);
     player.invulnerable = PLAYER.HURT_INVULN;
   }
 

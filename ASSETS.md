@@ -162,6 +162,10 @@ anchor (20, 36), animations **idle 2, walk 4, run 4, bark 2, hurt 2** (same shee
 | `zampanoCross`, `zampanoKnight` | Zampanò in armour, in the dream (2.1 onwards; `zampanoCross` is an alias of the knight's sheet) |
 | `sbrimbrulon`, `sbrimbrulonKnight` | Shih-tzu, on the lawn / armoured in the dream (3.1, 5.2; Pierre d'Amiens in 7.3). Both have Zampanò's 12 actions: standing still 3 s he sits, and `Actor.playAction(anim, seconds?)` plays any action in place |
 | `jack`, `watson`, `santina`, `confusione` | the band and friends (Jack the absent general / looter, Watson the sailor, Santina the purple-born princess, Confusione as Aleaume) |
+| `bagnaskizMarshal`, `bagnaskizEmperor` | Bagnaskiz's masks: Villehardouin, then the usurpers |
+| `doge`, `king`, `emir`, `legate`, `cellarer`, `preacher`, `stranger`, `marquis`, `prince`, `burgher`, `lady`, `greek`, `knight`, `varangian`, `clerkA`, `clerkB` | supporting cast |
+| `crowdA`, `crowdB`, `crowdC` | crowds (pilgrims, Venetians) |
+| `bear`, `leopard`, `hound` | the band as the three beasts of 2.1 (the hound is also the dream that chases him in 8.1) |
 
 **Bagnaskiz's band in the Green Zone** (1.0, `systems/ambush.ts`): Bagnaskiz, Jack and Watson wait
 on the road, jump in barking and poop around Zampanò. Bagnaskiz plays his `sit`, `bark` and
@@ -169,12 +173,9 @@ on the road, jump in barking and poop around Zampanò. Bagnaskiz plays his `sit`
 is not drawn yet. When their new sheets arrive with `poop` (and `sit`), give `jack` and `watson`
 their own animation list in `castDefs` (`src/assets/manifest.ts`, in the sheet's row order) and
 the ambush plays them with no other change (`Actor.playAction('poop')`, and an idle actor sits
-after 3 s when it has `sit`). The band's voices are the `bark` sound at three pitches
-(`fx/gameAudio.ts`); recorded lines can replace them through `src/fx/audioFiles.ts`.
-| `bagnaskizMarshal`, `bagnaskizEmperor` | Bagnaskiz's masks: Villehardouin, then the usurpers |
-| `doge`, `king`, `emir`, `legate`, `cellarer`, `preacher`, `stranger`, `marquis`, `prince`, `burgher`, `lady`, `greek`, `knight`, `varangian`, `clerkA`, `clerkB` | supporting cast |
-| `crowdA`, `crowdB`, `crowdC` | crowds (pilgrims, Venetians) |
-| `bear`, `leopard`, `hound` | the band as the three beasts of 2.1 (the hound is also the dream that chases him in 8.1) |
+after 3 s when it has `sit`). The band's voices are the `bark` sound at three pitches, played by
+the `ambushVoice` handler in `src/fx/gameAudio.ts`; recorded lines would be new files in
+`src/fx/audioFiles.ts` (`SOUND_FILES`), played by that handler instead of the bark.
 
 They are generated on first use, so a replacement sheet is loaded the same way (`sheet:` in the
 manifest). Preview any of them with `?debug=sprites&char=<key>`. Dialogue portraits use frame

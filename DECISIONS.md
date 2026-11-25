@@ -1088,14 +1088,25 @@ poop everywhere.
   18 s); until each pile is cleaned it keeps staining the ground around it. Then they run off
   and vanish.
 - **Bagnaskiz's usual attack** (the pug that roams and pollutes, `threats.ts`) is held while he
-  waits with his band and for 12 s after they leave (`AMBUSH.ATTACK_GRACE`): he cannot be in two
-  places. The scripted attack at 56 % therefore comes after that grace, as him coming back alone.
+  waits with his band and for 8 s after they leave (`AMBUSH.ATTACK_GRACE`): he cannot be in two
+  places. The level's scripted attack moves from 56 % to 70 % (`events.underAttack`): at 56 % it
+  fell inside the hold, and a player walking on reached the exit before the grace ended, so it
+  never came; at 70 % he comes back alone in the second half of the walk.
 - **Skipped** when Zampanò gets past 62 % without triggering it (a teleport in the screenshot
   scripts), so nothing is held then.
+- **Review fixes** (an adversarial review of the first version, each finding checked by two
+  skeptics): they chase where he is during the jump (walking away at NOW! no longer leaves him
+  frozen with the band 5 to 9 tiles off); popping up ahead of him they are placed clear of hedges
+  and trees (a body half inside one could not move again); Bagnaskiz's squat plays its whole clip
+  sped up into 0.6 s and his next bark waits for it (it was cut off); the voices brighten in four
+  steps (a pooled text kept its first glow); the shout's bark is never throttled away by a voice
+  just before it; losing a life to hunger during the fright keeps him frozen.
 - Pure sequence in `systems/ambushLogic.ts` (tested), the band in `systems/ambush.ts` (story
   `Actor`s), effects in `fx/gameFx.ts`, sounds in `fx/gameAudio.ts`, numbers in `AMBUSH`.
-  Checks: `tests/ambush.test.ts`, `npm run smoke -- walk` (the whole sequence in the real game),
-  `npm run screens -- ambush` (five pictures). Jack's and Watson's squat waits for their animation
+  Checks: `tests/ambush.test.ts`, `npm run smoke -- walk` (the whole sequence in the real game:
+  silent before 25 %, the voices, the hold against a dirtied zone, NOW!, the barking, the fright,
+  the spread piles, the band gone, the grace, Bagnaskiz back at 70 %, walking away at NOW!, the
+  west trail, a teleport past it), `npm run screens -- ambush` (five pictures). Jack's and Watson's squat waits for their animation
   delivery (`ASSETS.md`).
 
 ## More treats, spread over the road and the loops

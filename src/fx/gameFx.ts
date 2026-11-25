@@ -233,7 +233,9 @@ export class GameFx {
     // view (keepIn), brighter as he gets closer.
     events.on('ambushVoice', (e) => {
       const p = at(e.x, e.y, 44);
-      const style = { color: BAND_COLOR[e.who] ?? C.white, glow: 'self' as const, glowAlpha: 0.2 + 0.4 * e.loud, align: 'center' as const, maxWidth: 150 };
+      // Four steps of glow (each its own pooled text: a reused text keeps its first glow).
+      const glowAlpha = 0.2 + 0.4 * (Math.round(e.loud * 3) / 3);
+      const style = { color: BAND_COLOR[e.who] ?? C.white, glow: 'self' as const, glowAlpha, align: 'center' as const, maxWidth: 150 };
       this.voices.text(e.text, p.x, p.y, style, 1.1 + 0.5 * e.loud, -12, true);
     });
     events.on('ambushNow', (e) => {

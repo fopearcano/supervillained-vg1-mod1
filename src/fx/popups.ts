@@ -41,7 +41,7 @@ export class Popups {
   }
 
   text(str: string, x: number, y: number, style: Partial<PixelTextStyle>, life = 0.9, vy = -22, keep = false): void {
-    const key = `${str}|${style.color}|${style.scale ?? 1}|${style.outline}`;
+    const key = `${str}|${style.color}|${style.scale ?? 1}|${style.outline}|${style.glowAlpha ?? ''}`;
     const pool = this.textPool.get(key) ?? [];
     const t =
       pool.pop() ?? new PixelText(str, { outline: '#000000', ...style }).setOrigin(0.5, 1);
