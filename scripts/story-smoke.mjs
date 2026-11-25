@@ -298,6 +298,29 @@ async function menuChecks(page) {
   await press('Escape');
   await wait(400);
   check(await titleShown(), `Escape on the title does nothing (Back quits there; ${await top()})`);
+  // Fast text and J held down to skip dialogue: the presses never pick an answer not yet shown.
+  await page.evaluate(() => window.__sv.game.updateSettings((st) => (st.textSpeed = 'instant')));
+  await page.evaluate(() => window.__sv.flow.story.debugPlay('1.3'));
+  await wait(600);
+  for (let k = 0; k < 30; k++) {
+    const st = await page.evaluate(() => window.__sv.top().debugState?.().step ?? null);
+    if (st === 'AskStep') break;
+    await page.evaluate(() => window.__sv.top().debugSkip?.());
+    await wait(100);
+  }
+  for (let k = 0; k < 8; k++) {
+    await page.keyboard.press('KeyJ');
+    await wait(45);
+  }
+  await wait(600);
+  const asked = await page.evaluate(() => window.__sv.top().debugState());
+  await press('KeyJ');
+  await wait(300);
+  const answered = await page.evaluate(() => window.__sv.top().debugState());
+  check(asked.step === 'AskStep' && asked.metrics.choices.length === 0, `J mashed through a question's prompt picks nothing (${asked.step}, picked: ${asked.metrics.choices.join(', ') || 'none'})`);
+  check(answered.metrics.choices.length === 1, `a J once the answers are shown picks one (${answered.metrics.choices.join(', ') || 'none'})`);
+  await page.evaluate(() => window.__sv.game.updateSettings((st) => (st.textSpeed = 'normal')));
+
   // The same Briefing reached with a finger on a phone: the touch wording (the page emulates one).
   await page.evaluate(() => window.__sv.flow.story.newGame());
   await wait(900);

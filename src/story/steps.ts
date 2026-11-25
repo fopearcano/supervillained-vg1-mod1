@@ -91,6 +91,8 @@ export function optionView(o: Option, state: CampaignState): { label: string; lo
 class AskStep implements Step {
   private phase: 'typing' | 'choosing' = 'typing';
   private t = 0;
+  /** When the choices appeared (step time). */
+  private shownAt = 0;
   private views: Array<{ label: string; locked?: string }> = [];
   /** Autopilot's pick, applied on the next update. */
   private forced = -1;
@@ -111,14 +113,22 @@ class AskStep implements Step {
   update(dt: number, ctx: StoryScene): StepStatus {
     this.t += dt;
     if (this.phase === 'typing') {
-      if (ctx.dialogue.typing && tapped(ctx, 0.15, this.t)) ctx.dialogue.finish();
+      // Every press now belongs to the prompt (it finishes the typing): read even once the line is
+      // shown, so none is left over to pick a choice the player has not seen yet.
+      if (tapped(ctx, 0.15, this.t) && ctx.dialogue.typing) ctx.dialogue.finish();
       if (!ctx.dialogue.typing && this.t > 0.3) {
         this.phase = 'choosing';
+        this.shownAt = this.t;
         this.views = this.options.map((o) => optionView(o, ctx.state));
         // Never a dead end: if every option is out of reach, the costly ones open up.
         if (this.views.every((v) => v.locked)) this.views = this.options.map((o) => ({ label: o.label, locked: o.locked }));
         ctx.dialogue.setChoices(this.views);
       }
+      return 'running';
+    }
+    if (this.t - this.shownAt < STORY.CHOICE_GUARD) {
+      // The options have only just appeared: a press now was meant for the line before.
+      tapped(ctx, 0, this.t);
       return 'running';
     }
     let pick = ctx.dialogue.updateChoices(ctx.game.input);

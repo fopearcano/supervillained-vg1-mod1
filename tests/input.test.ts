@@ -112,3 +112,34 @@ describe('menus take the continue keys', () => {
     }
   });
 });
+
+describe('which hints a player gets (Input.usingTouch)', () => {
+  /** An Input on stand-ins, and a pointer press of the given kind on its canvas. */
+  function pointer(): { input: Input; down: (pointerType: string) => void } {
+    const el = new Map<string, (e: unknown) => void>();
+    vi.stubGlobal('window', { addEventListener: () => {} });
+    vi.stubGlobal('document', { addEventListener: () => {} });
+    const input = new Input();
+    input.attach({ addEventListener: (type: string, fn: (e: unknown) => void) => el.set(type, fn) } as unknown as HTMLElement, (x, y) => ({ x, y }));
+    let id = 0;
+    const down = (pointerType: string) => {
+      const e = { pointerType, pointerId: ++id, clientX: 100, clientY: 100, timeStamp: id * 1000, preventDefault: () => {}, target: { setPointerCapture: () => {} } };
+      el.get('pointerdown')!(e);
+      el.get('pointerup')!(e);
+    };
+    return { input, down };
+  }
+
+  it('a finger or a stylus means touch hints; a mouse does not', () => {
+    for (const [kind, touch] of [
+      ['touch', true],
+      ['pen', true],
+      ['mouse', false],
+    ] as const) {
+      const { input, down } = pointer();
+      expect(input.usingTouch).toBe(false);
+      down(kind);
+      expect(input.usingTouch, kind).toBe(touch);
+    }
+  });
+});

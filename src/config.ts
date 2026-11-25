@@ -455,6 +455,11 @@ export const STORY = {
   /** Dialogue typewriter, characters per second, per text-speed setting. */
   TEXT_CPS: { slow: 24, normal: 45, fast: 90, instant: 10000 },
   PICKUP_RADIUS: 0.7,
+  /**
+   * Seconds after a choice wheel appears during which a press does not pick: it was meant for the
+   * line before (fast text, a key held down to skip dialogue), not for an option not yet read.
+   */
+  CHOICE_GUARD: 0.25,
   /** Reach goals count as reached within this radius (tiles) unless a walk sets its own. */
   GOAL_RADIUS: 0.8,
   /** Sight cones: alert gained per second while seen, lost per second while hidden. */

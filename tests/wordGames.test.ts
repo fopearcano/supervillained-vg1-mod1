@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Input, type Action } from '../src/core/input';
 import { Autopilot } from '../src/story/autopilot';
 import { KeyCursor, LetterGame, RumourGame } from '../src/story/minigames/words';
@@ -218,8 +218,20 @@ describe('5.4 the letter, from the keyboard', () => {
   });
 });
 
+/**
+ * The rumour shuffles its pieces with Math.random: `order(...)` fixes the shuffle (one value per
+ * swap, last index first) so a test sees the same order every run.
+ */
+function order(...values: number[]): void {
+  let k = 0;
+  vi.spyOn(Math, 'random').mockImplementation(() => values[Math.min(k++, values.length - 1)]!);
+}
+
 describe('6.2 the rumour, from the keyboard', () => {
+  afterEach(() => vi.restoreAllMocks());
+
   it('can be finished with the arrows and the confirm keys only', () => {
+    order(0); // pieces arrive 1, 2, 3, 4, 5, 0: the first to place comes last, so a wrong pick is tried
     const { ctx, input, notices } = scene();
     const game = begin(new RumourGame(), ctx);
     const placed = () => (game as unknown as { placed: number[] }).placed.length;
@@ -245,6 +257,28 @@ describe('6.2 the rumour, from the keyboard', () => {
       else r = press(game, ctx, input, keys[placed() % keys.length]!);
     }
     expect(r).toBe('won');
+    expect(wrong).toBe(true);
+  });
+
+  it('the highlight stays put when a piece is placed from the end of the list and another arrives', () => {
+    order(0.99, 0.99, 0.99, 0.99, 0); // pieces arrive 1, 0, 2, 3, 4, 5
+    const { ctx, input } = scene();
+    const game = begin(new RumourGame(), ctx);
+    const ids = () => peek(game).buttons.map((b) => b.id);
+    for (let k = 0; k < 60 * 5 && ids().length < 2; k++) step(game, ctx);
+    expect(ids()).toEqual(['1', '0']);
+    press(game, ctx, input, 'down'); // shows the highlight on '1'
+    press(game, ctx, input, 'down'); // '0', the last of the list
+    expect(lit(game)).toBe('0');
+    // Place it on the step right before the next piece arrives (no key read in between).
+    const timer = () => (game as unknown as { arriveT: number }).arriveT;
+    for (let k = 0; k < 60 * 5 && timer() > 2 * DT; k++) step(game, ctx);
+    expect(timer()).toBeGreaterThan(DT);
+    press(game, ctx, input, 'confirm'); // placed: the list is just '1'
+    expect(ids()).toEqual(['1']);
+    step(game, ctx); // '2' arrives
+    expect(ids()).toEqual(['1', '2']);
+    expect(lit(game)).toBe('1'); // not '2', the piece that just arrived
   });
 
   it('a confirm press with no highlight shows it and picks nothing', () => {

@@ -321,6 +321,9 @@ export class RumourGame extends WordGame {
       this.button(String(k), GARBLE[k]!, 10, y, w - 20);
       y += this.buttons[this.buttons.length - 1]!.h + 4;
     });
+    // Right away, not at the next key: a piece placed from the end of the list must not leave the
+    // highlight past it, where the next piece to arrive would light up by itself.
+    this.picker.cursor.clamp(this.buttons.length);
   }
 
   /** Text widths follow the screen; set here, not every frame (setStyle redraws the text). */

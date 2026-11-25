@@ -1042,6 +1042,19 @@ reviewers before merging.
 - **One music call for a new screen**: `AudioEngine.playTrack(name)` (track, full level, start)
   replaces the three calls spelled out at each site and the two copies of `reading()`. The
   pause menus' ducking, the walk's attack ducking and the siren keep their own calls.
+- **A press never picks an answer the player has not seen.** Found by the cross-check of the
+  merged fixes: with fast text, a question's prompt is shown at once and looks like any line, and
+  a J (or Space, Enter, a tap) pressed to skip it stayed queued and picked the first answer the
+  moment the choices appeared (in 1.3, OFFER THE PAW, unread). The question now takes every press
+  while its prompt shows, and ignores presses for `STORY.CHOICE_GUARD` (0.25 s) after the
+  answers appear (the autopilot's pick waits out the same quarter second).
+- **A stylus gets the touch hints** (`Input.usingTouch` counts `pen` pointers too): after the
+  Briefing switched to `usingTouch`, an S Pen player on a phone would have read PRESS SPACE.
+- **The rumour's highlight is pulled back as soon as its list shrinks**, not at the next key: a
+  piece placed from the end of the list, followed by a new piece on the very next frame, lit the
+  new piece by itself.
 - Checks: `npm run smoke` gains the `keys` group and more `menus` checks (J on cards, menus and
   GLOSSARY; Escape on OPTIONS, NEW GAME? and the title; the Briefing's wording by keyboard and by
-  touch); unit tests for the input rule, the keyboard highlight, both games and `playTrack`.
+  touch; J mashed through a question at INSTANT text picks nothing); unit tests for the input
+  rule, touch / pen / mouse hints, the keyboard highlight (a deterministic rumour order), both
+  games and `playTrack`. Each new check fails on the code before its fix.

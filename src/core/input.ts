@@ -372,7 +372,8 @@ export class Input {
 
   private onPointerDown(e: PointerEvent): void {
     e.preventDefault();
-    if (e.pointerType === 'touch') this.usingTouch = true;
+    // A stylus on a phone plays with the on-screen buttons too: touch hints for it as well.
+    if (e.pointerType === 'touch' || e.pointerType === 'pen') this.usingTouch = true;
     const p = this.toLogical(e.clientX, e.clientY);
     const at = e.timeStamp / 1000;
     try {
