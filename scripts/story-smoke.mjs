@@ -208,6 +208,15 @@ async function menuChecks(page) {
   await wait(500);
   const after = await top();
   check(reopened === 'StoryChapterScene' && after === 'StoryMenuScene', `Back on the level list goes back to the story menu (${reopened} -> ${after})`);
+  await wait(400);
+  await androidBack();
+  await wait(1000);
+  check((await top()) === 'TitleScene', `Back on the story menu goes to the title (${await top()})`);
+  await page.evaluate(() => window.__sv.flow.story.openMenu());
+  await wait(800);
+  await press('Escape');
+  await wait(1200);
+  check((await top()) === 'TitleScene', `Escape on the story menu goes to the title (${await top()})`);
 
   // A story scene: Back opens and closes the pause menu; a resize under it keeps MENU off.
   await page.evaluate(() => window.__sv.flow.story.debugPlay('1.1'));

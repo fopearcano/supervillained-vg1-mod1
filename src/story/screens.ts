@@ -84,6 +84,7 @@ export class StoryMenuScene implements Scene {
   private readonly menu: Menu;
   private readonly meters = new PixelText('', { color: C.white, shadow: '#000000', align: 'center', lineGap: 3 }).setOrigin(0.5, 0);
   private time = 0;
+  private readonly onBack: () => void;
 
   constructor(
     private readonly game: Game,
@@ -97,6 +98,7 @@ export class StoryMenuScene implements Scene {
       unlocked: (chapter: ChapterDef) => boolean;
     },
   ) {
+    this.onBack = actions.back;
     const items: MenuItem[] = [{ label: state.completed.length ? 'CONTINUE' : 'BEGIN THE DREAM', action: actions.cont, color: C.green }];
     for (const ch of chapters) {
       const done = ch.subLevels.filter((s) => state.completed.includes(s.id)).length;
@@ -124,8 +126,14 @@ export class StoryMenuScene implements Scene {
     this.menu.layout(w / 2, 58);
   }
 
+  /** Android Back: BACK to the title, as Escape does. */
+  back(): void {
+    this.onBack();
+  }
+
   update(dt: number): void {
     this.time += dt;
+    if (this.game.input.consume('back')) return this.back();
     if (this.time > 0.3) this.menu.update(dt, this.game.input);
   }
 }

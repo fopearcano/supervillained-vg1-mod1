@@ -19,13 +19,13 @@ Found by reading the code; each one is reproducible as described.
    MIDDLE: CLIMB SIDES: LADDER", "ROW! (TAP)", "TAP ON THE BEAT" (`story/minigames/`). Choose the
    wording with `input.usingTouch`, as the Briefing and the walk do. Matters for a desktop build.
 
-## Decisions needed (behaviour that may be intended)
+## Deferred by the owner
 
-1. **Back and Escape on the story menu do nothing.** It has a BACK item (to the title), but
-   neither Escape nor the Android Back button reaches it (`story/screens.ts` StoryMenuScene has
-   no `back()`). Kept as it was until decided.
-2. **Shield by gesture is a pulse, shield by key a hold.** Swipe down raises the shield for one
-   blow (`walk.ts` → `combat.raiseShield`); I and the round button in SHIELD mode hold it.
+1. **Combat** (the fights of 2.3, 5.3, 7.2 and the BARK / SWORD / SHIELD modes) is a draft the
+   owner has not played yet: no balancing or rework until then. Open question kept for that
+   pass: shield by gesture is a pulse (one blow), shield by key a hold (`walk.ts` →
+   `combat.raiseShield`).
+2. **Mini-games** are a side problem for now (item 1.1 above included).
 
 ## 2. Remaining structural problems
 
