@@ -2,7 +2,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { CHAPTERS, findSubLevel } from '../src/campaign/chapters';
 import { homeObject, KNOWN_MARVELS } from '../src/campaign/home';
-import { applyEffects, beginAttempt, canSpend, dreamSkin, ending, endingNotes, fadeCommozione, graceTier, keepAttemptTime, loadCampaign, METER_MAX, METER_START, migrateV1, newCampaign, saveCampaign, spend, STORY_VERSION, unshakeable, V1_BACKUP_KEY } from '../src/campaign/state';
+import { applyEffects, beginAttempt, canSpend, dreamSkin, ending, endingNotes, fadeCommozione, graceTier, keepAttemptTime, loadCampaign, METER_MAX, METER_START, migrateV1, newCampaign, saveCampaign, spend, STORY_VERSION, UNKNOWN_BACKUP_KEY, unshakeable, V1_BACKUP_KEY } from '../src/campaign/state';
 import { STORY } from '../src/config';
 import { optionView } from '../src/story/steps';
 import { CHAPTER_TITLES } from '../src/campaign/titles';
@@ -274,6 +274,46 @@ describe('saved stories', () => {
     expect(back.notice).toBeNull();
     mem.set('supervillained:story', JSON.stringify({ version: 99, completed: ['1.0'] }));
     expect(loadCampaign().completed).toEqual([]);
+  });
+
+  it('keeps a save it does not know (a newer game) aside untouched before starting afresh', () => {
+    const mem = memoryStorage();
+    const newer = { version: 99, completed: ['1.0', '1.1', '9.9'], meters: { resolve: 12 }, playTime: 7200 };
+    mem.set('supervillained:story', JSON.stringify(newer));
+    const s = loadCampaign();
+    expect(s).toEqual(newCampaign());
+    expect(JSON.parse(mem.get(`supervillained:${UNKNOWN_BACKUP_KEY}`)!)).toEqual(newer);
+    // The fresh campaign is saved over it; the backup stays.
+    saveCampaign(s);
+    expect(JSON.parse(mem.get('supervillained:story')!).version).toBe(STORY_VERSION);
+    expect(loadCampaign().completed).toEqual([]);
+    expect(JSON.parse(mem.get(`supervillained:${UNKNOWN_BACKUP_KEY}`)!)).toEqual(newer);
+  });
+
+  it('keeps the first unknown save: a later one does not overwrite the backup', () => {
+    const mem = memoryStorage();
+    const first = { version: 99, completed: ['1.0', '1.1'] };
+    mem.set('supervillained:story', JSON.stringify(first));
+    loadCampaign();
+    // A damaged save with no version at all is not known either.
+    mem.set('supervillained:story', JSON.stringify({ completed: ['1.0'], coins: 3 }));
+    expect(loadCampaign().completed).toEqual([]);
+    mem.set('supervillained:story', JSON.stringify({ version: '2', completed: ['1.0'] }));
+    expect(loadCampaign().completed).toEqual([]);
+    expect(JSON.parse(mem.get(`supervillained:${UNKNOWN_BACKUP_KEY}`)!)).toEqual(first);
+  });
+
+  it('keeps nothing aside for an empty storage or for the saves it knows', () => {
+    const mem = memoryStorage();
+    expect(loadCampaign()).toEqual(newCampaign());
+    expect(mem.size).toBe(0);
+    const s = newCampaign();
+    s.completed = ['1.0'];
+    saveCampaign(s);
+    expect(loadCampaign().completed).toEqual(['1.0']);
+    mem.set('supervillained:story', JSON.stringify(v1Save()));
+    expect(loadCampaign().completed).toEqual(['1.0', '1.2', '1.3', '1.4']);
+    expect(mem.has(`supervillained:${UNKNOWN_BACKUP_KEY}`)).toBe(false);
   });
 });
 

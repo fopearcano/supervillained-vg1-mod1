@@ -105,12 +105,15 @@ export class TouchControls {
   /** Show the switcher and the gesture hints (story walks), not the Green Zone. */
   private storyExtras = false;
   private hintKey = '';
+  /** The last gesture whose streak was drawn (Input's `seq`). */
   private streakSeq = 0;
   private streakLeft = 0;
   private streakFrom = { x: 0, y: 0 };
   private streakKind: Gesture = 'swipeUp';
 
   constructor(private readonly input: Input) {
+    // Input keeps the last gesture across scenes: draw only gestures made after these controls.
+    this.streakSeq = input.lastGesture?.seq ?? 0;
     const peeIcon = new Sprite(textures.get(spriteName('peeIcon')));
     const peeLabel = (this.peeLabel = new PixelText('PEE', { color: '#ffe23a', shadow: '#000000' }).setOrigin(0.5, 0));
     peeLabel.y = 6;

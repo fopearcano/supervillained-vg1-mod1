@@ -994,3 +994,20 @@ break; the rest is in `docs/BACKLOG.md`.
   after pause → SKIP during a replay).
 - Checks: `npm run smoke` now ends with two groups of flow checks through the real menus,
   `progress` and `menus`, which fail on the previous code for each bug above.
+
+## Unknown saves kept aside; no stale gesture streaks
+
+- **A save the game does not know is kept aside.** `loadCampaign` started a fresh campaign for a
+  save of any version other than 1 or 2 (one written by a newer game, or damaged: no version, or
+  a garbled one), and the next save overwrote the player's data for good. It now copies such a
+  save once, untouched, to `story-unknown-backup` (`UNKNOWN_BACKUP_KEY` in `campaign/state.ts`)
+  before starting afresh, as a version-1 save is kept in `story-v1-backup`; a later unknown save
+  never overwrites that copy. Empty storage and versions 1 and 2 load exactly as before. A save
+  that is not valid JSON still reads as no save (`storage.get`). Tested in
+  `tests/campaign.test.ts`.
+- **A gesture's streak is not drawn again in the next scene.** `Input.lastGesture` outlives the
+  scene (nothing else needs it cleared), and a new scene's `TouchControls` started counting at
+  0, so it drew the previous scene's last swipe or double tap again for about half a second. The
+  controls now start from the gesture that was last made when they are created
+  (`ui/touchControls.ts`); gestures made after that show as before. Tested in
+  `tests/touchControls.test.ts`.

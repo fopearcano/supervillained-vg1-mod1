@@ -32,12 +32,6 @@ Found by reading the code; each one is reproducible as described.
 6. **Shield by gesture is a pulse, shield by key a hold.** Swipe down raises the shield for one
    blow (`walk.ts` → `combat.raiseShield`); I and the round button in SHIELD mode hold it.
    Possibly intended; confirm.
-7. **Cosmetic: a gesture's streak replays for half a second in the next scene**
-   (`Input.lastGesture` is never cleared; a new `TouchControls` starts at `streakSeq = 0`).
-8. **A save written by a newer version of the game is dropped.** `loadCampaign` returns a fresh
-   campaign for any version it does not know and the next save overwrites it
-   (`campaign/state.ts`). Harmless today (only versions 1 and 2 exist); before shipping save
-   version 3, keep unknown saves aside the way version 1 is (`V1_BACKUP_KEY`).
 
 ## 2. Remaining structural problems
 

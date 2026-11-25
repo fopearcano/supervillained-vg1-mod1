@@ -228,6 +228,11 @@ export function endingNotes(state: CampaignState): string[] {
 const KEY = 'story';
 /** Where a version-1 save is kept, untouched, when it is migrated. */
 export const V1_BACKUP_KEY = 'story-v1-backup';
+/**
+ * Where a save of a version this game does not know (written by a newer game, or damaged) is
+ * kept, untouched, before a fresh campaign replaces it. Only the first one is kept.
+ */
+export const UNKNOWN_BACKUP_KEY = 'story-unknown-backup';
 
 /**
  * Version-1 scenes whose meaning the rewrite keeps (docs/STORY-SOURCES.md, "Save migration").
@@ -281,7 +286,11 @@ export function loadCampaign(): CampaignState {
     storage.set(KEY, migrated);
     return migrated;
   }
-  if (raw.version !== STORY_VERSION) return base;
+  if (raw.version !== STORY_VERSION) {
+    // The next save would overwrite it: keep it aside first, once.
+    if (storage.get<unknown>(UNKNOWN_BACKUP_KEY, null) === null) storage.set(UNKNOWN_BACKUP_KEY, raw);
+    return base;
+  }
   return {
     ...base,
     ...raw,
