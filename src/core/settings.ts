@@ -7,9 +7,28 @@ import { storage } from './storage';
 export type TextSpeed = 'slow' | 'normal' | 'fast' | 'instant';
 export const TEXT_SPEEDS: readonly TextSpeed[] = ['slow', 'normal', 'fast', 'instant'];
 
+/** The volumes OPTIONS and the pause menu step through. */
+export const VOLUME_STEPS: readonly number[] = [0.25, 0.5, 0.7, 1];
+
+/** The next volume step (after the loudest, the quietest). Pure (tested). */
+export function nextVolume(volume: number): number {
+  const i = VOLUME_STEPS.findIndex((v) => v >= volume - 0.01);
+  return VOLUME_STEPS[(i + 1) % VOLUME_STEPS.length]!;
+}
+
+/** The next story text speed (after INSTANT, SLOW). Pure (tested). */
+export function nextTextSpeed(speed: TextSpeed): TextSpeed {
+  return TEXT_SPEEDS[(TEXT_SPEEDS.indexOf(speed) + 1) % TEXT_SPEEDS.length]!;
+}
+
 /** What a gesture does (CONTROLS): the action button, BARK, the SWORD, the SHIELD, the mode switcher, RUN on/off. */
 export type GestureBinding = 'off' | 'action' | 'bark' | 'sword' | 'shield' | 'switch' | 'run';
 export const GESTURE_BINDINGS: readonly GestureBinding[] = ['off', 'action', 'bark', 'sword', 'shield', 'switch', 'run'];
+
+/** The next gesture binding in the CONTROLS list. Pure (tested). */
+export function nextBinding(b: GestureBinding): GestureBinding {
+  return GESTURE_BINDINGS[(GESTURE_BINDINGS.indexOf(b) + 1) % GESTURE_BINDINGS.length]!;
+}
 
 export interface ControlSettings {
   /** Right-hand gestures over the buttons. */

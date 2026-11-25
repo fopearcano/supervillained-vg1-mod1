@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { addCoins, bestFor, DEFAULT_CONTROLS, loadCoins, loadSettings, saveRecord, saveSettings, validControls } from '../src/core/settings';
+import { addCoins, bestFor, DEFAULT_CONTROLS, GESTURE_BINDINGS, loadCoins, loadSettings, nextBinding, nextTextSpeed, nextVolume, saveRecord, saveSettings, validControls, VOLUME_STEPS } from '../src/core/settings';
 import { storage } from '../src/core/storage';
 
 class MemoryStorage {
@@ -94,5 +94,25 @@ describe('settings, records and coins', () => {
     localStorage.setItem('supervillained:settings', '{not json');
     expect(loadCoins()).toBe(0);
     expect(loadSettings().muted).toBe(false);
+  });
+});
+
+describe('stepping through a setting (OPTIONS, the pause menus, CONTROLS)', () => {
+  it('cycles the volume through its steps, the loudest back to the quietest', () => {
+    expect(nextVolume(0.25)).toBe(0.5);
+    expect(nextVolume(0.5)).toBe(0.7);
+    expect(nextVolume(0.7)).toBe(1);
+    expect(nextVolume(1)).toBe(0.25);
+    // A volume between steps (an older default) moves to the step after the next one up.
+    expect(nextVolume(0.6)).toBe(1);
+    expect(nextVolume(0)).toBe(0.5);
+    for (const v of VOLUME_STEPS) expect(VOLUME_STEPS).toContain(nextVolume(v));
+  });
+
+  it('cycles the text speed and the gesture bindings in their listed order', () => {
+    expect(nextTextSpeed('slow')).toBe('normal');
+    expect(nextTextSpeed('instant')).toBe('slow');
+    expect(nextBinding('off')).toBe(GESTURE_BINDINGS[1]);
+    expect(nextBinding(GESTURE_BINDINGS[GESTURE_BINDINGS.length - 1]!)).toBe('off');
   });
 });

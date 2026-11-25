@@ -5,7 +5,7 @@ import { computeViewport, safeAreaInsets, type Viewport } from './display';
 import { Input } from './input';
 import { GameLoop } from './loop';
 import { SceneManager, type Scene } from './scene';
-import { loadSettings, type Settings } from './settings';
+import { loadSettings, saveSettings, type Settings } from './settings';
 
 /**
  * Shared services for all scenes: renderer, logical size, input, scene stack, loop.
@@ -61,7 +61,13 @@ export class Game {
     return this.view.height;
   }
 
-  onSettingsChanged(): void {
+  /**
+   * The one way to change a setting: applies `change` to the settings, saves them and tells the
+   * listeners (audio volume, input controls) at once.
+   */
+  updateSettings(change: (s: Settings) => void): void {
+    change(this.settings);
+    saveSettings(this.settings);
     for (const fn of this.settingsListeners) fn(this.settings);
   }
 

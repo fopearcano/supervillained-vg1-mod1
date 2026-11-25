@@ -1,7 +1,7 @@
 import { BlurFilter } from 'pixi.js';
 import type { Game } from '../core/game';
 import type { Scene } from '../core/scene';
-import { saveRecord, saveSettings, TEXT_SPEEDS } from '../core/settings';
+import { nextTextSpeed, nextVolume, saveRecord } from '../core/settings';
 import { LEVELS, levelByNumber } from '../levels';
 import { finalHealth, starBonus, starsFromHealth, timeBonus } from '../systems/scoring';
 import type { LevelDef } from '../world/level';
@@ -127,29 +127,13 @@ export class Flow {
 
   private openOptions(): void {
     const s = this.game.settings;
-    const changed = () => {
-      saveSettings(s);
-      this.game.onSettingsChanged();
-    };
     this.overTitle(
       new OptionsScene(this.game, {
-        toggleSound: () => {
-          s.muted = !s.muted;
-          changed();
-        },
+        toggleSound: () => this.toggleSound(),
         muted: () => s.muted,
-        cycleVolume: () => {
-          const steps = [0.25, 0.5, 0.7, 1];
-          const i = steps.findIndex((v) => v >= s.volume - 0.01);
-          s.volume = steps[(i + 1) % steps.length]!;
-          changed();
-          this.game.audio.play('click');
-        },
+        cycleVolume: () => this.cycleVolume(),
         volume: () => s.volume,
-        cycleTextSpeed: () => {
-          s.textSpeed = TEXT_SPEEDS[(TEXT_SPEEDS.indexOf(s.textSpeed) + 1) % TEXT_SPEEDS.length]!;
-          saveSettings(s);
-        },
+        cycleTextSpeed: () => this.game.updateSettings((st) => (st.textSpeed = nextTextSpeed(st.textSpeed))),
         textSpeed: () => s.textSpeed.toUpperCase(),
         controls: () => this.game.scenes.push(new ControlsScene(this.game, () => this.game.scenes.pop())),
         // The character art: the new sheets, or the old version they replaced.
@@ -240,23 +224,23 @@ export class Flow {
         resume: () => this.resume(),
         restart: () => this.restart(),
         quit: () => this.quitToTitle(),
-        toggleSound: () => {
-          this.game.settings.muted = !this.game.settings.muted;
-          saveSettings(this.game.settings);
-          this.game.onSettingsChanged();
-        },
+        toggleSound: () => this.toggleSound(),
         muted: () => this.game.settings.muted,
         volume: () => this.game.settings.volume,
-        cycleVolume: () => {
-          const steps = [0.25, 0.5, 0.7, 1];
-          const i = steps.findIndex((v) => v >= this.game.settings.volume - 0.01);
-          this.game.settings.volume = steps[(i + 1) % steps.length]!;
-          saveSettings(this.game.settings);
-          this.game.onSettingsChanged();
-          this.game.audio.play('click');
-        },
+        cycleVolume: () => this.cycleVolume(),
       }),
     );
+  }
+
+  /** SOUND: ON / OFF (OPTIONS and the walk's pause menu). */
+  private toggleSound(): void {
+    this.game.updateSettings((s) => (s.muted = !s.muted));
+  }
+
+  /** VOLUME: the next step, with a click to hear it. */
+  private cycleVolume(): void {
+    this.game.updateSettings((s) => (s.volume = nextVolume(s.volume)));
+    this.game.audio.play('click');
   }
 
   resume(): void {

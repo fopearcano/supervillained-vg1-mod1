@@ -3,7 +3,7 @@ import { applyEffects, beginAttempt, ending, endingNotes, isComplete, keepAttemp
 import type { ChapterDef, SubLevelDef } from '../campaign/types';
 import type { PlayAs } from '../assets/manifest';
 import type { Game } from '../core/game';
-import { saveSettings, TEXT_SPEEDS } from '../core/settings';
+import { nextTextSpeed } from '../core/settings';
 import { C } from '../ui/retro';
 import { BookScene, StoryCardScene, StoryChapterScene, StoryMenuScene, StoryPauseScene } from './screens';
 import { Autopilot, type PilotPolicy } from './autopilot';
@@ -363,17 +363,9 @@ export class StoryFlow {
         skip: () => this.glitch(() => this.finishSub(ch, sub, { attempt: scene.state })),
         // The book as this attempt has it (what he found in this scene included).
         book: () => this.game.scenes.push(new BookScene(this.game, scene.state, () => this.game.scenes.pop())),
-        sound: () => {
-          this.game.settings.muted = !this.game.settings.muted;
-          saveSettings(this.game.settings);
-          this.game.onSettingsChanged();
-        },
+        sound: () => this.game.updateSettings((s) => (s.muted = !s.muted)),
         muted: () => this.game.settings.muted,
-        textSpeed: () => {
-          const s = this.game.settings;
-          s.textSpeed = TEXT_SPEEDS[(TEXT_SPEEDS.indexOf(s.textSpeed) + 1) % TEXT_SPEEDS.length]!;
-          saveSettings(s);
-        },
+        textSpeed: () => this.game.updateSettings((s) => (s.textSpeed = nextTextSpeed(s.textSpeed))),
         textSpeedLabel: () => this.game.settings.textSpeed.toUpperCase(),
         controls: () => this.game.scenes.push(new ControlsScene(this.game, () => this.game.scenes.pop())),
         menu: () => {

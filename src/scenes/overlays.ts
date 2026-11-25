@@ -11,7 +11,7 @@ import { Menu, type MenuItem } from '../ui/menu';
 import { PixelText, type Span } from '../ui/pixelText';
 import { logoTexture, logoWidth, type LogoStyle } from '../ui/logo';
 import { C, frameRect, hex, retroBox } from '../ui/retro';
-import { DEFAULT_CONTROLS, GESTURE_BINDINGS, saveSettings, type GestureBinding } from '../core/settings';
+import { DEFAULT_CONTROLS, nextBinding, type ControlSettings, type GestureBinding } from '../core/settings';
 import { clampLives, nextLives } from '../systems/lives';
 import { spriteName } from '../assets/manifest';
 import type { LevelDef } from '../world/level';
@@ -290,9 +290,7 @@ export class TitleScene extends Overlay {
   }
 
   private changeLives(step: number): void {
-    const s = this.game.settings;
-    s.lives = nextLives(s.lives, step);
-    saveSettings(s);
+    this.game.updateSettings((s) => (s.lives = nextLives(s.lives, step)));
     this.game.audio.play('click');
     this.showLives();
     this.layout();
@@ -765,7 +763,7 @@ const BINDING_LABEL: Record<GestureBinding, string> = {
 /**
  * OPTIONS > CONTROLS (also in the story's pause menu): what the right-hand gestures do, RUN held
  * or switched, the action button's switcher, and the buttons for the right or the left hand.
- * Changes apply at once (Game.onSettingsChanged → Input.applyControls) and are saved.
+ * Changes apply at once (Game.updateSettings → Input.applyControls) and are saved.
  */
 export class ControlsScene extends Overlay {
   private readonly heading = big('CONTROLS', C.yellow, 2);
@@ -779,17 +777,13 @@ export class ControlsScene extends Overlay {
     // Opaque: it opens over OPTIONS or the pause menu.
     super(game, 1);
     const c = () => game.settings.controls;
-    const changed = () => {
-      saveSettings(game.settings);
-      game.onSettingsChanged();
+    /** Changes the controls (saved and applied at once), with a click. */
+    const change = (fn: (controls: ControlSettings) => void) => {
+      game.updateSettings((s) => fn(s.controls));
       game.audio.play('click');
       this.menu.refreshLabels();
     };
-    const cycle = (key: 'swipeUp' | 'swipeDown' | 'doubleTap') => () => {
-      const list = GESTURE_BINDINGS;
-      c()[key] = list[(list.indexOf(c()[key]) + 1) % list.length]!;
-      changed();
-    };
+    const cycle = (key: 'swipeUp' | 'swipeDown' | 'doubleTap') => () => change((k) => (k[key] = nextBinding(k[key])));
     this.menu = new Menu(
       [
         { label: () => `SWIPE UP: ${BINDING_LABEL[c().swipeUp]}`, action: cycle('swipeUp'), color: C.cyan },
@@ -797,34 +791,22 @@ export class ControlsScene extends Overlay {
         { label: () => `DOUBLE TAP: ${BINDING_LABEL[c().doubleTap]}`, action: cycle('doubleTap'), color: C.cyan },
         {
           label: () => (c().run === 'toggle' ? 'RUN: TAP ON/OFF' : 'RUN: HOLD'),
-          action: () => {
-            c().run = c().run === 'toggle' ? 'hold' : 'toggle';
-            changed();
-          },
+          action: () => change((k) => (k.run = k.run === 'toggle' ? 'hold' : 'toggle')),
           color: C.green,
         },
         {
           label: () => (c().switcher ? 'SWITCHER: ON' : 'SWITCHER: OFF'),
-          action: () => {
-            c().switcher = !c().switcher;
-            changed();
-          },
+          action: () => change((k) => (k.switcher = !k.switcher)),
           color: C.yellow,
         },
         {
           label: () => (c().hand === 'left' ? 'BUTTONS: LEFT HAND' : 'BUTTONS: RIGHT HAND'),
-          action: () => {
-            c().hand = c().hand === 'left' ? 'right' : 'left';
-            changed();
-          },
+          action: () => change((k) => (k.hand = k.hand === 'left' ? 'right' : 'left')),
           color: C.yellow,
         },
         {
           label: 'DEFAULTS',
-          action: () => {
-            game.settings.controls = { ...DEFAULT_CONTROLS };
-            changed();
-          },
+          action: () => change((k) => Object.assign(k, DEFAULT_CONTROLS)),
           color: C.pink,
         },
         { label: 'BACK', action: () => this.onBack(), color: C.white },
