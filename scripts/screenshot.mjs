@@ -619,7 +619,7 @@ const SCENARIOS = {
   /** M4: scripted "under attack" with Bagnaskiz, barking him away, a cat and a magnet ball. */
   async m4(browser) {
     const page = await openGame(browser, '?skip=game');
-    // Jump past 55% of the walk → scripted attack. (The band's ambush at the middle is its own
+    // Jump past 70% of the walk → scripted attack. (The band's ambush at the middle is its own
     // scenario, `ambush`: here it is skipped, as when he has already passed it.)
     await page.evaluate(() => {
       const s = window.__sv.scene();
@@ -631,7 +631,7 @@ const SCENARIOS = {
         for (let i = 0; i < m.width; i++) {
           if (m.groundAt(i, j) !== 2) continue;
           const d = m.exitDistance[m.index(i, j)];
-          const err = Math.abs(d - d0 * 0.42);
+          const err = Math.abs(d - d0 * 0.28);
           if (!best || err < best.err) best = { i, j, err };
         }
       s.teleport(best.i + 0.5, best.j + 0.5);
