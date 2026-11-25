@@ -2,7 +2,7 @@ import { ColorMatrixFilter, Container, Graphics } from 'pixi.js';
 import { ensureCharacters } from '../assets/build';
 import { floorDesignForMap, paletteForChapter } from '../assets/environment';
 import { ARMOURED_SKINS, costumeFor, type CharacterKey, type PlayAs, type PlayableCharacterKey } from '../assets/manifest';
-import { applyEffects, dreamSkin, fadeCommozione, saveCampaign, type CampaignState, type Effects } from '../campaign/state';
+import { applyEffects, dreamSkin, fadeCommozione, type CampaignState, type Effects } from '../campaign/state';
 import type { ChapterDef, SubLevelDef } from '../campaign/types';
 import type { Game } from '../core/game';
 import type { Scene } from '../core/scene';
@@ -66,10 +66,11 @@ export class StoryScene implements Scene {
   time = 0;
   /** Seconds the scene has been paused by a modal (used by steps for timers). */
   locked = false;
-  /** False for replays: nothing this scene changes is saved. */
-  persist = true;
-  /** False when the scene is restarted from the pause menu: the feeling already faded once. */
-  fade = true;
+  /**
+   * True when the scene was restarted from the pause menu: the feeling fades again on the fresh
+   * copy of the campaign (campaign/state.ts beginAttempt), without its notice a second time.
+   */
+  restarted = false;
   /** Automated playtest driver (null in normal play). */
   pilot: Autopilot | null = null;
   /** Playtest counters: how often the player had to start a walk or mini-game again. */
@@ -77,6 +78,7 @@ export class StoryScene implements Scene {
 
   constructor(
     readonly game: Game,
+    /** This attempt's copy of the campaign (StoryFlow commits it when the scene is finished). */
     readonly state: CampaignState,
     readonly chapter: ChapterDef,
     readonly sub: SubLevelDef,
@@ -96,11 +98,8 @@ export class StoryScene implements Scene {
   enter(): void {
     this.queue = this.sub.script();
     // The feeling fades between dream scenes: wonder and weeping have to keep filling it.
-    const lost = this.fade ? fadeCommozione(this.state, this.chapter.number) : 0;
-    if (lost) {
-      if (this.persist) saveCampaign(this.state);
-      this.notice(`-${lost} COMMOZIONE: THE FEELING FADES`, '#9aa4c0', 2.5);
-    }
+    const lost = fadeCommozione(this.state, this.chapter.number);
+    if (lost && !this.restarted) this.notice(`-${lost} COMMOZIONE: THE FEELING FADES`, '#9aa4c0', 2.5);
     this.next();
   }
 
@@ -329,10 +328,12 @@ export class StoryScene implements Scene {
 
   // ------------------------------------------------------------------ effects & feedback
 
-  /** Applies campaign effects, shows what changed and saves. */
+  /**
+   * Applies campaign effects to this attempt and shows what changed. They are saved with the
+   * campaign when the scene is finished (story/storyFlow.ts), never half way through.
+   */
   apply(fx: Effects): void {
     const changes = applyEffects(this.state, fx);
-    if (this.persist) saveCampaign(this.state);
     changes.forEach((c, k) => this.notice(c.label, c.positive ? C.green : C.red, k * 0.25));
   }
 
@@ -385,8 +386,8 @@ export class StoryScene implements Scene {
 
   update(dt: number): void {
     this.time += dt;
-    // Play time (saved with the campaign at the end of the scene; replays play on a copy).
-    if (this.persist) this.state.playTime += dt;
+    // Play time (saved with the campaign at the end of the scene, or kept when it is abandoned).
+    this.state.playTime += dt;
     const input = this.game.input;
     if (input.consume('menu') || input.consume('back')) {
       this.hooks.onMenu(this);

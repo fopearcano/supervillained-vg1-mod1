@@ -937,3 +937,22 @@ save migration in [`docs/STORY-SOURCES.md`](docs/STORY-SOURCES.md).
   stand where he feeds them (`horse`, three coats).
 - The Color Ink frames were checked for the same symptom: none is blank and none ends above its
   ground anchor (nothing in the delivered banks floats).
+
+## A scene's changes count once (attempts)
+
+- **Bug**: a story scene applied its effects straight to the campaign and saved them half way
+  through (`StoryScene.apply`). RESTART SCENE, or QUIT TO TITLE and CONTINUE, then played the
+  scene again over the already-changed campaign: meters, Commozione costs and coins applied
+  twice, and a flag set early in the scene could switch a `branch` on the second try. Measured
+  through the real pause menu: three tries at 6.1 left Supervillain at 34 instead of 18 and the
+  feeling faded twice (`npm run smoke -- progress` against the previous commit).
+- **Rule now**: every attempt at a sub-level plays on a copy of the campaign
+  (`campaign/state.ts` `beginAttempt`). The copy becomes the campaign and is saved when the scene
+  is finished, or skipped from the pause menu (SKIP SCENE keeps what was done so far, as before).
+  RESTART SCENE and QUIT TO TITLE drop it and keep only its play time (`keepAttemptTime`, also
+  saved when the pause menu opens, so time is not lost if the app is closed while paused). The
+  feeling fades once per attempt, on the copy, so a finished scene has faded exactly once; a
+  restart no longer repeats its notice. Replays of finished scenes are attempts never committed.
+- The pause menu's MERAVIGLIA BOOK shows the running attempt's book (what he found in this
+  scene included). The save format is unchanged (version 2): no migration needed.
+

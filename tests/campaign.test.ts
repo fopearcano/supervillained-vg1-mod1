@@ -2,7 +2,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { CHAPTERS, findSubLevel } from '../src/campaign/chapters';
 import { homeObject, KNOWN_MARVELS } from '../src/campaign/home';
-import { applyEffects, canSpend, dreamSkin, ending, endingNotes, fadeCommozione, graceTier, loadCampaign, METER_MAX, METER_START, migrateV1, newCampaign, saveCampaign, spend, STORY_VERSION, unshakeable, V1_BACKUP_KEY } from '../src/campaign/state';
+import { applyEffects, beginAttempt, canSpend, dreamSkin, ending, endingNotes, fadeCommozione, graceTier, keepAttemptTime, loadCampaign, METER_MAX, METER_START, migrateV1, newCampaign, saveCampaign, spend, STORY_VERSION, unshakeable, V1_BACKUP_KEY } from '../src/campaign/state';
 import { STORY } from '../src/config';
 import { optionView } from '../src/story/steps';
 import { CHAPTER_TITLES } from '../src/campaign/titles';
@@ -274,6 +274,66 @@ describe('saved stories', () => {
     expect(back.notice).toBeNull();
     mem.set('supervillained:story', JSON.stringify({ version: 99, completed: ['1.0'] }));
     expect(loadCampaign().completed).toEqual([]);
+  });
+});
+
+describe('attempts at a sub-level (RESTART SCENE, QUIT TO TITLE, SKIP SCENE)', () => {
+  /** What one attempt at 6.1 does: the feeling fades, he shares his half loaf (a costly choice). */
+  function playShareTheLoaf(attempt: ReturnType<typeof newCampaign>, seconds: number): void {
+    fadeCommozione(attempt, 6);
+    spend(attempt, 'commozione', 10);
+    applyEffects(attempt, { supervillain: 8, value: 'Comradeship', flags: { comradeship: true } });
+    attempt.playTime += seconds;
+  }
+
+  it('leaves the campaign untouched until the scene is finished', () => {
+    const campaign = newCampaign();
+    campaign.meters.commozione = 40;
+    const attempt = beginAttempt(campaign);
+    playShareTheLoaf(attempt, 30);
+    expect(campaign.meters).toEqual({ ...METER_START, commozione: 40 });
+    expect(campaign.flags).toEqual({});
+    expect(campaign.book.values).toEqual([]);
+  });
+
+  it('counts a restarted scene once: the choices, the cost and the fade of the attempt that finishes', () => {
+    let campaign = newCampaign();
+    campaign.meters.commozione = 40;
+    const once = beginAttempt(campaign);
+    playShareTheLoaf(once, 30);
+
+    // First attempt abandoned half way (RESTART SCENE), then played to the end.
+    const first = beginAttempt(campaign);
+    playShareTheLoaf(first, 20);
+    keepAttemptTime(campaign, first);
+    const second = beginAttempt(campaign);
+    playShareTheLoaf(second, 10);
+    campaign = second; // finished: the attempt becomes the campaign
+
+    expect(campaign.meters).toEqual(once.meters);
+    expect(campaign.book.values).toEqual(['Comradeship']);
+    expect(campaign.playTime).toBe(30); // both attempts' time is played time
+  });
+
+  it('keeps only the time played when an attempt is abandoned, never less than what was saved', () => {
+    const campaign = newCampaign();
+    campaign.playTime = 100;
+    const attempt = beginAttempt(campaign);
+    playShareTheLoaf(attempt, 12);
+    keepAttemptTime(campaign, attempt);
+    expect(campaign.playTime).toBe(112);
+    expect(campaign.meters).toEqual(METER_START);
+    keepAttemptTime(campaign, newCampaign());
+    expect(campaign.playTime).toBe(112);
+  });
+
+  it('plays an attempt on its own copy: nested book lists and flags are not shared', () => {
+    const campaign = newCampaign();
+    applyEffects(campaign, { marvel: 'THE GALLEYS' });
+    const attempt = beginAttempt(campaign);
+    applyEffects(attempt, { marvel: 'THE HORSES OF SAINT MARK', flags: { x: 1 } });
+    expect(campaign.book.marvels).toEqual(['THE GALLEYS']);
+    expect(campaign.flags).toEqual({});
   });
 });
 

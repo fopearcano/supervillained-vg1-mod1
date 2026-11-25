@@ -32,6 +32,7 @@ npm run screens      # Playwright verification screenshots → docs/screens/ (al
 npm run screens -- m1 joystick   # selected scenarios (see scripts/screenshot.mjs)
 npm run smoke        # plays every story sub-level start to finish (fails on errors / missing textures)
 npm run smoke -- 7.3 8.1         # selected sub-levels
+npm run smoke -- progress        # only the saving checks (restart / quit / skip through the real pause menu)
 npm run playtest     # the autopilot plays the whole campaign for real → report (fails if a sub-level can't be won)
 npm run playtest -- --skill 0.4 --ending alpha --choice random --from 5.1 --out docs/PLAYTEST.md
 npm run playtest -- --from 3.1 --to 3.4          # one level
@@ -98,7 +99,10 @@ sub-level), `?auto=1` (the autopilot plays the story; `&skill=0.7&ending=knight|
   `combat.ts` (BARK / SWORD / SHIELD in every walk; `walk({ fight })` makes foes swing back; rules
   in `systems/combat.ts`, numbers in `COMBAT`),
   `screens.ts` (story menu, level's sub-level list, cards, pause, Meraviglia book), `storyFlow.ts`
-  (menu → cards → sub-level → Professor aside → ending; saves progress; replays on a copy),
+  (menu → cards → sub-level → Professor aside → ending; every attempt at a sub-level plays on a
+  copy of the campaign, `beginAttempt`, which becomes the campaign and is saved only when the
+  scene is finished or skipped; RESTART SCENE / QUIT TO TITLE keep only its play time; replays are
+  attempts never committed),
   `maps.ts` (story stages + palettes/themes), `carry.ts` (what he carries, shown over his head),
   `names.ts` (names shown in yellow in the card texts; the period words, `OLD_WORDS`, coloured in the dialogue box),
   `dialogueGestures.ts` (a human speaker on stage gestures when his line starts),

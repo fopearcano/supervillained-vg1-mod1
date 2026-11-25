@@ -297,6 +297,21 @@ export function loadCampaign(): CampaignState {
   };
 }
 
+/**
+ * One attempt at a sub-level plays on a copy of the campaign: its choices, meters, Commozione
+ * costs, flags and book entries count only when the scene is finished (or skipped from the pause
+ * menu, which keeps what was done so far). RESTART SCENE and QUIT TO TITLE abandon the attempt,
+ * so the scene starts again from the campaign as it was before it, and nothing applies twice.
+ */
+export function beginAttempt(state: CampaignState): CampaignState {
+  return structuredClone(state);
+}
+
+/** An abandoned attempt keeps only the time played (pure, tested). */
+export function keepAttemptTime(state: CampaignState, attempt: CampaignState): void {
+  state.playTime = Math.max(state.playTime, attempt.playTime);
+}
+
 export function saveCampaign(state: CampaignState, now = Date.now()): void {
   state.savedAt = now;
   storage.set(KEY, state);

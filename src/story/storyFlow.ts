@@ -1,5 +1,5 @@
 import { CHAPTERS } from '../campaign/chapters';
-import { applyEffects, ending, endingNotes, isComplete, loadCampaign, markComplete, resetCampaign, saveCampaign, type CampaignState } from '../campaign/state';
+import { applyEffects, beginAttempt, ending, endingNotes, isComplete, keepAttemptTime, loadCampaign, markComplete, resetCampaign, saveCampaign, type CampaignState } from '../campaign/state';
 import type { ChapterDef, SubLevelDef } from '../campaign/types';
 import type { PlayAs } from '../assets/manifest';
 import type { Game } from '../core/game';
@@ -15,6 +15,11 @@ import { ControlsScene } from '../scenes/overlays';
 /**
  * Story flow: menu → level card → sub-level card → sub-level → … → the Professor's aside →
  * next level → … → the ending. Progress is saved after every sub-level.
+ *
+ * Every attempt at a sub-level plays on a copy of the campaign (`beginAttempt`): the copy becomes
+ * the campaign when the scene is finished or skipped; RESTART SCENE and QUIT TO TITLE drop it
+ * (only the time played is kept), so a scene's choices and meters never count twice. Replays of
+ * finished scenes are attempts that are never committed.
  */
 export interface PlaytestEntry {
   id: string;
@@ -103,7 +108,6 @@ export class StoryFlow {
     return true;
   }
 
-  /** Coins picked up on the Green Zone walk go to the story's purse. */
   /** The Green Zone walk (1.0) is over: its coins go to the story's purse, its time to the play time. */
   addWalk(coins: number, seconds: number): void {
     if (this.replaying) return;
@@ -236,32 +240,36 @@ export class StoryFlow {
       // The Green Zone walk is played by the walk's own scenes; the autopilot does not play it.
       if (this.autopilot) {
         this.log.push({ id: sub.id, time: 0, metrics: null, meters: { ...this.state.meters }, greenZone: true });
-        return this.finishSub(ch, sub, false, true);
+        return this.finishSub(ch, sub, { logged: true });
       }
       return this.playGreenZone(sub.greenZone, () => this.finishSub(ch, sub));
     }
     this.game.audio.setTrack(ch.music);
     this.game.audio.setDuck(1);
     this.game.audio.startMusic();
-    const scene = new StoryScene(this.game, this.replaying ? structuredClone(this.state) : this.state, ch, sub, {
-      onFinished: () => this.finishSub(ch, sub),
+    const scene = new StoryScene(this.game, beginAttempt(this.state), ch, sub, {
+      onFinished: (s) => this.finishSub(ch, sub, { attempt: s.state }),
       onMenu: () => this.pause(ch, sub),
     });
-    scene.persist = !this.replaying;
-    scene.fade = !restart;
+    scene.restarted = restart;
     scene.playAs = this.playAs;
     if (this.autopilot) scene.pilot = new Autopilot({ ...this.autopilot, seed: (this.autopilot.seed ?? 1) + this.log.length });
     this.game.scenes.replaceAll(scene);
   }
 
-  private finishSub(ch: ChapterDef, sub: SubLevelDef, skipped = false, logged = false): void {
+  /**
+   * A sub-level is over: its attempt (if it was a story scene) becomes the campaign, it is marked
+   * complete and saved, and the story moves on. A replay changes nothing.
+   */
+  private finishSub(ch: ChapterDef, sub: SubLevelDef, opts: { attempt?: CampaignState; skipped?: boolean; logged?: boolean } = {}): void {
     if (this.replaying) {
       this.replaying = false;
       return this.glitch(() => this.openChapter(ch));
     }
-    if (this.autopilot && !logged) {
+    if (opts.attempt) this.state = opts.attempt;
+    if (this.autopilot && !opts.logged) {
       const s = this.active;
-      this.log.push({ id: sub.id, time: s?.time ?? 0, metrics: s ? structuredClone(s.metrics) : null, meters: { ...this.state.meters }, skipped });
+      this.log.push({ id: sub.id, time: s?.time ?? 0, metrics: s ? structuredClone(s.metrics) : null, meters: { ...this.state.meters }, skipped: opts.skipped ?? false });
     }
     markComplete(this.state, sub.id);
     saveCampaign(this.state);
@@ -335,6 +343,9 @@ export class StoryFlow {
     scene.suspendControls();
     this.game.audio.play('click');
     this.game.audio.setDuck(0.4);
+    // The time played so far is saved now (the app may be closed while paused); the scene's
+    // other changes wait for its end.
+    this.keepTime(scene);
     const resume = () => {
       while (this.game.scenes.top !== scene && this.game.scenes.top) this.game.scenes.pop();
       this.game.audio.setDuck(1);
@@ -343,9 +354,15 @@ export class StoryFlow {
     this.game.scenes.push(
       new StoryPauseScene(this.game, {
         resume,
-        restart: () => this.glitch(() => this.startSub(ch, sub, true)),
-        skip: () => this.glitch(() => this.finishSub(ch, sub)),
-        book: () => this.game.scenes.push(new BookScene(this.game, this.state, () => this.game.scenes.pop())),
+        restart: () =>
+          this.glitch(() => {
+            this.keepTime(scene);
+            this.startSub(ch, sub, true);
+          }),
+        // SKIP SCENE keeps what was done in it so far.
+        skip: () => this.glitch(() => this.finishSub(ch, sub, { attempt: scene.state })),
+        // The book as this attempt has it (what he found in this scene included).
+        book: () => this.game.scenes.push(new BookScene(this.game, scene.state, () => this.game.scenes.pop())),
         sound: () => {
           this.game.settings.muted = !this.game.settings.muted;
           saveSettings(this.game.settings);
@@ -359,9 +376,19 @@ export class StoryFlow {
         },
         textSpeedLabel: () => this.game.settings.textSpeed.toUpperCase(),
         controls: () => this.game.scenes.push(new ControlsScene(this.game, () => this.game.scenes.pop())),
-        menu: () => this.backToTitle(),
+        menu: () => {
+          this.keepTime(scene);
+          this.backToTitle();
+        },
       }),
     );
+  }
+
+  /** An attempt that may be abandoned: the campaign keeps its play time (saved; not for replays). */
+  private keepTime(scene: StoryScene): void {
+    if (this.replaying) return;
+    keepAttemptTime(this.state, scene.state);
+    saveCampaign(this.state);
   }
 
   private openBook(): void {
@@ -371,7 +398,7 @@ export class StoryFlow {
   /** Automation: give up on the running sub-level (counted as skipped) and move on. */
   debugSkipCurrent(): void {
     const s = this.active;
-    if (s) this.finishSub(s.chapter, s.sub, true);
+    if (s) this.finishSub(s.chapter, s.sub, { attempt: s.state, skipped: true });
   }
 
   /** Automation: a fresh campaign. */
