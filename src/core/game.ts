@@ -23,11 +23,6 @@ export class Game {
   readonly settingsListeners: Array<(s: Settings) => void> = [];
   readonly audio: AudioEngine;
   view: Viewport;
-  /** Called after each logic step (after scenes). */
-  readonly stepHooks: Array<(dt: number) => void> = [];
-  /** Called each rendered frame (after scenes). */
-  readonly frameHooks: Array<(frameDt: number) => void> = [];
-  private readonly resizeListeners: Array<(w: number, h: number) => void> = [];
   time = 0;
 
   constructor(
@@ -71,10 +66,6 @@ export class Game {
     for (const fn of this.settingsListeners) fn(this.settings);
   }
 
-  onResize(fn: (w: number, h: number) => void): void {
-    this.resizeListeners.push(fn);
-  }
-
   start(scene: Scene): void {
     this.scenes.replaceAll(scene);
     this.loop.start();
@@ -83,14 +74,16 @@ export class Game {
   private step(dt: number): void {
     this.time += dt;
     this.input.update(dt);
+    // While a transition is about to change the scene, presses and taps are dropped: they were
+    // meant for the scene that is leaving, and a second Enter or tap (or Escape's paired `back`)
+    // would run its action again (double QUIT, double CONTINUE, double coins).
+    if (this.transition.swapping) this.input.clearPending();
     this.scenes.update(dt);
     this.transition.update(dt);
-    for (const h of this.stepHooks) h(dt);
   }
 
   private frame(alpha: number, frameDt: number): void {
     this.scenes.render(alpha, frameDt);
-    for (const h of this.frameHooks) h(frameDt);
     this.app.renderer.render(this.app.stage);
   }
 
@@ -111,7 +104,6 @@ export class Game {
     s.top = `${v.cssTop}px`;
     this.scenes.resize(v.width, v.height);
     this.transition.resize(v.width, v.height);
-    for (const fn of this.resizeListeners) fn(v.width, v.height);
   }
 
   toLogical(clientX: number, clientY: number): { x: number; y: number } {

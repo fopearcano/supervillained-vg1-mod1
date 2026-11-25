@@ -340,7 +340,8 @@ export class StoryHud {
     this.menu.clear();
     for (let k = 0; k < 3; k++) this.menu.rect(w - 17, 4 + k * 3, 13, 1).fill(hex(C.yellow));
     this.menuLabel.position.set(w - 3, 13);
-    this.input.setButton({ id: 'menu', action: 'menu', x: w - 14, y: 12, r: 14, enabled: true });
+    // Keeps its state: a resize must not turn it on under the pause menu.
+    this.input.setButton({ id: 'menu', action: 'menu', x: w - 14, y: 12, r: 14, enabled: this.menuEnabled });
     this.modeLabel.position.set(Math.round(w / 2), 56);
   }
 
@@ -367,7 +368,11 @@ export class StoryHud {
     this.mode = m;
   }
 
+  /** The MENU button (one per game: Input's `menu` button is shared by every HUD). */
+  private menuEnabled = true;
+
   setMenuEnabled(on: boolean): void {
+    this.menuEnabled = on;
     const b = this.input.buttons.get('menu');
     if (b) b.enabled = on;
     this.menu.visible = this.menuLabel.visible = on;

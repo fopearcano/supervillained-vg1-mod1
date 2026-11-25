@@ -233,6 +233,11 @@ export class TitleScene extends Overlay {
     return f.height;
   }
 
+  /** Android Back on the title: QUIT (closes the app on Android). */
+  back(): void {
+    this.actions.quit();
+  }
+
   override update(dt: number): void {
     super.update(dt);
     if (this.player) {
@@ -498,6 +503,11 @@ export class PauseScene extends Overlay {
     this.menu.layout(w / 2, top + 36);
   }
 
+  /** Android Back: RESUME. */
+  back(): void {
+    this.actions.resume();
+  }
+
   override update(dt: number): void {
     super.update(dt);
     const input = this.game.input;
@@ -682,6 +692,7 @@ export class GameOverScene extends Overlay {
 export class OptionsScene extends Overlay {
   private readonly heading = big('OPTIONS', C.yellow, 2);
   private readonly menu: Menu;
+  private readonly onBack: () => void;
 
   constructor(
     game: Game,
@@ -700,6 +711,7 @@ export class OptionsScene extends Overlay {
   ) {
     // Nearly opaque: the title's own buttons must not show through.
     super(game, 0.94);
+    this.onBack = actions.back;
     this.menu = new Menu(
       [
         {
@@ -742,6 +754,11 @@ export class OptionsScene extends Overlay {
     const { w, h } = this;
     this.heading.position.set(Math.round(w / 2), Math.round(h * 0.22));
     this.menu.layout(w / 2, Math.round(h * 0.32));
+  }
+
+  /** Android Back: BACK to the title. */
+  back(): void {
+    this.onBack();
   }
 
   override update(dt: number): void {
@@ -830,6 +847,11 @@ export class ControlsScene extends Overlay {
     this.help.position.set(Math.round(w / 2), top + this.menu.height + 10);
   }
 
+  /** Android Back: BACK. */
+  back(): void {
+    this.onBack();
+  }
+
   override update(dt: number): void {
     super.update(dt);
     const input = this.game.input;
@@ -847,8 +869,11 @@ export class ConfirmScene extends Overlay {
   private readonly text: PixelText;
   private readonly menu: Menu;
 
+  private readonly onNo: () => void;
+
   constructor(game: Game, title: string, text: string, actions: { yes: () => void; no: () => void; yesLabel?: string; noLabel?: string }) {
     super(game, 0.92);
+    this.onNo = actions.no;
     this.heading = big(title, C.yellow, 1);
     this.text = new PixelText(text, { color: C.white, shadow: '#000000', align: 'center', maxWidth: 180, lineGap: 3 }).setOrigin(0.5, 0);
     this.menu = new Menu(
@@ -869,6 +894,11 @@ export class ConfirmScene extends Overlay {
     this.heading.position.set(Math.round(w / 2), Math.round(h * 0.32));
     this.text.position.set(Math.round(w / 2), Math.round(h * 0.32 + 16));
     this.menu.layout(w / 2, Math.round(h * 0.32 + 30 + this.text.textHeight));
+  }
+
+  /** Android Back: NO. */
+  back(): void {
+    this.onNo();
   }
 
   override update(dt: number): void {
@@ -894,6 +924,11 @@ export class GoodbyeScene extends Overlay {
     const { w, h } = this;
     this.heading.position.set(Math.round(w / 2), Math.round(h * 0.42));
     this.text.position.set(Math.round(w / 2), Math.round(h * 0.42 + 18));
+  }
+
+  /** Android Back: closes the card. */
+  back(): void {
+    this.onBack();
   }
 
   override update(dt: number): void {

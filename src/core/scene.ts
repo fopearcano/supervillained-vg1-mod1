@@ -10,6 +10,11 @@ export interface Scene {
   update(dt: number): void;
   render?(alpha: number, frameDt: number): void;
   resize?(width: number, height: number): void;
+  /**
+   * The Android Back button while this scene is on top (Flow.back; MainActivity sends `svback`).
+   * Usually what Escape does here. Scenes without it ignore Back.
+   */
+  back?(): void;
 }
 
 /** Stack of scenes: overlays (pause, level end) are pushed on top of the game. */

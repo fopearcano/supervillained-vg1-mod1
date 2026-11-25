@@ -254,15 +254,14 @@ export class Flow {
     if (attack) this.game.audio.loop('siren', { volume: AUDIO.SIREN_VOLUME });
   }
 
-  /** Android back button: pause / resume during the walk, close menus, quit from the title. */
+  /**
+   * Android Back button: the scene on top decides (`Scene.back`: pause or resume the walk and the
+   * story, close menus and cards, QUIT on the title); scenes without it ignore Back. Ignored
+   * while a transition is changing the scene.
+   */
   back(): void {
-    if (this.story.back()) return;
-    const top = this.game.scenes.top;
-    if (top instanceof PauseScene) this.resume();
-    else if (top === this.gameScene) this.pause();
-    else if (top instanceof BookScene || top instanceof GlossaryScene || top instanceof CouchScene || top instanceof ControlsScene) this.game.scenes.pop();
-    else if (top instanceof OptionsScene || top instanceof ConfirmScene || top instanceof GoodbyeScene) this.closeOverTitle();
-    else if (top instanceof TitleScene) this.quit();
+    if (this.game.transition.swapping) return;
+    this.game.scenes.top?.back?.();
   }
 
   /** Called when the app goes to the background. */

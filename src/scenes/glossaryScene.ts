@@ -138,6 +138,11 @@ export class GlossaryScene implements Scene {
     }
   }
 
+  /** Android Back: closes the card, as Escape does. */
+  back(): void {
+    this.close();
+  }
+
   update(dt: number): void {
     this.time += dt;
     if (this.time < G.RING_DELAY + G.RING_TIME + 0.1) this.drawRing();

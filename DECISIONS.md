@@ -956,3 +956,41 @@ save migration in [`docs/STORY-SOURCES.md`](docs/STORY-SOURCES.md).
 - The pause menu's MERAVIGLIA BOOK shows the running attempt's book (what he found in this
   scene included). The save format is unchanged (version 2): no migration needed.
 
+
+## Foundations: settings, transitions, the Back button, scene cleanup
+
+A focused audit of the scene flow, input and lifecycle (this repository is the PixiJS track,
+copied from `supervillained-vg1` branch `claude/gallant-pascal-wjy5l2`). Fixed what was shown to
+break; the rest is in `docs/BACKLOG.md`.
+
+- **Settings have one owner.** Mute, volume and text speed were changed by copy-pasted code in
+  OPTIONS, the walk's pause menu and the story's pause menu, CONTROLS and the title's lives
+  counter each saved on their own, and only some copies told the audio and input.
+  `Game.updateSettings(change)` now applies, saves and notifies; the steps are pure
+  (`nextVolume`, `nextTextSpeed`, `nextBinding`). Labels, steps and clicks unchanged.
+- **Bug: a double tap on QUIT TO TITLE crashed the game.** A transition started while another's
+  midpoint was pending ran that midpoint without taking it off first; `toTitle` starts a
+  transition itself, so it ran again, without end (in a browser the tab died). Same for SKIP
+  SCENE, CONTINUE after the walk (coins counted twice) and BACK on the story menu. The pending
+  midpoint (and whatever it schedules) now runs once, in order (`fx/transition.ts`, tested), and
+  presses and taps are dropped while a transition is about to change the scene (`Game.step`), so
+  the leaving scene cannot act twice. Escape on a level's scene list no longer goes back twice
+  (Escape sends `menu` and `back`; the second arrived after the first had started the change).
+- **The Android Back button is decided by the scene on top** (`Scene.back()`), instead of two
+  `instanceof` chains in `Flow` and `StoryFlow`. Same behaviour everywhere it worked; on a
+  level's scene list it now goes back to the story menu, as Escape does (it did nothing). The
+  story menu, cards, briefing and result screens still ignore Back. GLOSSARY and COUCH close with
+  their click, as with Escape.
+- **Bug: the MENU corner came back to life.** Every HUD registered Input's single `menu` button
+  as enabled on each layout, and every scene on the stack is laid out on a resize (a mobile
+  browser's bar showing or hiding is enough): a tap in the top-right corner of a pause menu then
+  resumed the game, and on the title or the story cards the corner swallowed taps. A HUD now
+  keeps the button's state, and a scene turns it off when it leaves.
+- **Popup texts are freed with their scene.** Popups pool their texts out of the display tree,
+  so destroying the scene never reached them, and each held a canvas texture on the GPU; a story
+  scene's particle and popup layers were not destroyed at all. `Popups.destroy()` now runs when
+  the walk or a story scene ends.
+- **A level's scene list plays the menu music**, not the replayed level's music (still ducked
+  after pause → SKIP during a replay).
+- Checks: `npm run smoke` now ends with two groups of flow checks through the real menus,
+  `progress` and `menus`, which fail on the previous code for each bug above.

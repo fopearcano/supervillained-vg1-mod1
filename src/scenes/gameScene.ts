@@ -150,6 +150,11 @@ export class GameScene implements Scene {
     this.banner.layout(w, h);
   }
 
+  /** Android Back during the walk: the pause menu (Flow.pause decides whether it may open). */
+  back(): void {
+    this.hooks.onMenu?.(this);
+  }
+
   update(dt: number): void {
     this.time += dt;
     this.world.beginStep();
@@ -283,6 +288,10 @@ export class GameScene implements Scene {
   exit(): void {
     for (const e of this.entities) e.alive = false;
     this.events.clear();
+    // The MENU button belongs to Input (shared): off until the next HUD turns it on.
+    this.hud.setMenuEnabled(false);
+    // Pooled popup texts are out of the display tree: root.destroy does not reach them.
+    this.fx.popups.destroy();
   }
 
   /** Debug/test summary. */

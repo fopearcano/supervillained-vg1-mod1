@@ -163,6 +163,8 @@ export class StoryFlow {
   /** The level's sub-level list (replays and the next scene). */
   private openChapter(ch: ChapterDef): void {
     this.replaying = false;
+    // The menu's music, not ducked (coming back from a replay: its level's music, maybe paused).
+    this.reading();
     this.game.scenes.replaceAll(
       new StoryChapterScene(this.game, this.state, ch, {
         play: (sub) =>
@@ -409,29 +411,5 @@ export class StoryFlow {
       return this.startSub(ch, sub);
     }
     this.openMenu();
-  }
-
-  /** Android back / app hidden: pause a running sub-level. */
-  back(): boolean {
-    const top = this.game.scenes.top;
-    if (top instanceof ControlsScene) {
-      this.game.scenes.pop();
-      return true;
-    }
-    if (top instanceof StoryPauseScene || top instanceof BookScene) {
-      this.game.scenes.pop();
-      const s = this.active;
-      if (s) {
-        this.game.audio.setDuck(1);
-        s.resumeAfterPause();
-      }
-      return true;
-    }
-    const s = this.active;
-    if (s) {
-      s.requestMenu();
-      return true;
-    }
-    return top instanceof StoryCardScene || top instanceof StoryMenuScene;
   }
 }

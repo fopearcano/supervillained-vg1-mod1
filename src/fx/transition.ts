@@ -20,13 +20,29 @@ export class ScreenTransition {
     return this.running;
   }
 
+  /** Running, with its midpoint (usually a change of scene) still to come. */
+  get swapping(): boolean {
+    return this.running && this.mid !== null;
+  }
+
   resize(w: number, h: number): void {
     this.stage.filterArea = new Rectangle(0, 0, w, h);
   }
 
-  /** Plays a glitch burst; `mid` runs halfway through (e.g. swap scenes). */
+  /**
+   * Plays a glitch burst; `mid` runs halfway through (e.g. swap scenes). A transition started
+   * while another one's midpoint is still pending runs that midpoint first. It is taken off
+   * before it runs: midpoints often start a transition themselves (toTitle does), and must not
+   * find themselves still pending (that recursed without end and crashed the game).
+   */
   play(mid: (() => void) | null = null, duration: number = FX.TRANSITION_TIME, flash = 0.6): void {
-    if (this.running && this.mid) this.mid();
+    // Whatever that midpoint schedules in turn runs too, in order.
+    let pending = this.running ? this.mid : null;
+    while (pending) {
+      this.mid = null;
+      pending();
+      pending = this.mid;
+    }
     this.mid = mid;
     this.t = 0;
     this.dur = duration;

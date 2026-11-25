@@ -176,6 +176,11 @@ export class StoryChapterScene implements Scene {
     this.menu.layout(w / 2, 42 + this.note.textHeight + 10);
   }
 
+  /** Android Back: back to the story menu, as Escape does. */
+  back(): void {
+    this.actions.back();
+  }
+
   update(dt: number): void {
     this.time += dt;
     const input = this.game.input;
@@ -248,6 +253,11 @@ export class StoryPauseScene implements Scene {
     retroBox(this.box, Math.round(w / 2 - 80), top, 160, bh, C.red, C.yellow, 0.65);
     this.title.position.set(Math.round(w / 2), top + 16);
     this.menu.layout(w / 2, top + 32);
+  }
+
+  /** Android Back: RESUME. */
+  back(): void {
+    this.actions.resume();
   }
 
   update(dt: number): void {
@@ -398,6 +408,11 @@ export class BookScene implements Scene {
     this.build();
     this.paginate();
     this.show();
+  }
+
+  /** Android Back: closes the book. */
+  back(): void {
+    this.onClose();
   }
 
   update(dt: number): void {

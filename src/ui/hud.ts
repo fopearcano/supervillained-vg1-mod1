@@ -121,7 +121,8 @@ export class Hud {
     const my = M + 39;
     for (let k = 0; k < 3; k++) this.menu.rect(mx, my + k * 3, 14, 1).fill(hex(C.yellow));
     this.menuLabel.position.set(w - M, my + 10);
-    this.input.setButton({ id: 'menu', action: 'menu', x: w - M - 16, y: my + 8, r: 16, enabled: true });
+    // Keeps its state: a resize must not turn it on under the title or a pause menu.
+    this.input.setButton({ id: 'menu', action: 'menu', x: w - M - 16, y: my + 8, r: 16, enabled: this.menuEnabled });
     // Bottom
     const timeY = h - M - 15;
     retroBox(g, M, timeY, 98, 15, C.red, C.yellow);
@@ -135,7 +136,11 @@ export class Hud {
     this.lastStars = -1;
   }
 
+  /** The MENU button (one per game: Input's `menu` button is shared by every HUD). */
+  private menuEnabled = true;
+
   setMenuEnabled(on: boolean): void {
+    this.menuEnabled = on;
     const b = this.input.buttons.get('menu');
     if (b) b.enabled = on;
   }

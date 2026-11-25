@@ -69,6 +69,17 @@ export class Popups {
     });
   }
 
+  /**
+   * Frees every popup, the pooled texts too: those are out of the display tree, so destroying
+   * the scene does not reach them, and each holds a canvas texture on the GPU.
+   */
+  destroy(): void {
+    for (const pool of this.textPool.values()) for (const t of pool) t.destroy();
+    this.textPool.clear();
+    this.live.length = 0;
+    this.root.destroy({ children: true });
+  }
+
   update(dt: number): void {
     for (let k = this.live.length - 1; k >= 0; k--) {
       const p = this.live[k]!;

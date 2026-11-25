@@ -198,6 +198,11 @@ export class CouchScene implements Scene {
     drawPaperCard(this.card, cx, cy, cw, cardH, C.orange, ORANGE_INK);
   }
 
+  /** Android Back: closes the card, as Escape does. */
+  back(): void {
+    this.close();
+  }
+
   update(dt: number): void {
     this.time += dt;
     const input = this.game.input;

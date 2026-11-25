@@ -377,11 +377,7 @@ const SCENARIOS = {
     console.log('switcher', JSON.stringify(sw), 'mode now', await page.evaluate(() => window.__sv.top().actionMode));
     await page.screenshot({ path: `${OUT}/f-switcher.png` });
     // Left hand: the buttons and the gestures move to the left, the joystick to the right.
-    await page.evaluate(() => {
-      const g = window.__sv.game;
-      g.settings.controls.hand = 'left';
-      g.onSettingsChanged();
-    });
+    await page.evaluate(() => window.__sv.game.updateSettings((s) => (s.controls.hand = 'left')));
     await wait(400);
     await page.screenshot({ path: `${OUT}/f-left-hand.png` });
     console.log('fight state', JSON.stringify(await page.evaluate(() => {

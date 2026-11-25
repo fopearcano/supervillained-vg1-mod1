@@ -106,7 +106,12 @@ export class StoryScene implements Scene {
   exit(): void {
     this.current?.stop?.(this);
     this.current = null;
+    // The MENU button belongs to Input (shared): off until the next HUD turns it on.
+    this.hud.setMenuEnabled(false);
+    // The FX layers are the scene's, not the world's: freed here (world.destroy skips them).
     this.worldFx.removeFromParent();
+    this.popups.destroy();
+    this.worldFx.destroy({ children: true });
     if (this.pilot) this.game.input.override = null;
     this.world?.destroy();
     this.world = null;
@@ -383,6 +388,11 @@ export class StoryScene implements Scene {
   }
 
   // ------------------------------------------------------------------ loop
+
+  /** Android Back: the story's pause menu. */
+  back(): void {
+    this.requestMenu();
+  }
 
   update(dt: number): void {
     this.time += dt;
