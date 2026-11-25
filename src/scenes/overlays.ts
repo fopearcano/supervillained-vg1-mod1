@@ -416,7 +416,9 @@ export class BriefingScene extends Overlay {
     private readonly onGo: () => void,
   ) {
     super(game, 0.42);
-    const touch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    // Like every other hint: touch once a finger has touched the screen (on a phone the title's
+    // buttons and the level card were tapped to get here).
+    const touch = game.input.usingTouch;
     this.prompt = big(touch ? 'TAP TO START' : 'PRESS SPACE', C.white, 1, { outline: '#000000' });
     this.hint = new PixelText(
       touch ? 'LEFT THUMB: MOVE\nBUTTONS: PEE / BARK / RUN' : 'WASD MOVE  SHIFT RUN\nSPACE PEE  J BARK  ESC MENU',
@@ -445,7 +447,7 @@ export class BriefingScene extends Overlay {
     this.prompt.visible = Math.floor(this.time * 2.5) % 2 === 0;
     const input = this.game.input;
     const taps = input.consumeTaps();
-    if (this.time > 0.5 && (taps.length || input.consume('confirm'))) this.onGo();
+    if (this.time > 0.5 && (taps.length || input.consumeContinue())) this.onGo();
   }
 }
 
@@ -641,7 +643,7 @@ export class LevelEndScene extends Overlay {
     this.best.visible = this.r.newBest && t > after + 0.5 && Math.floor(this.time * 3) % 2 === 0;
     this.menu.root.visible = t > after + 0.6;
     if (!this.menu.root.visible) {
-      if (input.consumeTaps().length || input.consume('confirm')) this.skip = true;
+      if (input.consumeTaps().length || input.consumeContinue()) this.skip = true;
       return;
     }
     this.menu.update(dt, input);
@@ -763,6 +765,11 @@ export class OptionsScene extends Overlay {
 
   override update(dt: number): void {
     super.update(dt);
+    // Escape does what Android Back does.
+    if (this.game.input.consume('back')) {
+      this.back();
+      return;
+    }
     if (this.time > 0.25) this.menu.update(dt, this.game.input);
   }
 }
@@ -903,6 +910,11 @@ export class ConfirmScene extends Overlay {
 
   override update(dt: number): void {
     super.update(dt);
+    // Escape does what Android Back does.
+    if (this.game.input.consume('back')) {
+      this.back();
+      return;
+    }
     if (this.time > 0.25) this.menu.update(dt, this.game.input);
   }
 }
@@ -934,7 +946,7 @@ export class GoodbyeScene extends Overlay {
   override update(dt: number): void {
     super.update(dt);
     const input = this.game.input;
-    if (this.time > 0.5 && (input.consumeTaps().length || input.consume('confirm') || input.consume('back'))) this.onBack();
+    if (this.time > 0.5 && (input.consumeTaps().length || input.consumeContinue() || input.consume('back'))) this.onBack();
   }
 }
 

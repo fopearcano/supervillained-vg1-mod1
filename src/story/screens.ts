@@ -70,7 +70,7 @@ export class StoryCardScene implements Scene {
     this.tap.visible = this.time > 0.8 && Math.floor(this.time * 2.5) % 2 === 0;
     const input = this.game.input;
     const taps = input.consumeTaps().length > 0;
-    if (this.time > 0.6 && (taps || input.consumeAny(['confirm', 'action', 'pee']))) this.onDone();
+    if (this.time > 0.6 && (taps || input.consumeContinue())) this.onDone();
   }
 }
 
@@ -422,7 +422,7 @@ export class BookScene implements Scene {
       this.onClose();
       return;
     }
-    const tap = input.consumeTaps().length > 0 || input.consume('confirm') || input.consume('down') || input.consume('right');
+    const tap = input.consumeTaps().length > 0 || input.consumeContinue() || input.consume('down') || input.consume('right');
     if (this.time > 0.3 && tap) {
       if (this.page < this.pages.length - 1) {
         this.page++;

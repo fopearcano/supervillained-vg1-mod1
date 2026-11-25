@@ -26,7 +26,8 @@ const PART = 0xff9a1f;
  * COUCH (title page): Zampanò's "account", a floating paper card with everything the saved
  * story holds: the next scene, the scenes done (per level), the ending once it is finished, the
  * four meters, the Meraviglia book, coins, the costume, the Green Zone best, the play time and
- * when it was saved. Read-only; closes with CLOSE, a tap outside it, Enter or back.
+ * when it was saved. Read-only; closes with CLOSE, a tap outside it, a continue key (Enter, Space,
+ * J) or back.
  */
 export class CouchScene implements Scene {
   readonly root = new Container();
@@ -208,7 +209,7 @@ export class CouchScene implements Scene {
     const input = this.game.input;
     if (input.consume('back')) return this.close();
     if (this.time < 0.25) return;
-    if (input.consume('confirm')) return this.close();
+    if (input.consumeContinue()) return this.close();
     const r = this.cardRect;
     const c = this.closeRect;
     for (const t of input.consumeTaps()) {

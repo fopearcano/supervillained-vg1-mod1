@@ -227,6 +227,76 @@ async function menuChecks(page) {
   check((await top()) === 'StoryPauseScene', 'after a resize, a tap on the hidden MENU corner leaves the pause menu open');
   await androidBack();
   check((await top()) === 'StoryScene', 'Back resumes the story scene');
+
+  // J (and X) continue, confirm and pick wherever Space / Enter do (Input.consumeContinue).
+  await page.evaluate(() => window.__sv.flow.story.newGame());
+  await wait(900);
+  const card = await top();
+  await press('KeyJ');
+  await wait(1400);
+  const afterCard = await top();
+  check(card === 'StoryCardScene' && afterCard === 'BriefingScene', `J advances a story card (${card} -> ${afterCard})`);
+  const briefing = await page.evaluate(() => ({
+    touch: window.__sv.game.input.usingTouch,
+    prompt: window.__sv.top().prompt.content.map((s) => s.text).join(''),
+  }));
+  check(
+    briefing.prompt === (briefing.touch ? 'TAP TO START' : 'PRESS SPACE'),
+    `the Briefing's hint follows the input in use, like every other hint (${briefing.prompt}, touch seen: ${briefing.touch})`,
+  );
+  await press('KeyJ');
+  await wait(500);
+  check((await top()) === 'GameScene', 'J starts the walk from the Briefing');
+  await page.evaluate(() => window.__sv.flow.story.debugPlay('1.1'));
+  await wait(900);
+  await press('Escape');
+  await wait(300);
+  const paused = await top();
+  await press('KeyJ');
+  await wait(400);
+  const resumed = await top();
+  check(paused === 'StoryPauseScene' && resumed === 'StoryScene', `J picks the selected menu item (RESUME: ${paused} -> ${resumed})`);
+  // Each of the next checks starts from a fresh title, so one failure does not hide the others.
+  const freshTitle = async () => {
+    await page.evaluate(() => window.__sv.flow.toTitle());
+    await wait(1500);
+  };
+  await freshTitle();
+  await page.evaluate(() => window.__sv.top().actions.glossary());
+  await wait(500);
+  const glossary = await top();
+  await press('KeyJ');
+  await wait(300);
+  const afterGlossary = await top();
+  check(glossary === 'GlossaryScene' && afterGlossary === 'TitleScene', `J closes the GLOSSARY card (${glossary} -> ${afterGlossary})`);
+
+  // Escape does what Back does on OPTIONS and on the NEW GAME? question; on the title, nothing.
+  const titleShown = () => page.evaluate(() => window.__sv.top().constructor.name === 'TitleScene' && window.__sv.top().root.visible);
+  await freshTitle();
+  await page.evaluate(() => window.__sv.top().actions.options());
+  await wait(500);
+  const options = await top();
+  await press('Escape');
+  await wait(300);
+  check(options === 'OptionsScene' && (await titleShown()), `Escape closes OPTIONS and shows the title again (${options} -> ${await top()})`);
+  // A saved story, so NEW GAME asks first.
+  await page.evaluate(() => {
+    const story = window.__sv.flow.story;
+    story.debugReset();
+    story.state.completed.push('1.0');
+    localStorage.setItem('supervillained:story', JSON.stringify(story.state));
+  });
+  await freshTitle();
+  await page.evaluate(() => window.__sv.top().actions.newGame());
+  await wait(500);
+  const confirm = await top();
+  await press('Escape');
+  await wait(300);
+  check(confirm === 'ConfirmScene' && (await titleShown()), `Escape closes the NEW GAME? question and shows the title again (${confirm} -> ${await top()})`);
+  await freshTitle();
+  await press('Escape');
+  await wait(400);
+  check(await titleShown(), `Escape on the title does nothing (Back quits there; ${await top()})`);
   check(errors.length === 0, `no page errors (${errors.join(' | ') || 'none'})`);
   page.off('pageerror', onError);
   await page.evaluate(() => localStorage.clear());

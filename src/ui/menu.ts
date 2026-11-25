@@ -21,7 +21,7 @@ interface Row {
 
 /**
  * Vertical list of retro buttons. Works with taps (hit test on release) and with the keyboard
- * (up/down + Enter/Space).
+ * (up/down + Enter/Space/J/X: Input.consumeContinue).
  */
 export class Menu {
   readonly root = new Container();
@@ -84,7 +84,7 @@ export class Menu {
       this.keyboard = true;
       this.selected = (this.selected + 1) % this.rows.length;
     }
-    if (input.consume('confirm')) {
+    if (input.consumeContinue()) {
       this.rows[this.selected]?.item.action();
       return;
     }

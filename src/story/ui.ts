@@ -229,7 +229,7 @@ export class DialogueBox {
       this.keyboard = true;
       this.selected = (this.selected + 1) % this.choiceRows.length;
     }
-    if (input.consume('confirm')) return this.selected;
+    if (input.consumeContinue()) return this.selected;
     for (const tap of input.consumeTaps()) {
       const hit = this.choiceRows.findIndex((r) => tap.x >= r.x && tap.x <= r.x + r.w && tap.y >= r.y - 2 && tap.y <= r.y + r.h + 2);
       if (hit >= 0) return hit;

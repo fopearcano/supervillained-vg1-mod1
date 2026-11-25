@@ -17,11 +17,11 @@ import { speakerOf } from './ui';
  * arrays of steps (see campaign/chapters).
  */
 
-/** Waits for a tap / Space / Enter (after a short guard so a held key doesn't skip). */
+/** Waits for a tap or a continue key (Input.consumeContinue), after a short guard so a held key doesn't skip. */
 function tapped(ctx: StoryScene, guard: number, t: number): boolean {
   const input = ctx.game.input;
   const taps = input.consumeTaps().length > 0;
-  const key = input.consumeAny(['confirm', 'action', 'pee']);
+  const key = input.consumeContinue();
   return t > guard && (taps || key);
 }
 

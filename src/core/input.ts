@@ -318,6 +318,16 @@ export class Input {
     return hit;
   }
 
+  /**
+   * The one rule for "continue / confirm / pick" on every screen (dialogue, cards, menus, the
+   * choice wheel, the book, the title's cards): Space, Enter, J / X, the PEE or the action button.
+   * True (once) if any was pressed recently; consumes all of them, so one Space (pee + confirm)
+   * counts once. Taps are read by each screen itself.
+   */
+  consumeContinue(): boolean {
+    return this.consumeAny(['confirm', 'action', 'pee']);
+  }
+
   /** A gesture was made: do what it is bound to, and remember it for its on-screen streak. */
   private fireGesture(kind: Gesture, x: number, y: number): void {
     const a = this.gestureActions[kind];

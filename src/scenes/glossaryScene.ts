@@ -12,7 +12,8 @@ const VIOLET_INK = '#5b2bc4';
 /**
  * GLOSSARY (title page): a floating paper card with the dictionary entry of "supervillain,
  * supervillained". The b) verb, the sense the game is about, is circled in red by hand: the ring
- * draws itself when the card opens. Closes with CLOSE, a tap outside the card, Enter or back.
+ * draws itself when the card opens. Closes with CLOSE, a tap outside the card, a continue key
+ * (Enter, Space, J) or back.
  */
 export class GlossaryScene implements Scene {
   readonly root = new Container();
@@ -149,7 +150,7 @@ export class GlossaryScene implements Scene {
     const input = this.game.input;
     if (input.consume('back')) return this.close();
     if (this.time < 0.25) return;
-    if (input.consume('confirm')) return this.close();
+    if (input.consumeContinue()) return this.close();
     // CLOSE, or a tap outside the card.
     const r = this.cardRect;
     const c = this.closeRect;

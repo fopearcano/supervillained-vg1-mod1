@@ -114,7 +114,7 @@ export class SupervillainedScene implements Scene {
       k.s.visible = left > 0;
     }
 
-    const taps = input.consumeTaps().length > 0 || input.consume('confirm');
+    const taps = input.consumeTaps().length > 0 || input.consumeContinue();
     if (t >= SV.HOLD || (taps && t >= SV.SKIP_AFTER)) this.finish();
   }
 
