@@ -11,3 +11,6 @@ android/local.properties
 android/app/src/main/assets/public/
 *.apk
 *.ipa
+
+# Temporary git worktrees made by Claude Code workflows
+.claude/worktrees/
