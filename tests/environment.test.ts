@@ -249,6 +249,21 @@ describe('two environment art banks (OPTIONS > ART: CURRENT / NEW, a temporary t
     expect(m.environmentArtBank()).toBe('new');
   });
 
+  it('each bank reports its own problems (the same gap in both banks warns twice)', async () => {
+    twoBanks();
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const m = await import('../src/assets/environment');
+    const unknown = { ...entry(), name: 'notInTheAtlas_0' };
+    await m.preloadEnvironmentArt('current');
+    m.withEnvironmentArt(m.paletteForChapter(1, 'greenzone', fallback), [entry(), unknown]);
+    await m.preloadEnvironmentArt('new');
+    m.withEnvironmentArt(m.paletteForChapter(1, 'greenzone', fallback), [entry(), unknown]);
+    const gaps = m.environmentDiagnostics().warnings.filter((w) => w.includes('notInTheAtlas_0'));
+    expect(gaps).toHaveLength(2);
+    expect(gaps[0]).toMatch(/^current art, opening/);
+    expect(gaps[1]).toMatch(/^new art, opening/);
+  });
+
   it('shows the bank chosen in OPTIONS, unless the address asks for one (?art=new|current)', async () => {
     const { chosenArtBank } = await import('../src/assets/environment');
     expect(chosenArtBank(false)).toBe('current');

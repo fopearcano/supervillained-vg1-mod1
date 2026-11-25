@@ -50,6 +50,8 @@ const BANK_DIRS: Record<ArtBank, string> = { current: 'environment-ink/', new: '
 
 /** Everything one bank's manifest and atlases give, decoded once. */
 interface BankState {
+  /** Which bank (also tags its warnings: each bank reports its own problems). */
+  readonly name: ArtBank;
   readonly framesByZone: Map<string, Map<string, DeliveredFrame>>;
   readonly palettesByZone: Map<string, Partial<Palette>>;
   readonly floorDesigns: Map<string, FloorDesign>;
@@ -69,7 +71,7 @@ const warnings: string[] = [];
 function bankState(which: ArtBank): BankState {
   let b = banks.get(which);
   if (!b) {
-    b = { framesByZone: new Map(), palettesByZone: new Map(), floorDesigns: new Map(), chapterThemes: {}, themeFallbacks: {} };
+    b = { name: which, framesByZone: new Map(), palettesByZone: new Map(), floorDesigns: new Map(), chapterThemes: {}, themeFallbacks: {} };
     banks.set(which, b);
   }
   return b;
@@ -132,7 +134,7 @@ function readFloorDesigns(raw: unknown, manifest: EnvironmentManifest, bank: Ban
       }
       bank.floorDesigns.set(key, Object.freeze({ environment, width, height, tiles: Object.freeze(choices) }));
     } catch (error) {
-      warnOnce(`floor:${key}`, `${key}: ${String(error)}; using native ground choices`);
+      warnOnce(`${bank.name}:floor:${key}`, `${bank.name} art, ${key}: ${String(error)}; using native ground choices`);
     }
   }
 }
@@ -144,7 +146,7 @@ export function floorDesignForMap(chapter: number, mapKey: string, palette: Pale
   const design = bank.floorDesigns.get(key);
   if (!design) return undefined;
   if (design.environment !== palette.environment || design.width !== level.width || design.height !== level.height || !bank.framesByZone.has(design.environment)) {
-    warnOnce(`floor:selection:${key}`, `${key}: floor layout does not match the current map/art bank; using native ground choices`);
+    warnOnce(`${bank.name}:floor:selection:${key}`, `${bank.name} art, ${key}: floor layout does not match the current map/art bank; using native ground choices`);
     return undefined;
   }
   return design;
@@ -278,9 +280,10 @@ async function loadBank(which: ArtBank, bank: BankState): Promise<void> {
 export function withEnvironmentArt(palette: Palette, entries: AtlasEntry[]): AtlasEntry[] {
   const id = palette.environment;
   if (!id) return entries;
-  const delivered = bankState(active).framesByZone.get(id);
+  const bank = bankState(active);
+  const delivered = bank.framesByZone.get(id);
   if (!delivered) {
-    warnOnce(`missing:${id}`, `no delivered atlas for '${id}'; using generated art`);
+    warnOnce(`${bank.name}:missing:${id}`, `${bank.name} art: no delivered atlas for '${id}'; using generated art`);
     return entries;
   }
   const missing: string[] = [];
@@ -288,18 +291,18 @@ export function withEnvironmentArt(palette: Palette, entries: AtlasEntry[]): Atl
     const frame = delivered.get(entry.name);
     if (!frame) { missing.push(entry.name); return entry; }
     if (frame.w !== entry.image.w || frame.h !== entry.image.h || frame.anchorX !== entry.anchorX || frame.anchorY !== entry.anchorY) {
-      warnOnce(`shape:${id}:${entry.name}`, `${id}/${entry.name}: dimensions or anchor differ from the game contract; using generated frame`);
+      warnOnce(`${bank.name}:shape:${id}:${entry.name}`, `${bank.name} art, ${id}/${entry.name}: dimensions or anchor differ from the game contract; using generated frame`);
       return entry;
     }
     return { ...entry, image: frame.image };
   });
-  if (missing.length) warnOnce(`partial:${id}`, `${id}: atlas lacks ${missing.join(', ')}; using generated art for those frames`);
+  if (missing.length) warnOnce(`${bank.name}:partial:${id}`, `${bank.name} art, ${id}: atlas lacks ${missing.join(', ')}; using generated art for those frames`);
   // Extra authored floor frames have their own namespace and exactly the ground contract.
   const names = new Set(result.map((entry) => entry.name));
   for (const [name, frame] of delivered) {
     if (!FLOOR_FRAME.test(name) || names.has(name)) continue;
     if (frame.w !== 32 || frame.h !== 16 || frame.anchorX !== 16 || frame.anchorY !== 0) {
-      warnOnce(`floor:shape:${id}:${name}`, `${id}/${name}: non-native floor frame; ignoring it`);
+      warnOnce(`${bank.name}:floor:shape:${id}:${name}`, `${bank.name} art, ${id}/${name}: non-native floor frame; ignoring it`);
       continue;
     }
     result.push({ name, image: frame.image, anchorX: 16, anchorY: 0 });
