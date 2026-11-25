@@ -61,24 +61,33 @@ From the design documents (`SPEC.md`, the VG1 PDFs as summarised in `DECISIONS.m
 The story is `docs/STORY.md` (canonical) and `docs/STORY-SOURCES.md`; the cleanup changed none of
 it. When a revision comes, change together: the chapter scripts (`src/campaign/chapters/`), the
 maps they use (`src/story/maps.ts`), `docs/STORY.md`, and, if saved scene ids change meaning, a
-new save version with a migration and its test (see "Saves" in `CLAUDE.md`). No revision is
-pending in the repository today.
+new save version with a migration and its test (see "Saves" in `CLAUDE.md`).
+
+Announced by the owner, to come: the story and the dialogue rewritten, the gameplay and the level
+design improved, starting from Level 1, which defines Zampanò (bullied by Bagnaskiz's band, filled
+with history by the Professor, his human dad, and hopeless with girls). **Santina's part (1.4)
+is to be changed.** The Green Zone walk got the band's ambush and more treats first (see
+`DECISIONS.md`).
 
 ## 5. Polish and release
 
-1. **Android release signing**: `android:release` signs with the debug key
+1. **The Green Zone ambush needs playing by a person**: its numbers (`AMBUSH` in `config.ts`:
+   when the voices start, how often, the fright's length, six poop piles) were set by eye and
+   checked by scripts, not by play. Jack's and Watson's squat and sit wait for their animation
+   delivery (`ASSETS.md`); the voices are barks until recorded lines exist.
+2. **Android release signing**: `android:release` signs with the debug key
    (`android/app/build.gradle`, `signingConfig signingConfigs.debug`). A store upload needs a
    real upload key, kept out of the repository.
-2. **Application id** `com.zampano.supervillained` is marked as a placeholder in `DECISIONS.md`
+3. **Application id** `com.zampano.supervillained` is marked as a placeholder in `DECISIONS.md`
    (M6); fix it before the first store upload, since it cannot change afterwards.
-3. **APK size** (~40 MB debug): mostly the recorded music (`assets/music`, ~6 MB a track).
-4. **Device checks**: the owner confirmed Back works on an installed build from before these
+4. **APK size** (~40 MB debug): mostly the recorded music (`assets/music`, ~6 MB a track).
+5. **Device checks**: the owner confirmed Back works on an installed build from before these
    passes. The newer changes (Back on a level's scene list, the double-tap guard, the MENU
    corner, Escape on OPTIONS / NEW GAME?, the wrapped rumour heading) were checked in a desktop
    Chromium with phone emulation and the same `svback` event the app sends, not on a phone.
    Play through once on a device: Back on every screen, double taps on QUIT / SKIP / CONTINUE,
    rotate or resize while paused, the rumour (6.2).
-5. **The committed screenshots in `docs/screens/` were stale** (older art in several) until this
+6. **The committed screenshots in `docs/screens/` were stale** (older art in several) until this
    pass regenerated them; regenerate after visual changes (`npm run screens`).
-6. **Gameplay feel and balance are not covered by any check.** The playtest proves every scene
+7. **Gameplay feel and balance are not covered by any check.** The playtest proves every scene
    can be finished by the autopilot, not that it is fun or fair at human speed.

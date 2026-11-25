@@ -171,16 +171,27 @@ export class Rules {
     this.world.events.emit('pee', { x: cx, y: cy, marking, radius, score });
   }
 
-  private doPoop(): void {
-    const { player, map } = this.world;
-    const surface = map.poopSurfaceAt(player.gx, player.gy);
+  /**
+   * A poop pile on the ground: it pollutes at once, spreads, shows on the radar and is cleaned by
+   * a pee. Zampanò's own (doPoop) also count in his POOPS; the band's (systems/ambush.ts) do not.
+   */
+  dropPoop(x: number, y: number): PoopPile {
+    const map = this.world.map;
+    const surface = map.poopSurfaceAt(x, y);
     const footprint = map.poopFootprint(surface);
-    // Drop it just behind Zampanò.
-    const v = { x: -Math.sign(player.vx || 0.0001) * 0.15, y: -Math.sign(player.vy || 0.0001) * 0.15 };
-    const pile = new PoopPile(player.gx + v.x, player.gy + v.y, surface, footprint);
+    const pile = new PoopPile(x, y, surface, footprint);
     this.poops.push(pile);
     this.world.addEntity(pile);
     map.stampDirt(pile.gx, pile.gy, footprint.radius, footprint.strength);
+    return pile;
+  }
+
+  private doPoop(): void {
+    const { player } = this.world;
+    // Drop it just behind Zampanò.
+    const v = { x: -Math.sign(player.vx || 0.0001) * 0.15, y: -Math.sign(player.vy || 0.0001) * 0.15 };
+    const pile = this.dropPoop(player.gx + v.x, player.gy + v.y);
+    const surface = pile.surface;
     player.startAction('poop', DIGESTION.SQUAT_TIME);
     player.bump(-0.25);
     this.stats.poops++;

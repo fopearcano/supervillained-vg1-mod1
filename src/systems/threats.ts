@@ -32,6 +32,11 @@ export class Threats {
   private ballTimer: number;
   private readonly rng: Rng;
   private readonly pendingHits: PendingHit[] = [];
+  /**
+   * True while Bagnaskiz is busy elsewhere (with his band, waiting to ambush Zampanò: see
+   * systems/ambush.ts): his usual attack does not start then.
+   */
+  attackHeld: () => boolean = () => false;
 
   constructor(
     private readonly world: WorldAccess,
@@ -128,7 +133,8 @@ export class Threats {
     const progress = map.progressAt(player.gx, player.gy);
     for (const wave of this.pollutionDirector.update(progress)) this.startPollutionWave(wave);
     const health = map.health();
-    const signal = this.director.update(dt, health, progress, !this.pug || this.pug.state === 'gone');
+    const held = this.director.state === 'calm' && this.attackHeld();
+    const signal = held ? null : this.director.update(dt, health, progress, !this.pug || this.pug.state === 'gone');
     if (signal === 'start') this.startAttack();
     else if (signal === 'end') events.emit('attackEnd', {});
 

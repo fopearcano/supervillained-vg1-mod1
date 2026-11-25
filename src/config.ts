@@ -384,6 +384,50 @@ export const ATTACK = {
   BASE_INTENSITY: 0.35,
 } as const;
 
+/**
+ * The band's ambush in the Green Zone walk (systems/ambush.ts; who, where and what they say is
+ * level data: LevelDef.events.ambush).
+ */
+export const AMBUSH = {
+  /** Seconds between two voices: when they start (at warnFrom) and just before they jump in. */
+  VOICE_EVERY: [3.4, 0.55] as readonly [number, number],
+  /** Random spread of that interval (fraction of it). */
+  VOICE_JITTER: 0.2,
+  /** Sound volume of the voices, from the first to the last. */
+  VOICE_VOLUME: [0.3, 0.9] as readonly [number, number],
+  /** The voices' text, kept inside the view: below the HUD, inside the sides (px). */
+  VOICE_INSET: { SIDE: 6, TOP: 86 },
+  /** Seconds between the shout and the jump. */
+  NOW_BEAT: 0.45,
+  /** Running speed of the band jumping in (tiles/s) and the longest the jump may last (s). */
+  JUMP_SPEED: 7.5,
+  JUMP_MAX: 1.4,
+  /** How far around Zampanò they land (tiles), and how wide their circle grows while they scare
+   * him: they poop where they run, so the piles spread out of one pee's reach. */
+  RING: 2,
+  RING_WIDEN_TO: 3.4,
+  /** Farther than this from him at the shout (he took another lane), they first pop up... */
+  REACH: 9,
+  /** ...this far from him, ahead (tiles). */
+  APPEAR_AT: 5,
+  /** Seconds Zampanò stays frozen with fright while they bark around him. */
+  SCARE_TIME: 2.4,
+  /** Push away from the leader when the fright starts (tiles/s). */
+  SCARE_KNOCK: 3,
+  /** Circling speed around him (tiles/s) and seconds between two barks of each one. */
+  CIRCLE_SPEED: 2.2,
+  BARK_EVERY: 0.55,
+  /** Poop piles each band member leaves where it stands while circling him. */
+  POOPS_EACH: 2,
+  /** Seconds to run off and vanish, and their speed (tiles/s). */
+  LEAVE_TIME: 2.2,
+  LEAVE_SPEED: 6,
+  /** Bagnaskiz's usual attack waits while the band waits, and this long after it leaves (s). */
+  ATTACK_GRACE: 12,
+  /** Camera shake at the jump and at the fright. */
+  SHAKE: 5,
+} as const;
+
 export const BAGNASKIZ = {
   /** A little slower than Zampanò walking. */
   SPEED: 2.65,

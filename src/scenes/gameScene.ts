@@ -3,7 +3,7 @@ import { textures } from '../core/assets';
 import { Emitter, type GameEvents } from '../core/events';
 import type { Game } from '../core/game';
 import type { Scene } from '../core/scene';
-import { BALL } from '../config';
+import { AMBUSH, BALL } from '../config';
 import { PropEntity } from '../entities/prop';
 import type { Zampano } from '../entities/zampano';
 import type { Entity } from '../entities/entity';
@@ -11,6 +11,7 @@ import { GameFx } from '../fx/gameFx';
 import type { Camera } from '../iso/camera';
 import { gridToScreen, gridVecToScreen } from '../iso/projection';
 import { clampLives, livesSpeed } from '../systems/lives';
+import { Ambush } from '../systems/ambush';
 import { Rules } from '../systems/rules';
 import { Threats } from '../systems/threats';
 import { GlitchFilter } from '../fx/glitchFilter';
@@ -39,6 +40,8 @@ export class GameScene implements Scene {
   readonly events = new Emitter<GameEvents>();
   readonly rules: Rules;
   readonly threats: Threats;
+  /** Bagnaskiz's band waiting half way (level data `events.ambush`), or null. */
+  readonly ambush: Ambush | null;
   readonly hud: Hud;
   readonly banner = new AttackBanner();
   private readonly attackFilter = new GlitchFilter();
@@ -82,6 +85,10 @@ export class GameScene implements Scene {
     this.rules = new Rules(this, levelDef, lives);
     this.player.speedMul = livesSpeed(lives);
     this.threats = new Threats(this, this.rules, levelDef);
+    const ambush = levelDef.events.ambush;
+    this.ambush = ambush ? new Ambush(this, this.rules, ambush, levelDef.seed) : null;
+    // While Bagnaskiz waits with his band (and a little after they leave), he does not also roam.
+    this.threats.attackHeld = () => this.ambush?.holdsAttack ?? false;
     this.fx = new GameFx(this.events, this.player, this.camera, () => this.rules.poopWarning);
     this.world.decalLayer.addChild(this.fx.below, this.magnetG);
     this.fx.terrainAt = (x, y) => {
@@ -162,11 +169,18 @@ export class GameScene implements Scene {
     if (this.active) {
       if (input.consume('menu') && this.rules.state === 'playing') this.hooks.onMenu?.(this);
       this.rules.update(dt, input);
-      if (this.rules.state === 'playing') this.threats.update(dt, input);
+      if (this.rules.state === 'playing') {
+        this.threats.update(dt, input);
+        this.ambush?.update(dt);
+      }
     } else {
       this.player.setIntent(0, 0);
     }
     this.world.endStep(dt);
+    // Voices from off screen stay readable: kept inside the view, below the HUD.
+    const v = this.camera.viewRect();
+    const k = AMBUSH.VOICE_INSET;
+    this.fx.voices.keepIn = { x: v.x + k.SIDE, y: v.y + k.TOP, w: v.w - k.SIDE * 2, h: v.h - k.TOP };
     this.fx.update(dt);
     this.updateAttackFx(dt);
 
@@ -268,6 +282,12 @@ export class GameScene implements Scene {
       const d = rel(pug.gx, pug.gy);
       radar.push({ dx: d.x, dy: d.y, color: 0xff7a1f, size: 4, blink: true });
     }
+    if (this.ambush?.revealed) {
+      for (const m of this.ambush.band) {
+        const d = rel(m.actor.gx, m.actor.gy);
+        radar.push({ dx: d.x, dy: d.y, color: 0xff7a1f, size: 3, blink: true });
+      }
+    }
     const exit = rel(this.map.exit.x, this.map.exit.y);
     return {
       pees: st.pees,
@@ -292,6 +312,7 @@ export class GameScene implements Scene {
     this.hud.setMenuEnabled(false);
     // Pooled popup texts are out of the display tree: root.destroy does not reach them.
     this.fx.popups.destroy();
+    this.fx.voices.destroy();
   }
 
   /** Debug/test summary. */
@@ -309,6 +330,7 @@ export class GameScene implements Scene {
       treatsLeft: this.rules.treats.length,
       attack: this.threats.director.state,
       pug: this.threats.pug ? { state: this.threats.pug.state, hits: this.threats.pug.hits } : null,
+      ambush: this.ambush ? this.ambush.director.phase : null,
       cats: this.threats.cats.length,
       balls: this.threats.balls.length,
     };

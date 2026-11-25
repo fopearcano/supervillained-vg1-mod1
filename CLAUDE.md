@@ -78,7 +78,10 @@ sub-level), `?auto=1` (the autopilot plays the story; `&skill=0.7&ending=knight|
 - `levels/` — level data (`level1.ts`) and registry (`index.ts`).
 - `entities/` — `Entity` base (grid position, interpolation, view), `CharacterAnimator`,
   `Zampano`, `PropEntity`, …
-- `systems/` — gameplay rules as small, mostly pure classes (unit-tested).
+- `systems/` — gameplay rules as small, mostly pure classes (unit-tested). `ambushLogic.ts` (the
+  band's ambush as a pure sequence) and `ambush.ts` (Bagnaskiz, Jack and Watson as story `Actor`s
+  in the Green Zone: waiting half way, voices, NOW!, the fright, their poop via
+  `Rules.dropPoop`); who, where and the lines are level data (`events.ambush`), timings `AMBUSH`.
 - `ui/` — `pixelFont.ts` + `pixelText.ts` (crisp bitmap text with glow/outline), HUD, touch controls
   (`touchControls.ts`: the action button's modes, the switcher, gesture hints, left-hand mirror),
   `titleArt.ts` / `titleAnim.ts` (title portrait: the animated GIF decoded with `ImageDecoder`).
@@ -165,8 +168,11 @@ server, which reloads the page on every change and breaks the run.
   `input.consumeContinue()`; Escape is `input.consume('back')`. Change scenes inside `game.transition.play(mid)`
   (the flows' `glitch()`): presses during the first half are dropped, so a double tap cannot run an
   action twice.
-- **Green Zone walk (1.0) rules**: `systems/` (pure, tested: needs, scoring, threats, lives) and
-  `scenes/gameScene.ts` (the scene that hosts them); tuning in `config.ts`.
+- **Green Zone walk (1.0) rules**: `systems/` (pure, tested: needs, scoring, threats, lives,
+  ambush) and `scenes/gameScene.ts` (the scene that hosts them); tuning in `config.ts`; level
+  data (treats, waves, the band's ambush) in `levels/level1.ts`. Nothing plays the walk in
+  `npm run playtest`: check it with `npm run smoke -- walk` and `npm run screens -- ambush m1 m2 m3
+  m4`.
 - **Art, animations, sounds, music**: `ASSETS.md` (the manifest in `src/assets/manifest.ts`, never
   game logic). Run `npm test` (sprite tests), `npm run screens`, and look at the PNGs.
 - **Settings**: add the field to `Settings` in `core/settings.ts` with a default in

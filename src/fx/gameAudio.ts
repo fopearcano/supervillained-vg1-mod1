@@ -1,4 +1,8 @@
-import { AUDIO } from '../config';
+import { AMBUSH, AUDIO } from '../config';
+
+/** The band's barks, each its own voice (until recorded voices are delivered: ASSETS.md). */
+const BAND_PITCH: Record<string, number> = { bagnaskiz: 1, jack: 1.35, watson: 0.82 };
+const bandRate = (who: string) => (BAND_PITCH[who] ?? 1) * (0.96 + Math.random() * 0.08);
 import type { AudioEngine } from '../core/audio';
 import type { Emitter, GameEvents } from '../core/events';
 
@@ -29,6 +33,19 @@ export function bindGameAudio(events: Emitter<GameEvents>, audio: AudioEngine): 
   events.on('ballSpawn', () => audio.play('ball'));
   events.on('fetch', () => audio.play('fetch'));
   events.on('pollutionSurge', () => audio.play('warning', { rate: 0.82, volume: 0.75 }));
+  // The ambush: voices louder as he gets closer, the shout, the fright, the barking and poops.
+  events.on('ambushVoice', (e) => {
+    const [quiet, loud] = AMBUSH.VOICE_VOLUME;
+    audio.play('bark', { rate: bandRate(e.who), volume: quiet + (loud - quiet) * e.loud });
+  });
+  events.on('ambushNow', (e) => {
+    audio.play('bark', { rate: bandRate(e.who) * 0.92 });
+    audio.play('hit', { delay: 0.05 });
+  });
+  events.on('ambushJump', () => audio.play('swish'));
+  events.on('ambushScare', () => audio.play('hurt'));
+  events.on('ambushBark', (e) => audio.play('bark', { rate: bandRate(e.who), volume: 0.8 }));
+  events.on('bandPoop', () => audio.play('poop', { volume: 0.6 }));
   events.on('attackStart', () => {
     audio.play('alarm');
     audio.loop('siren', { volume: AUDIO.SIREN_VOLUME, delay: AUDIO.SIREN_DELAY });

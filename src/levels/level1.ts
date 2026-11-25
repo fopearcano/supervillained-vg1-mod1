@@ -220,6 +220,20 @@ export const LEVEL_1: LevelDef = {
       { progress: 0.43, count: 2, radius: 2.8, strength: 0.82, distance: [3, 8] },
       { progress: 0.72, count: 3, radius: 3, strength: 0.9, distance: [2, 8] },
     ],
+    // Bagnaskiz waits half way with his band, on the road just before the middle plaza: in
+    // full view of Zampano coming up the road from about 40 % of the walk.
+    ambush: {
+      warnFrom: 0.25,
+      at: 0.5,
+      until: 0.62,
+      spot: { x: 45.2, y: 44.4 },
+      band: ['bagnaskiz', 'jack', 'watson'],
+      voices: [
+        { who: 'jack', text: "HE'S COMING! HE'S COMING!" },
+        { who: 'watson', text: 'GET READY!' },
+      ],
+      now: 'NOW!',
+    },
   },
   source: { format: 'ascii', rows: buildGreenZoneRows() },
 };

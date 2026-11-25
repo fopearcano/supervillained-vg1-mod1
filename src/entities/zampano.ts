@@ -13,7 +13,7 @@ import { CharacterAnimator, Entity } from './entity';
  * Zampanò's action states. 'free' = controlled by the player.
  * Some actions keep control (bark, eat), others lock movement for their duration.
  */
-export type ZState = 'free' | 'pee' | 'poop' | 'bark' | 'eat' | 'fetch' | 'hurt' | 'drink' | 'exit';
+export type ZState = 'free' | 'pee' | 'poop' | 'bark' | 'eat' | 'fetch' | 'hurt' | 'scared' | 'drink' | 'exit';
 
 const LOCKS_MOVEMENT: Record<ZState, boolean> = {
   free: false,
@@ -23,6 +23,8 @@ const LOCKS_MOVEMENT: Record<ZState, boolean> = {
   poop: true,
   fetch: true,
   hurt: true,
+  /** Frozen with fright (the band's ambush in the Green Zone). */
+  scared: true,
   drink: true,
   exit: true,
 };
@@ -34,6 +36,7 @@ const STATE_ANIM: Partial<Record<ZState, AnimName>> = {
   eat: 'eat',
   fetch: 'fetch',
   hurt: 'hurt',
+  scared: 'hurt',
   drink: 'eat',
 };
 
@@ -277,6 +280,8 @@ export class Zampano extends Entity {
     this.animator.sprite.scale.set(1 - s * 0.6, 1 + s);
     // Hurt blink
     this.animator.sprite.alpha = this.invulnerable > 0 && Math.floor(this.invulnerable * 12) % 2 === 0 ? 0.35 : 1;
-    this.animator.sprite.tint = this.state === 'hurt' ? 0xff8080 : 0xffffff;
+    // Hurt: red. Scared: pale, and he trembles on the spot.
+    this.animator.sprite.tint = this.state === 'hurt' ? 0xff8080 : this.state === 'scared' ? 0xd4e0ff : 0xffffff;
+    this.animator.sprite.x = this.state === 'scared' ? (Math.floor(this.stateTime * 26) % 2 === 0 ? 1 : -1) : 0;
   }
 }

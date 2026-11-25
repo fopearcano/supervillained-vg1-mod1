@@ -64,6 +64,30 @@ export interface EventSettings {
    * level data (not global tuning), so later arcade maps can define a different encounter rhythm.
    */
   pollutionWaves?: readonly PollutionWaveSettings[];
+  /**
+   * Bagnaskiz's band waits half way along the route (systems/ambush.ts): their voices from
+   * `warnFrom`, more and more often; at `at` the first of them shouts, they jump in barking,
+   * frighten Zampanò, poop around him and run off. Timings are in config.ts (AMBUSH).
+   */
+  ambush?: AmbushSettings;
+}
+
+/** Who is in the band and what they say (level data: the scene's text). */
+export interface AmbushSettings {
+  /** Route progress (0..1) at which the voices start. */
+  warnFrom: number;
+  /** Route progress at which they jump in (the middle of the walk). */
+  at: number;
+  /** Past this progress without having been triggered (a teleport), the ambush is skipped. */
+  until: number;
+  /** Where the band waits (grid); each one stands a little apart around it. */
+  spot: { x: number; y: number };
+  /** The band, leader first (the leader shouts `now`). Character keys of the manifest. */
+  band: readonly string[];
+  /** The voices heard before, in turn: who says it (a band member) and the line. */
+  voices: readonly { who: string; text: string }[];
+  /** The leader's shout when they jump in. */
+  now: string;
 }
 
 export interface PollutionWaveSettings {

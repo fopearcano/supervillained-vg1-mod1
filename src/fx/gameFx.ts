@@ -1,7 +1,7 @@
 import { Container, Graphics, Sprite } from 'pixi.js';
 import { textures } from '../core/assets';
 import type { Emitter, GameEvents } from '../core/events';
-import { FX } from '../config';
+import { AMBUSH, FX } from '../config';
 import { spriteName } from '../assets/manifest';
 import type { Zampano } from '../entities/zampano';
 import type { Camera } from '../iso/camera';
@@ -32,6 +32,10 @@ interface Ring {
 
 const GEO_COLORS = [0xff9a1f, 0xb040ff, 0x6ad8ff, 0xff4fa8, 0xffe23a];
 
+/** Bagnaskiz's band, in the colours their lines have in the story (story/ui.ts speakers). */
+const BAND_COLOR: Record<string, string> = { bagnaskiz: C.orange, jack: '#ff8ab8', watson: '#d8d4c8' };
+const DIRT = [0x6e4a1c, 0x8f6a30, 0x4a2e0e];
+
 /**
  * Visual reactions to gameplay events: popups, particles, pee rings, the digestion bubble,
  * screen shake. Everything here is cosmetic.
@@ -41,6 +45,8 @@ export class GameFx {
   readonly above = new Container();
   readonly particles = new Particles();
   readonly popups = new Popups();
+  /** The band's lines (the ambush): their own layer, cleared when Bagnaskiz shouts. */
+  readonly voices = new Popups();
   private readonly rings: Ring[] = [];
   private readonly waves: Wave[] = [];
   private readonly ringG = new Graphics();
@@ -58,7 +64,7 @@ export class GameFx {
     private readonly bubbleState: () => number,
   ) {
     this.below.addChild(this.ringG);
-    this.above.addChild(this.particles.root, this.popups.root);
+    this.above.addChild(this.particles.root, this.popups.root, this.voices.root);
     this.bubble = new Sprite(textures.get(spriteName('thought')));
     this.bubble.visible = false;
     this.bubble.scale.set(2);
@@ -223,6 +229,34 @@ export class GameFx {
     events.on('attackStart', () => {
       this.camera.shake(FX.SHAKE_HURT);
     });
+    // The band's ambush (systems/ambush.ts). Voices come from where they wait and are kept in
+    // view (keepIn), brighter as he gets closer.
+    events.on('ambushVoice', (e) => {
+      const p = at(e.x, e.y, 44);
+      const style = { color: BAND_COLOR[e.who] ?? C.white, glow: 'self' as const, glowAlpha: 0.2 + 0.4 * e.loud, align: 'center' as const, maxWidth: 150 };
+      this.voices.text(e.text, p.x, p.y, style, 1.1 + 0.5 * e.loud, -12, true);
+    });
+    events.on('ambushNow', (e) => {
+      // The shout alone: the voices still floating are cut off by it.
+      this.voices.clear();
+      const p = at(e.x, e.y, 56);
+      this.voices.text(e.text, p.x, p.y, { color: BAND_COLOR[e.who] ?? C.orange, glow: 'self', scale: 2 }, 1.4, -10, true);
+      this.camera.shake(AMBUSH.SHAKE * 0.6);
+    });
+    events.on('ambushJump', () => this.camera.shake(AMBUSH.SHAKE));
+    events.on('ambushScare', (e) => {
+      const p = at(e.x, e.y, 40);
+      this.popups.text('!!', p.x, p.y, { color: C.white, glow: 'self', scale: 2 }, 1.3, -18);
+      const g = at(e.x, e.y, 26);
+      this.particles.burst(g.x, g.y, { count: 8, textures: ['pixel'], colors: [0xaee0ff, 0xffffff], speed: [30, 60], life: [0.4, 0.7], gravity: 160, angle: [-Math.PI * 0.9, -Math.PI * 0.1] });
+      this.camera.shake(AMBUSH.SHAKE);
+    });
+    events.on('bandPoop', (e) => {
+      const p = at(e.x, e.y, 26);
+      this.popups.icon('poop', p.x, p.y, 2, FX.POPUP_TIME, -8);
+      const g = at(e.x, e.y);
+      this.particles.burst(g.x, g.y, { count: 6, textures: ['pixel'], colors: DIRT, speed: [18, 40], life: [0.35, 0.6], gravity: 120, angle: [-Math.PI * 0.95, -Math.PI * 0.05] });
+    });
     events.on('lifeLost', (e) => {
       const p = at(e.x, e.y, 38);
       this.popups.text(e.lives > 0 ? 'STARVING! -1' : 'STARVED!', p.x, p.y, { color: C.red, glow: 'self', scale: 1 }, 1.4, -10);
@@ -234,6 +268,7 @@ export class GameFx {
     this.time += dt;
     this.particles.update(dt);
     this.popups.update(dt);
+    this.voices.update(dt);
     // Footsteps: dust when running, leaves in bushes, splashes in puddles.
     const p = this.player;
     if (p.moving) {

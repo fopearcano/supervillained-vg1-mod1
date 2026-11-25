@@ -1058,3 +1058,42 @@ reviewers before merging.
   touch; J mashed through a question at INSTANT text picks nothing); unit tests for the input
   rule, touch / pen / mouse hints, the keyboard highlight (a deterministic rumour order), both
   games and `playTrack`. Each new check fails on the code before its fix.
+
+## Bagnaskiz's band waits half way (the Green Zone ambush)
+
+The owner's design for the walk (story 1.0), which defines Zampanò as bullied: Bagnaskiz waits in
+the middle of the level with his band (Jack and Watson); from a quarter of the way their voices
+are heard and written, "HE'S COMING! HE'S COMING!" and "GET READY!", more and more often; when
+Zampanò reaches the middle Bagnaskiz says "NOW!" and they jump in barking to frighten him and
+poop everywhere.
+
+- **Where**: on the road just before the middle plaza (45.2, 44.4), about 53 % of the way, so
+  Zampanò coming up the road sees them waiting from about 40 % (Bagnaskiz sits; Jack and Watson
+  watch for him). If he reaches the middle on another lane, they pop out a few tiles ahead of
+  him instead (`AMBUSH.REACH`, `APPEAR_AT`). Who, where and the lines are level data
+  (`LEVEL_1.events.ambush`), so a later level can have its own.
+- **The voices**: from 25 % of the route, alternating Jack's and Watson's lines in their story
+  colours, from where the band waits and kept inside the view below the HUD when that is off
+  screen (ahead is up the screen); the interval shrinks from 3.4 s to 0.55 s and the bark under
+  each line grows louder as he gets closer (the closest he has been counts: stepping back does not
+  quieten them). The sound is the bark at three pitches until recorded voices exist.
+- **NOW!** at 50 %: Bagnaskiz shouts (big, orange), a beat, they run at him (7.5 tiles/s), and
+  he is frozen with fright for 2.4 s (a new `scared` state: the flinch, pale, trembling, "!!",
+  a yelp, a small push away from Bagnaskiz) while they circle him barking. Each of the three
+  poops twice where it stands (`Rules.dropPoop`: the piles pollute, spread, show on the radar and
+  are cleaned by his pee for CLEAN! points, like his own, but are not counted in his POOPS or the
+  pee-deficit penalty). Their circle widens from 2 to 3.4 tiles as they run round him, so the
+  piles land 1.2 to 3.2 tiles away ("everywhere"): measured, a pee where he stands cleans about
+  one, and the rest take moving round and two or three more pees (three charges, one back every
+  18 s); until each pile is cleaned it keeps staining the ground around it. Then they run off
+  and vanish.
+- **Bagnaskiz's usual attack** (the pug that roams and pollutes, `threats.ts`) is held while he
+  waits with his band and for 12 s after they leave (`AMBUSH.ATTACK_GRACE`): he cannot be in two
+  places. The scripted attack at 56 % therefore comes after that grace, as him coming back alone.
+- **Skipped** when Zampanò gets past 62 % without triggering it (a teleport in the screenshot
+  scripts), so nothing is held then.
+- Pure sequence in `systems/ambushLogic.ts` (tested), the band in `systems/ambush.ts` (story
+  `Actor`s), effects in `fx/gameFx.ts`, sounds in `fx/gameAudio.ts`, numbers in `AMBUSH`.
+  Checks: `tests/ambush.test.ts`, `npm run smoke -- walk` (the whole sequence in the real game),
+  `npm run screens -- ambush` (five pictures). Jack's and Watson's squat waits for their animation
+  delivery (`ASSETS.md`).

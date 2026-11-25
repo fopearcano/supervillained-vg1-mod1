@@ -619,9 +619,11 @@ const SCENARIOS = {
   /** M4: scripted "under attack" with Bagnaskiz, barking him away, a cat and a magnet ball. */
   async m4(browser) {
     const page = await openGame(browser, '?skip=game');
-    // Jump past 55% of the walk → scripted attack.
+    // Jump past 55% of the walk → scripted attack. (The band's ambush at the middle is its own
+    // scenario, `ambush`: here it is skipped, as when he has already passed it.)
     await page.evaluate(() => {
       const s = window.__sv.scene();
+      s.ambush?.skip();
       const m = s.map;
       const d0 = m.exitDistance[m.index(m.startTile.i, m.startTile.j)];
       let best = null;
@@ -688,6 +690,42 @@ const SCENARIOS = {
   },
 
   /** M5: juice — treat popup + geometric particles, marking a tree, running dust, audio on. */
+  /** The Green Zone: Bagnaskiz's band waiting half way, their voices, NOW!, the fright, the mess. */
+  async ambush(browser) {
+    const page = await openGame(browser, '?skip=game');
+    await wait(1200);
+    const phase = () => page.evaluate(() => window.__sv.scene().debugState().ambush);
+    // On the road at about 38 % of the walk: voices from ahead, kept in view below the HUD.
+    await page.evaluate(() => window.__sv.scene().teleport(58.9, 57.5));
+    for (let k = 0; k < 16; k++) {
+      await wait(250);
+      const voice = await page.evaluate(() => window.__sv.scene().fx.voices.root.children.some((c) => c.visible && c.content?.some?.((t) => /COMING|READY/.test(t.text))));
+      if (voice) break;
+    }
+    await page.screenshot({ path: `${OUT}/g-ambush-voices.png` });
+    // 47 %: the band waits on the road ahead.
+    await page.evaluate(() => window.__sv.scene().teleport(51.1, 48.6));
+    await wait(2400);
+    await page.screenshot({ path: `${OUT}/g-ambush-waiting.png` });
+    // Up the road to the middle: NOW!
+    await page.keyboard.down('KeyW');
+    for (let k = 0; k < 40 && (await phase()) === 'voices'; k++) await wait(50);
+    await page.keyboard.up('KeyW');
+    await wait(150);
+    await page.screenshot({ path: `${OUT}/g-ambush-now.png` });
+    for (let k = 0; k < 40 && (await phase()) !== 'scare'; k++) await wait(50);
+    await wait(1300);
+    await page.screenshot({ path: `${OUT}/g-ambush-scare.png` });
+    for (let k = 0; k < 120 && (await phase()) !== 'done'; k++) await wait(50);
+    await wait(400);
+    await page.screenshot({ path: `${OUT}/g-ambush-after.png` });
+    console.log('ambush', JSON.stringify(await page.evaluate(() => {
+      const s = window.__sv.scene();
+      return { ...s.debugState(), bandPoops: s.rules.poops.length, ownPoops: s.rules.stats.poops };
+    })));
+    await page.close();
+  },
+
   async m5(browser) {
     const page = await openGame(browser, '');
     await page.evaluate(() => localStorage.removeItem('supervillained:story'));

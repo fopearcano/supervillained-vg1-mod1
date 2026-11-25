@@ -55,5 +55,16 @@ export interface GameEvents extends Record<string, unknown> {
   attackStart: { intensity: number };
   attackEnd: Record<string, never>;
   bagnaskizFled: At & { score: number };
+  /** The band's ambush (systems/ambush.ts): a voice from where they wait (loud 0..1). */
+  ambushVoice: At & { text: string; who: string; loud: number };
+  /** The leader's shout (NOW!). */
+  ambushNow: At & { text: string; who: string };
+  ambushJump: At;
+  /** Zampanò frozen with fright. */
+  ambushScare: At;
+  ambushBark: At & { who: string };
+  /** A band member's poop pile (not counted as Zampanò's). */
+  bandPoop: At & { who: string };
+  ambushLeave: At;
   score: At & { amount: number; label?: string };
 }

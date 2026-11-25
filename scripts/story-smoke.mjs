@@ -1,14 +1,15 @@
 /**
  * Story smoke test: plays every sub-level script from start to finish, skipping each step after a
  * few frames (`StoryScene.debugSkip`), and fails on any page error (missing marker, unknown actor,
- * bad sprite key...). Then three groups of checks through the real menus and keys: `progress`
+ * bad sprite key...). Then four groups of checks through the real menus and keys: `progress`
  * (what a scene saves on restart / quit / skip), `menus` (double presses during a transition,
  * Escape and the Android Back button on each kind of screen, the MENU button after a resize, the
- * continue / confirm keys) and `keys` (the letter and rumour mini-games played from the keyboard).
+ * continue / confirm keys), `keys` (the letter and rumour mini-games played from the keyboard) and
+ * `walk` (the Green Zone: Bagnaskiz's band's ambush half way).
  *
- *   npm run smoke                 all sub-levels, then the three groups of checks
+ *   npm run smoke                 all sub-levels, then the four groups of checks
  *   npm run smoke -- 7.3 8.1      selected sub-levels
- *   npm run smoke -- progress menus keys   only those checks (any of them)
+ *   npm run smoke -- progress menus keys walk   only those checks (any of them)
  *   SMOKE_SHOTS=dir npm run smoke one screenshot per sub-level (first walk / mini-game / choice)
  */
 import { spawn } from 'node:child_process';
@@ -352,6 +353,82 @@ async function menuChecks(page) {
  * through every kind of button (change a word, send, write it again, accept), 6.2 (the rumour)
  * to the end. Returns the number of failures.
  */
+/**
+ * The Green Zone walk (story 1.0): Bagnaskiz's band waits half way. Their voices from a quarter
+ * of the way, NOW! at the middle, Zampano frozen with fright, the band's poop piles (not his),
+ * the band gone, Bagnaskiz's usual attack held meanwhile; and no ambush when he jumps past it.
+ * Returns the number of failures.
+ */
+async function walkChecks(page) {
+  let fails = 0;
+  const check = (ok, what) => {
+    if (!ok) fails++;
+    console.log(`${ok ? 'ok  ' : 'FAIL'} walk: ${what}`);
+  };
+  const errors = [];
+  const onError = (e) => errors.push(e.message);
+  page.on('pageerror', onError);
+  const state = () =>
+    page.evaluate(() => {
+      const s = window.__sv.scene();
+      return {
+        phase: s.ambush?.director.phase ?? null,
+        player: s.player.state,
+        band: s.ambush?.band.length ?? 0,
+        piles: s.rules.poops.length,
+        own: s.rules.stats.poops,
+        pug: !!s.threats.pug,
+        attack: s.threats.director.state,
+        held: s.ambush?.holdsAttack ?? false,
+        voices: window.__voices ?? [],
+      };
+    });
+  await page.evaluate(() => {
+    localStorage.clear();
+    window.__sv.flow.play(1);
+  });
+  await wait(1200);
+  await page.evaluate(() => {
+    window.__voices = [];
+    window.__sv.scene().events.on('ambushVoice', (e) => window.__voices.push(e.text));
+  });
+  let st = await state();
+  check(st.phase === 'waiting' && st.band === 3, `the band waits from the start (${st.phase}, ${st.band} of them)`);
+  // A third of the way up the road: their voices.
+  await page.evaluate(() => window.__sv.scene().teleport(58.9, 57.5));
+  for (let k = 0; k < 40 && !(await state()).voices.length; k++) await wait(150);
+  st = await state();
+  check(st.phase === 'voices' && st.voices.length > 0, `their voices from a quarter of the way (${st.voices.join(' / ') || 'none'})`);
+  check(!st.pug && st.attack === 'calm' && st.held, "Bagnaskiz's usual attack waits while he waits with his band");
+  // Up the road to the middle.
+  await page.evaluate(() => window.__sv.scene().teleport(51.1, 48.6));
+  await wait(300);
+  await page.keyboard.down('KeyW');
+  for (let k = 0; k < 60 && (await state()).phase === 'voices'; k++) await wait(40);
+  await page.keyboard.up('KeyW');
+  st = await state();
+  check(st.phase === 'now' || st.phase === 'jump', `NOW! at the middle of the walk (${st.phase})`);
+  for (let k = 0; k < 60 && (await state()).phase !== 'scare'; k++) await wait(50);
+  st = await state();
+  check(st.phase === 'scare' && st.player === 'scared', `they jump in and he is frozen with fright (${st.phase}, ${st.player})`);
+  for (let k = 0; k < 160 && (await state()).phase !== 'done'; k++) await wait(50);
+  st = await state();
+  check(st.phase === 'done' && st.band === 0 && st.player === 'free', `then they run off and he can move again (${st.phase}, ${st.band} left, ${st.player})`);
+  check(st.piles >= 6 && st.own === 0, `they pooped all around him; none counted as his (${st.piles} piles, his POOPS ${st.own})`);
+  check(st.held && !st.pug, 'a grace period before Bagnaskiz comes back on his own');
+  // Jumping past the middle (a teleport): no ambush, nothing held.
+  await page.evaluate(() => window.__sv.flow.play(1));
+  await wait(900);
+  await page.evaluate(() => window.__sv.scene().teleport(20.5, 22.5));
+  await wait(300);
+  st = await state();
+  check(st.phase === 'done' && st.band === 0 && !st.held, `no ambush when he gets past it some other way (${st.phase}, held: ${st.held})`);
+  check(errors.length === 0, `no page errors (${errors.join(' | ') || 'none'})`);
+  page.off('pageerror', onError);
+  await page.evaluate(() => localStorage.clear());
+  return fails;
+}
+
 async function keyChecks(page) {
   let fails = 0;
   const check = (ok, what) => {
@@ -471,7 +548,7 @@ try {
   await page.waitForFunction(() => window.__sv && window.__sv.top(), null, { timeout: 30000 });
   await page.evaluate(() => localStorage.clear());
   const all = await page.evaluate(() => window.__sv.storyIds());
-  const GROUPS = ['progress', 'menus', 'keys'];
+  const GROUPS = ['progress', 'menus', 'keys', 'walk'];
   const named = process.argv.slice(2).filter((a) => !GROUPS.includes(a));
   const groups = process.argv.slice(2).length ? GROUPS.filter((g) => process.argv.includes(g)) : GROUPS;
   const ids = named.length ? named : groups.length && process.argv.slice(2).length ? [] : all;
@@ -520,6 +597,7 @@ try {
   if (groups.includes('progress')) failures += await progressChecks(page);
   if (groups.includes('menus')) failures += await menuChecks(page);
   if (groups.includes('keys')) failures += await keyChecks(page);
+  if (groups.includes('walk')) failures += await walkChecks(page);
   await page.close();
 } catch (err) {
   console.error(err);
