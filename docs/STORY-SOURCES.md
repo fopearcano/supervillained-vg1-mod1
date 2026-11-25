@@ -189,3 +189,7 @@ time the game reads it (`migrateV1`, unit-tested in `tests/campaign.test.ts`):
   THE DREAM HAS BEEN REWRITTEN, saying what was kept; the notice is then cleared and saved.
 - COUCH, the story menu and replays read the migrated save like any other; replays still play on a
   copy and save nothing.
+- **A save this game cannot read** (written by a newer version, or with no or a garbled version)
+  is not migrated: the game starts a fresh story, but the save is first copied once, untouched, to
+  `supervillained:story-unknown-backup` (never overwritten by a later one), so a newer build can
+  still recover it.

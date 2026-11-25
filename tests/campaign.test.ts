@@ -303,6 +303,19 @@ describe('saved stories', () => {
     expect(JSON.parse(mem.get(`supervillained:${UNKNOWN_BACKUP_KEY}`)!)).toEqual(first);
   });
 
+  it('keeps a damaged save aside too (no version, or a version that is not a number)', () => {
+    const noVersion = { completed: ['1.0', '1.1'], coins: 3 };
+    let mem = memoryStorage();
+    mem.set('supervillained:story', JSON.stringify(noVersion));
+    expect(loadCampaign()).toEqual(newCampaign());
+    expect(JSON.parse(mem.get(`supervillained:${UNKNOWN_BACKUP_KEY}`)!)).toEqual(noVersion);
+    const textVersion = { version: '2', completed: ['1.0'] };
+    mem = memoryStorage();
+    mem.set('supervillained:story', JSON.stringify(textVersion));
+    expect(loadCampaign().completed).toEqual([]);
+    expect(JSON.parse(mem.get(`supervillained:${UNKNOWN_BACKUP_KEY}`)!)).toEqual(textVersion);
+  });
+
   it('keeps nothing aside for an empty storage or for the saves it knows', () => {
     const mem = memoryStorage();
     expect(loadCampaign()).toEqual(newCampaign());

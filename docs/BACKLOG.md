@@ -5,33 +5,27 @@ What is known to be left, by kind, most important first in each section. Fixed i
 shows them. Nothing here is a new feature idea: every entry is a bug that was observed in the
 code, a structural cost, something a design document asks for, or release work.
 
-Last full pass: the foundations cleanup (attempts, settings, transitions, Back button); see the
-last sections of `DECISIONS.md`.
+Last passes: the foundations cleanup (attempts, settings, transitions, Back button) and the
+backlog fixes (one confirm rule, Escape, keyboard mini-games, unknown saves, music helper); see
+the last sections of `DECISIONS.md`.
 
 ## 1. Confirmed bugs (not fixed yet)
 
 Found by reading the code; each one is reproducible as described.
 
-1. **The rumour mini-game (6.2) cannot be played from the keyboard.** `RumourGame` reads taps
-   only (`src/story/minigames/words.ts`, its `update`). Mouse and touch work; a keyboard-only
-   player has to SKIP SCENE. Matters for a desktop build, not for Android.
-2. **The letter mini-game (5.4) is only half playable from the keyboard.** Changing a word and
-   WRITE IT AGAIN are taps (`LetterGame` in `words.ts`), so the `letter: 'named'` outcome cannot
-   be reached with keys; the comment on `WordGame.tapped` promises keyboard selection.
-3. **J / X confirm some screens and not others.** They advance dialogue and story cards
-   (`story/steps.ts` `tapped`, `story/screens.ts` StoryCardScene) but not the Briefing,
-   "You've been supervillained", the Level End skip, the book, GLOSSARY / COUCH, menus or the
-   choice wheel, which take Space / Enter / taps only.
-4. **Escape is ignored on OPTIONS, the NEW GAME confirmation and the story menu**, while the
-   Android Back button closes the first two (`Scene.back`). The story menu has a BACK item but
-   neither Escape nor Back reaches it. Decide whether Back on the story menu should go to the
-   title (it does nothing today, kept as it was).
-5. **The Briefing decides "TAP" or "PRESS" differently from the game** (`'ontouchstart' in
-   window` in `scenes/overlays.ts` BriefingScene, `input.usingTouch` everywhere else): on a
-   touchscreen laptop the hints disagree.
-6. **Shield by gesture is a pulse, shield by key a hold.** Swipe down raises the shield for one
+1. **Mini-game hints say TAP to everyone.** The keyboard now reaches every outcome of every
+   mini-game, but the on-screen hints still speak to touch only: the letter's "(TAP A WORD TO
+   CHANGE IT)", the rumour's "TAP THE PIECES IN THE ORDER THEY HAPPENED...", the ladders' "TAP
+   MIDDLE: CLIMB SIDES: LADDER", "ROW! (TAP)", "TAP ON THE BEAT" (`story/minigames/`). Choose the
+   wording with `input.usingTouch`, as the Briefing and the walk do. Matters for a desktop build.
+
+## Decisions needed (behaviour that may be intended)
+
+1. **Back and Escape on the story menu do nothing.** It has a BACK item (to the title), but
+   neither Escape nor the Android Back button reaches it (`story/screens.ts` StoryMenuScene has
+   no `back()`). Kept as it was until decided.
+2. **Shield by gesture is a pulse, shield by key a hold.** Swipe down raises the shield for one
    blow (`walk.ts` → `combat.raiseShield`); I and the round button in SHIELD mode hold it.
-   Possibly intended; confirm.
 
 ## 2. Remaining structural problems
 
@@ -40,10 +34,9 @@ None blocks work; fix each when the code around it is next changed.
 1. **`scenes/overlays.ts` holds nine scenes (~950 lines).** Title, Briefing, Pause, Level End,
    Game Over, Options, Controls, Confirm, Goodbye. Split by screen when one of them is next
    reworked; not worth a move on its own.
-2. **"Tap or key to continue" is written four times with different keys** (`story/steps.ts`,
-   `story/screens.ts`, `story/minigames/action.ts`, `story/minigames/rhythm.ts`), the choice
-   wheel (`story/ui.ts`) re-implements `ui/menu.ts` with a different tap margin, and the
-   GLOSSARY / COUCH cards copy their close logic. One helper on `Input` would also settle bug 3.
+2. **The choice wheel (`story/ui.ts`) re-implements `ui/menu.ts`** with a different tap margin,
+   and the GLOSSARY / COUCH cards copy their close logic. (Their keys now agree:
+   `Input.consumeContinue`.)
 3. **`Flow.gameScene` keeps the last Green Zone scene referenced after it is destroyed**
    (JS heap only; every use is guarded). Clear it when the story takes over.
 4. **Per-scene filters are not destroyed** (title glitch, blur, attack, bleach). They hold no
@@ -79,10 +72,12 @@ pending in the repository today.
 2. **Application id** `com.zampano.supervillained` is marked as a placeholder in `DECISIONS.md`
    (M6); fix it before the first store upload, since it cannot change afterwards.
 3. **APK size** (~40 MB debug): mostly the recorded music (`assets/music`, ~6 MB a track).
-4. **Device checks not done in this pass**: the Back button changes, the double-tap guard and
-   the MENU corner were checked in a desktop Chromium with the same `svback` event the app
-   sends, not on a phone. Play through once on a device: Back on every screen, double taps on
-   QUIT / SKIP / CONTINUE, rotate or resize while paused.
+4. **Device checks**: the owner confirmed Back works on an installed build from before these
+   passes. The newer changes (Back on a level's scene list, the double-tap guard, the MENU
+   corner, Escape on OPTIONS / NEW GAME?, the wrapped rumour heading) were checked in a desktop
+   Chromium with phone emulation and the same `svback` event the app sends, not on a phone.
+   Play through once on a device: Back on every screen, double taps on QUIT / SKIP / CONTINUE,
+   rotate or resize while paused, the rumour (6.2).
 5. **The committed screenshots in `docs/screens/` were stale** (older art in several) until this
    pass regenerated them; regenerate after visual changes (`npm run screens`).
 6. **Gameplay feel and balance are not covered by any check.** The playtest proves every scene

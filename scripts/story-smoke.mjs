@@ -1,13 +1,14 @@
 /**
  * Story smoke test: plays every sub-level script from start to finish, skipping each step after a
  * few frames (`StoryScene.debugSkip`), and fails on any page error (missing marker, unknown actor,
- * bad sprite key...). Then two groups of flow checks through the real menus: `progress` (what a
- * scene saves on restart / quit / skip) and `menus` (double presses during a transition, Escape
- * and the Android Back button on each kind of screen, the MENU button after a resize).
+ * bad sprite key...). Then three groups of checks through the real menus and keys: `progress`
+ * (what a scene saves on restart / quit / skip), `menus` (double presses during a transition,
+ * Escape and the Android Back button on each kind of screen, the MENU button after a resize, the
+ * continue / confirm keys) and `keys` (the letter and rumour mini-games played from the keyboard).
  *
- *   npm run smoke                 all sub-levels, then both groups of checks
+ *   npm run smoke                 all sub-levels, then the three groups of checks
  *   npm run smoke -- 7.3 8.1      selected sub-levels
- *   npm run smoke -- progress menus   only those checks
+ *   npm run smoke -- progress menus keys   only those checks (any of them)
  *   SMOKE_SHOTS=dir npm run smoke one screenshot per sub-level (first walk / mini-game / choice)
  */
 import { spawn } from 'node:child_process';
@@ -297,6 +298,17 @@ async function menuChecks(page) {
   await press('Escape');
   await wait(400);
   check(await titleShown(), `Escape on the title does nothing (Back quits there; ${await top()})`);
+  // The same Briefing reached with a finger on a phone: the touch wording (the page emulates one).
+  await page.evaluate(() => window.__sv.flow.story.newGame());
+  await wait(900);
+  await page.touchscreen.tap(200, 500);
+  await wait(1400);
+  const touched = await page.evaluate(() => ({
+    top: window.__sv.top().constructor.name,
+    touch: window.__sv.game.input.usingTouch,
+    prompt: window.__sv.top().prompt?.content.map((s) => s.text).join('') ?? '',
+  }));
+  check(touched.top === 'BriefingScene' && touched.touch && touched.prompt === 'TAP TO START', `a tap on the card: the Briefing says TAP TO START (${touched.prompt}, touch seen: ${touched.touch})`);
   check(errors.length === 0, `no page errors (${errors.join(' | ') || 'none'})`);
   page.off('pageerror', onError);
   await page.evaluate(() => localStorage.clear());

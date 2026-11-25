@@ -105,7 +105,7 @@ export class TouchControls {
   /** Show the switcher and the gesture hints (story walks), not the Green Zone. */
   private storyExtras = false;
   private hintKey = '';
-  /** The last gesture whose streak was drawn (Input's `seq`). */
+  /** The last gesture already dealt with (Input's `seq`): drawn, or made before these controls. */
   private streakSeq = 0;
   private streakLeft = 0;
   private streakFrom = { x: 0, y: 0 };

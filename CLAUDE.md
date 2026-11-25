@@ -33,7 +33,7 @@ npm run screens -- m1 joystick   # selected scenarios (see scripts/screenshot.mj
 npm run smoke        # plays every story sub-level start to finish (fails on errors / missing textures),
                      # then the flow checks: saving (restart / quit / skip) and menus / Back button
 npm run smoke -- 7.3 8.1         # selected sub-levels
-npm run smoke -- progress menus  # only the flow checks (either group alone works too)
+npm run smoke -- progress menus keys  # only the flow checks (any group alone works too)
 npm run playtest     # the autopilot plays the whole campaign for real → report (fails if a sub-level can't be won)
 npm run playtest -- --skill 0.4 --ending alpha --choice random --from 5.1 --out docs/PLAYTEST.md
 npm run playtest -- --from 3.1 --to 3.4          # one level
@@ -64,7 +64,8 @@ sub-level), `?auto=1` (the autopilot plays the story; `&skill=0.7&ending=knight|
   way to change a setting: applies, saves, tells audio and input), `loop.ts` (fixed 60 Hz
   step + interpolation), `input.ts` (keyboard, floating joystick, touch buttons, taps, right-hand
   gestures: swipe up / down and double tap, bound by the CONTROLS settings; RUN held or toggled;
-  actions `action` (the round button), `bark`, `strike`, `guard`, `switch`), `settings.ts`
+  actions `action` (the round button), `bark`, `strike`, `guard`, `switch`; `consumeContinue()` is
+  the one rule for continue / confirm / pick: Space, Enter, J, X, taps aside), `settings.ts`
   (sound, text speed, lives, `controls`),
   `scene.ts` (scene stack; a scene's optional `back()` is what the Android Back button does on it),
   `display.ts` (logical resolution + integer scale), `assets.ts`
@@ -153,12 +154,15 @@ server, which reloads the page on every change and breaks the run.
   endings) go in `campaign/state.ts` with a test.
 - **A mini-game**: a `MiniGame` subclass in `story/minigames/` (`start`, `update` returning
   `'running' | 'won' | 'lost'`, and a `pilot()` strategy), used with `mini(() => new X(), { won,
-  lost })`. Read input as actions (`input.consume('confirm')`...) and taps; give it a keyboard path
-  as well as taps.
+  lost })`. Read input as actions and taps, never raw keys; every outcome a tap can reach must be
+  reachable from the keys too (a list of buttons: `ButtonPicker` in `story/minigames/words.ts`,
+  arrows + `consumeContinue()`). Set text widths in `onLayout()`, not every frame (`setStyle`
+  redraws the text). `npm run smoke -- keys` plays the letter and the rumour from the keyboard.
 - **A screen (menu, card, overlay)**: a class implementing `Scene` (`core/scene.ts`): a `root`
   container, `update(dt)`, `resize(w, h)`, and `back()` if the Android Back button should do
   something on it (usually what Escape does). Push it from `scenes/flow.ts` or
-  `story/storyFlow.ts`; menus use `ui/menu.ts`. Change scenes inside `game.transition.play(mid)`
+  `story/storyFlow.ts`; menus use `ui/menu.ts`; continue / confirm with
+  `input.consumeContinue()`; Escape is `input.consume('back')`. Change scenes inside `game.transition.play(mid)`
   (the flows' `glitch()`): presses during the first half are dropped, so a double tap cannot run an
   action twice.
 - **Green Zone walk (1.0) rules**: `systems/` (pure, tested: needs, scoring, threats, lives) and
@@ -183,8 +187,8 @@ server, which reloads the page on every change and breaks the run.
   21, Android SDK 36; set `ANDROID_HOME` or `android/local.properties`).
 - **Which checks**: every change: `npm run build` and `npm test`. Story or maps: `npm run smoke`
   for the touched sub-levels. Gameplay, walks, mini-games: `npm run playtest` (whole campaign,
-  about 10 minutes) and read the report. Menus, flow, saving, Back: `npm run smoke -- progress
-  menus`. Anything visible: `npm run screens` and look at the PNGs. Android code or config:
+  about 10 minutes) and read the report. Menus, flow, saving, Back, keys: `npm run smoke --
+  progress menus keys`. Anything visible: `npm run screens` and look at the PNGs. Android code or config:
   `npm run android:apk`. Known gaps and open bugs: `docs/BACKLOG.md`.
 
 ## Conventions

@@ -42,6 +42,22 @@ export class KeyCursor {
   select(i: number): void {
     this.index = i;
   }
+
+  /**
+   * The list now has `count` buttons: an index past its end is pulled back for good, so the
+   * highlight does not jump by itself onto a button added later (the rumour's pieces arrive one
+   * by one).
+   */
+  clamp(count: number): void {
+    if (count > 0) this.index = Math.min(this.index, count - 1);
+  }
+
+  /** Shows the highlight where it is, without moving it. */
+  show(count: number): void {
+    if (count <= 0) return;
+    this.clamp(count);
+    this.shown = true;
+  }
 }
 
 const MOVES = [
@@ -54,7 +70,8 @@ const MOVES = [
 /**
  * Taps and keys over the word games' buttons (listed top to bottom, so list order is reading
  * order). A tap picks the button under it, as it always did; the arrows move the highlight and
- * Space / Enter / J / X pick the highlighted button, or `unlit` while no highlight is shown.
+ * Space / Enter / J / X pick the highlighted button, or `unlit` while no highlight is shown (with
+ * no `unlit`, that first press only shows the highlight).
  */
 class ButtonPicker {
   readonly cursor = new KeyCursor();
@@ -69,10 +86,15 @@ class ButtonPicker {
         break;
       }
     }
+    this.cursor.clamp(buttons.length);
     for (const [action, delta] of MOVES) if (input.consume(action)) this.cursor.move(delta, buttons.length);
-    if (input.consumeAny(['confirm', 'action', 'pee'])) {
+    if (input.consumeContinue()) {
       const lit = this.cursor.current(buttons.length);
-      id = lit >= 0 ? buttons[lit]!.id : (unlit ?? id);
+      if (lit >= 0) id = buttons[lit]!.id;
+      else if (unlit !== null) id = unlit;
+      // Nothing to pick without a highlight: the first press shows it (a keyboard player who
+      // never touched the arrows still finds the way in).
+      else this.cursor.show(buttons.length);
     }
     return id;
   }
@@ -301,6 +323,12 @@ export class RumourGame extends WordGame {
     });
   }
 
+  /** Text widths follow the screen; set here, not every frame (setStyle redraws the text). */
+  protected override onLayout(): void {
+    this.head.setStyle({ maxWidth: this.w - 16 });
+    this.body.setStyle({ maxWidth: this.w - 32 });
+  }
+
   update(dt: number, ctx: StoryScene): MiniResult {
     const { w, h } = this;
     this.arriveT -= dt;
@@ -328,9 +356,9 @@ export class RumourGame extends WordGame {
     g.rect(8, 76, w - 16, 136).fill(0xf0dcb0);
     this.drawButtons();
     this.head.setText("ALEXIOS'S PROMISE, AS IT REACHED HIM");
-    this.head.position.set(Math.round(w / 2), 64);
+    // Wrapped to the screen (it is wider than a phone's 216 px), sitting just above the paper.
+    this.head.position.set(Math.round(w / 2), 74 - this.head.textHeight);
     this.body.setText(this.placed.map((k, n) => `${n + 1}. ${RUMOUR[k]}`).join('\n') || 'TAP THE PIECES IN THE ORDER THEY HAPPENED...');
-    this.body.setStyle({ maxWidth: w - 32 });
     this.body.position.set(16, 84);
     return this.placed.length === RUMOUR.length ? 'won' : 'running';
   }

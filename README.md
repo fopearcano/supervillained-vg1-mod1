@@ -54,7 +54,8 @@ Open the printed `Local` URL on the computer, or the `Network` URL on a phone on
 | Sword (once a knight) | swipe up over the buttons | U |
 | Shield (once a knight) | swipe down over the buttons (or hold the round button in SHIELD mode) | hold I |
 | Menu   | MENU (top right) | Esc |
-| Story: next line / choose | tap the line / tap an option | Space or Enter / arrows + Space |
+| Story: next line / choose | tap the line / tap an option | Space, Enter, J or X / arrows + Space |
+| Menus and cards | tap | arrows + Space, Enter, J or X; Esc closes a menu (not the title or the story menu) |
 
 In the story the round button changes name with the scene (LOOK, SNIFF, VOW, PLACE…); the switcher
 cycles it through the scene's action, BARK and, once Zampanò is a knight (2.3), SWORD and SHIELD.

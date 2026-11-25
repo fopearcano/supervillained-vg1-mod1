@@ -1011,3 +1011,37 @@ break; the rest is in `docs/BACKLOG.md`.
   controls now start from the gesture that was last made when they are created
   (`ui/touchControls.ts`); gestures made after that show as before. Tested in
   `tests/touchControls.test.ts`.
+
+## One confirm rule; Escape; mini-games from the keyboard; one music call
+
+Fixes from `docs/BACKLOG.md`, made in parallel worktrees and each checked by two independent
+reviewers before merging.
+
+- **J and X confirm everywhere Space and Enter do.** They advanced dialogue and story cards but
+  did nothing on menus, the choice wheel, the Briefing, "You've been supervillained", the Level
+  End, the book, GLOSSARY / COUCH and the goodbye card. `Input.consumeContinue()` is now the one
+  rule for continue / confirm / pick (Space, Enter, J, X, the PEE or round button); gameplay
+  presses (walks, rhythm, ladders) are unchanged.
+- **Escape closes OPTIONS and the NEW GAME? confirmation**, as the Android Back button already
+  did. It still does nothing on the title (where Back quits) and on the story menu (a decision is
+  pending, see the backlog).
+- **The Briefing words its hints like the rest of the game** (`input.usingTouch`, set by the
+  first real touch) instead of asking the browser whether a touchscreen exists: a touchscreen
+  laptop played with keys no longer reads TAP TO START. On a phone the player has always tapped
+  by then (title, cards), so it still says TAP.
+- **The letter (5.4) and the rumour (6.2) can be played from the keyboard**, every outcome
+  included (the letter's "named" ending was tap-only, the rumour tap-only altogether). The arrows
+  move a highlight over the buttons (`ButtonPicker` / `KeyCursor` in `story/minigames/words.ts`,
+  shared by both); confirm picks it. The highlight shows only after a key, so touch players see
+  nothing new; with nothing highlighted, a first confirm press in the rumour shows it, and in the
+  letter it sends and accepts as before (how the autopilot plays it). The other mini-games were
+  checked: every outcome was already reachable with keys.
+- **The rumour's heading fits the screen.** "ALEXIOS'S PROMISE, AS IT REACHED HIM" was wider than
+  a phone (cut off on both sides); it now wraps above the paper. Its text widths are set on
+  layout instead of every frame (each `setStyle` redrew the text).
+- **One music call for a new screen**: `AudioEngine.playTrack(name)` (track, full level, start)
+  replaces the three calls spelled out at each site and the two copies of `reading()`. The
+  pause menus' ducking, the walk's attack ducking and the siren keep their own calls.
+- Checks: `npm run smoke` gains the `keys` group and more `menus` checks (J on cards, menus and
+  GLOSSARY; Escape on OPTIONS, NEW GAME? and the title; the Briefing's wording by keyboard and by
+  touch); unit tests for the input rule, the keyboard highlight, both games and `playTrack`.

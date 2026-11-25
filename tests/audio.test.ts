@@ -60,7 +60,7 @@ describe('playTrack (the music for a new screen)', () => {
     expect(music(audio)).toEqual({ track: 'level2', duck: 1, wantMusic: true });
   });
 
-  it('keeps the track it is already on, back at full level', () => {
+  it('on the track it is already on, still lifts the ducking (node has no playback to observe)', () => {
     const audio = silentEngine();
     audio.playTrack('intro');
     audio.setDuck(0.4);

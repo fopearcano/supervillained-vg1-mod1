@@ -120,6 +120,26 @@ describe('the keyboard highlight of the word games', () => {
     expect(c.current(1)).toBe(0);
   });
 
+  it('does not jump by itself when the list shrinks and then grows again (clamp)', () => {
+    const c = new KeyCursor();
+    c.move(1, 4);
+    c.move(-1, 4);
+    expect(c.current(4)).toBe(3);
+    c.clamp(2); // the rumour placed two pieces: two buttons left
+    expect(c.current(2)).toBe(1);
+    expect(c.current(4)).toBe(1); // two new pieces arrive: still on the same button
+  });
+
+  it('can be shown where it is without moving (the first confirm press)', () => {
+    const c = new KeyCursor();
+    c.select(2);
+    c.show(4);
+    expect(c.current(4)).toBe(2);
+    const empty = new KeyCursor();
+    empty.show(0);
+    expect(empty.shown).toBe(false);
+  });
+
   it('follows a tap without showing itself', () => {
     const c = new KeyCursor();
     c.select(2);
@@ -225,6 +245,18 @@ describe('6.2 the rumour, from the keyboard', () => {
       else r = press(game, ctx, input, keys[placed() % keys.length]!);
     }
     expect(r).toBe('won');
+  });
+
+  it('a confirm press with no highlight shows it and picks nothing', () => {
+    const { ctx, input } = scene();
+    const game = begin(new RumourGame(), ctx);
+    const placed = () => (game as unknown as { placed: number[] }).placed.length;
+    for (let k = 0; k < 60 * 5 && peek(game).buttons.length === 0; k++) step(game, ctx);
+    expect(peek(game).buttons.length).toBeGreaterThan(0);
+    expect(lit(game)).toBe(null);
+    press(game, ctx, input, 'action');
+    expect(placed()).toBe(0);
+    expect(lit(game)).not.toBe(null);
   });
 
   it('the autopilot still wins it', () => {

@@ -8,7 +8,7 @@ export type MiniResult = 'running' | 'won' | 'lost';
 
 /**
  * A self-contained skill game drawn in screen space over (or instead of) the stage:
- * rhythm, ladders, tug of war, calm rescue, letter, rumour, catapult.
+ * rhythm, ladders, tug of war, boat, letter, rumour.
  */
 export abstract class MiniGame {
   readonly root = new Container();

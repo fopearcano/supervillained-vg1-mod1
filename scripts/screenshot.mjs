@@ -567,10 +567,11 @@ const SCENARIOS = {
     await page.screenshot({ path: `${OUT}/m3-glitch-transition.png` });
     await wait(1650);
     await page.screenshot({ path: `${OUT}/m3-walk-card.png` }); // the one Green Zone card (level 1)
-    await page.mouse.click(200, 500);
+    // A finger, as on the phone: the Briefing words its hints for touch (Input.usingTouch).
+    await page.touchscreen.tap(200, 500);
     await wait(1400);
     await page.screenshot({ path: `${OUT}/m3-briefing.png` });
-    await page.mouse.click(200, 500);
+    await page.touchscreen.tap(200, 500);
     await wait(500);
     await holdKeys(page, ['KeyW'], 500);
     await page.keyboard.press('Escape');
