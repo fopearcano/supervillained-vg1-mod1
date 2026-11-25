@@ -87,7 +87,7 @@ export class StoryFlow {
     if (this.state.notice !== 'dream-rewritten') return false;
     this.state.notice = null;
     saveCampaign(this.state);
-    this.reading();
+    this.game.audio.playTrack('intro');
     this.game.scenes.replaceAll(
       new StoryCardScene(
         this.game,
@@ -130,9 +130,7 @@ export class StoryFlow {
     this.replaying = false;
     this.state = loadCampaign();
     if (this.showNotice(() => this.openMenu())) return;
-    this.game.audio.setTrack('intro');
-    this.game.audio.setDuck(1);
-    this.game.audio.startMusic();
+    this.game.audio.playTrack('intro');
     this.game.scenes.replaceAll(
       new StoryMenuScene(this.game, this.state, CHAPTERS, {
         play: (ch) => this.glitch(() => this.openChapter(ch)),
@@ -164,7 +162,7 @@ export class StoryFlow {
   private openChapter(ch: ChapterDef): void {
     this.replaying = false;
     // The menu's music, not ducked (coming back from a replay: its level's music, maybe paused).
-    this.reading();
+    this.game.audio.playTrack('intro');
     this.game.scenes.replaceAll(
       new StoryChapterScene(this.game, this.state, ch, {
         play: (sub) =>
@@ -177,16 +175,10 @@ export class StoryFlow {
     );
   }
 
-  /** Intro music while the player reads the cards; the level's own music plays in the scene. */
-  private reading(): void {
-    this.game.audio.setTrack('intro');
-    this.game.audio.setDuck(1);
-    this.game.audio.startMusic();
-  }
-
   private showSub(ch: ChapterDef, sub: SubLevelDef, withChapterCard: boolean): void {
     if (this.autopilot) return this.startSub(ch, sub);
-    this.reading();
+    // Intro music while the player reads the cards; the level's own music plays in the scene.
+    this.game.audio.playTrack('intro');
     const start = () => this.glitch(() => this.startSub(ch, sub));
     const replayNote = this.replaying ? [{ text: 'REPLAY: THE CAMPAIGN WILL NOT CHANGE', color: C.cyan }] : [];
     // The Green Zone walk (1.0): one page, the level and what the walk is.
@@ -246,9 +238,7 @@ export class StoryFlow {
       }
       return this.playGreenZone(sub.greenZone, () => this.finishSub(ch, sub));
     }
-    this.game.audio.setTrack(ch.music);
-    this.game.audio.setDuck(1);
-    this.game.audio.startMusic();
+    this.game.audio.playTrack(ch.music);
     const scene = new StoryScene(this.game, beginAttempt(this.state), ch, sub, {
       onFinished: (s) => this.finishSub(ch, sub, { attempt: s.state }),
       onMenu: () => this.pause(ch, sub),
@@ -283,7 +273,7 @@ export class StoryFlow {
       return this.glitch(() => (nextCh ? this.showSub(nextCh, nextCh.subLevels[0]!, true) : this.showEnding()));
     }
     // End of the level: "You've been supervillained" snaps in, then the Professor's aside.
-    this.reading();
+    this.game.audio.playTrack('intro');
     this.supervillained(() =>
       this.game.scenes.replaceAll(
         new StoryCardScene(
@@ -315,7 +305,7 @@ export class StoryFlow {
   }
 
   private showEnding(): void {
-    this.reading();
+    this.game.audio.playTrack('intro');
     const e = ending(this.state);
     if (this.autopilot) this.log.push({ id: 'ending', time: 0, metrics: null, meters: { ...this.state.meters }, ending: e });
     const lines =

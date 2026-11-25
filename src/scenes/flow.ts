@@ -70,9 +70,7 @@ export class Flow {
     scene.setControlsEnabled(false);
     scene.controls.root.visible = false;
     // Intro music on the title screen (in a browser it starts with the first tap: autoplay rules).
-    this.game.audio.setTrack('intro');
-    this.game.audio.setDuck(1);
-    this.game.audio.startMusic();
+    this.game.audio.playTrack('intro');
     this.game.scenes.push(
       new TitleScene(this.game, {
         newGame: () => this.newGame(),
@@ -160,7 +158,7 @@ export class Flow {
     this.game.scenes.replaceAll(scene);
     scene.setControlsEnabled(false);
     // Reading the rules: intro music. The Green Zone music starts with the walk (startPlaying).
-    this.reading();
+    this.game.audio.playTrack('intro');
     this.game.scenes.push(new BriefingScene(this.game, () => this.startPlaying()));
   }
 
@@ -173,16 +171,7 @@ export class Flow {
     scene.active = true;
     scene.controls.root.visible = true;
     scene.setControlsEnabled(true);
-    this.game.audio.setTrack('greenzone');
-    this.game.audio.setDuck(1);
-    this.game.audio.startMusic();
-  }
-
-  /** Intro music while the player reads (title, briefing, score). */
-  private reading(): void {
-    this.game.audio.setTrack('intro');
-    this.game.audio.setDuck(1);
-    this.game.audio.startMusic();
+    this.game.audio.playTrack('greenzone');
   }
 
   /** Glitch transition with its sound. */
@@ -296,7 +285,8 @@ export class Flow {
       nextLabel: 'CONTINUE',
     };
     scene.setControlsEnabled(false);
-    this.reading();
+    // Reading the score: intro music.
+    this.game.audio.playTrack('intro');
     const end = new LevelEndScene(this.game, this.level, result, {
       next: () => {
         this.storyDone = null;

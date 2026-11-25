@@ -44,14 +44,11 @@ None blocks work; fix each when the code around it is next changed.
    `story/screens.ts`, `story/minigames/action.ts`, `story/minigames/rhythm.ts`), the choice
    wheel (`story/ui.ts`) re-implements `ui/menu.ts` with a different tap margin, and the
    GLOSSARY / COUCH cards copy their close logic. One helper on `Input` would also settle bug 3.
-3. **Music changes are spelled out at every call site** (`setTrack` + `setDuck` + `startMusic`,
-   and `reading()` exists in both `Flow` and `StoryFlow`). An `AudioEngine.playTrack(name)`
-   would remove the repetition.
-4. **`Flow.gameScene` keeps the last Green Zone scene referenced after it is destroyed**
+3. **`Flow.gameScene` keeps the last Green Zone scene referenced after it is destroyed**
    (JS heap only; every use is guarded). Clear it when the story takes over.
-5. **Per-scene filters are not destroyed** (title glitch, blur, attack, bleach). They hold no
+4. **Per-scene filters are not destroyed** (title glitch, blur, attack, bleach). They hold no
    textures, so this is ordinary garbage; destroy them if a GPU profile ever points there.
-6. **The art deliveries are committed as zips at the repository root (~170 MB)**, as delivered
+5. **The art deliveries are committed as zips at the repository root (~170 MB)**, as delivered
    (`DECISIONS.md`, sprite updates). Every clone pays for them; Git LFS or release attachments
    would keep the history smaller. Owner's decision.
 

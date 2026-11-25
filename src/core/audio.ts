@@ -229,6 +229,17 @@ export class AudioEngine {
     if (wasPlaying || this.wantMusic) this.ensureMusicPlaying();
   }
 
+  /**
+   * The music for a new screen: switches to `track` (the same track keeps playing where it is),
+   * lifts any ducking and starts the music if it was stopped. Pause menus and the siren duck with
+   * setDuck alone.
+   */
+  playTrack(track: MusicTrack): void {
+    this.setTrack(track);
+    this.setDuck(1);
+    this.startMusic();
+  }
+
   private ensureMusicPlaying(): void {
     const ctx = this.ctx;
     if (!ctx || !this.music || !this.wantMusic || this.musicSource || this.playingElement) return;
