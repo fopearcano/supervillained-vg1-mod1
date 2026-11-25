@@ -145,7 +145,7 @@ describe('the engine sets its buses from the MUSIC and SOUNDS levels', () => {
     vi.unstubAllGlobals();
   });
 
-  const settings = (over: Partial<Settings> = {}): Settings => ({ muted: false, music: 1, sounds: 1, textSpeed: 'normal', lives: 2, controls: DEFAULT_CONTROLS, ...over });
+  const settings = (over: Partial<Settings> = {}): Settings => ({ muted: false, music: 1, sounds: 1, textSpeed: 'normal', lives: 2, controls: DEFAULT_CONTROLS, newArt: false, ...over });
 
   it('levels changed before the first tap apply when audio unlocks', () => {
     const s = settings();

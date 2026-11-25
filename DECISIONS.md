@@ -1166,3 +1166,48 @@ of the single VOLUME.
   music and effects, levels set before unlock apply at unlock, ducking and track changes keep the
   level); `npm run smoke -- menus` follows the new rows and changes MUSIC and SOUNDS from the
   keyboard in OPTIONS, then checks the save, the audio's settings and the labels.
+
+## Vibrant environment art on trial (OPTIONS > ART)
+
+The owner delivered a vibrant recolour of the environment art
+(`Supervillained_Complete_Vibrant_Level_Gameplay_Implementation.zip`) and asked for it under a
+temporary testing option in the settings, not in place of the current art.
+
+- **What the delivery is**: a complete overlay made against commit 879ac0f. Its sources are older
+  than this branch (no band, no MUSIC / SOUNDS, no attempts...), and its `environment.ts` is the
+  one already here, so no source file was taken from it. What is new is art and its tooling: the 15
+  atlases and `manifest.json` recoloured (v2, `artDirection` in the manifest), the recolour script,
+  the art-direction notes and report, a vibrancy test, a capture script and reference screenshots.
+  Checked before integrating: same zones, frame rectangles, anchors, floor compositions, chapter
+  themes and theme fallbacks as the current bank; only colours and the fallback palettes differ
+  (91-96 % of opaque pixels recoloured, every alpha byte unchanged per the report).
+- **Two banks, not a replacement**: the current Color Ink art stays in `public/environment-ink/`
+  and stays the default; the vibrant one is `public/environment-ink-vibrant/` (the delivery puts
+  it in `environment-ink/`, replacing the current one; that is the step to take if the owner
+  keeps it). `environment.ts` keeps one decoded state per bank (frames, palettes, floor designs,
+  themes), loads a bank once, and switches only when it is fully decoded, so a stage built
+  meanwhile still gets a complete bank; switching back and forth quickly, the last choice wins.
+  The level texture cache key includes the bank, so the same palette in the other bank is
+  rebuilt. Story stages take the bank's palettes too (`paletteForChapter`); the Green Zone keeps
+  its own level palette and takes the bank's frames.
+- **The setting**: `Settings.newArt` (boolean, default false; any other saved value is false),
+  OPTIONS > ART: CURRENT / ART: NEW (TEST), the row after MERAVIGLIA BOOK (9 rows: on the shortest
+  screen, 192 × 310, the last ends at 302). It is applied from the next stage on: OPTIONS opens
+  only over the title, where no stage is on screen. The boot loads the chosen bank before the
+  first texture is built; `?art=new|current` overrides the choice for one visit (screenshots) and
+  is not saved. Not in the pause menus.
+- **Tooling, adapted**: `scripts/recolor_environment_atlases.py` reads the current bank and
+  writes the vibrant one (the delivery read `art-archive/environment-ink-color-ink-v1/`, which is
+  byte-identical to the current bank); run here it reproduces the delivered PNGs pixel for pixel
+  and the same manifest. The report records repository paths instead of the machine paths it was
+  delivered with. `npm run screens:environments` captures every chapter's stage in both banks
+  (`docs/screens/environments/current/`, `new/`) and fails if the bank shown is not the one asked
+  for or a zone is not decoded; `SV_ART=new npm run screens -- <scenario>` writes any scenario in
+  the new art to `docs/screens/art-new/`.
+- **Checks**: `tests/environmentAssets.test.ts` runs the frame contract on both banks, checks that
+  the vibrant bank changes nothing but colours, and keeps the delivery's vibrancy checks; the
+  loader tests cover the two banks (own folder, decoded once, switch after decode, last request
+  wins, `?art=`); `npm run smoke -- menus` toggles ART from the keyboard, checks the save, the
+  bank in use and a fresh start with the saved choice, and goes back to CURRENT.
+- Nothing else changes: no gameplay, map, marker, collision or story data; no runtime dependency;
+  the APK grows by the second bank (1.6 MB).

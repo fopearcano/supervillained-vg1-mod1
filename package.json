@@ -11,6 +11,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "screens": "node scripts/screenshot.mjs",
+    "screens:environments": "node scripts/capture_environment_screens.mjs",
     "smoke": "node scripts/story-smoke.mjs",
     "playtest": "node scripts/playtest.mjs",
     "android:sync": "npm run build && cap sync android",

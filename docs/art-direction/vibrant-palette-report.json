@@ -1,0 +1,369 @@
+{
+  "version": 2,
+  "source": "public/environment-ink",
+  "output": "public/environment-ink-vibrant",
+  "geometryInvariant": true,
+  "alphaInvariant": true,
+  "zones": {
+    "ch01_greenzone": {
+      "image": "ch01_greenzone.png",
+      "size": [
+        512,
+        512
+      ],
+      "changedOpaquePixels": 85675,
+      "opaquePixels": 92108,
+      "uniqueOpaqueColors": 91,
+      "groups": {
+        "stone": 79,
+        "wood": 30,
+        "vegetation": 16,
+        "metal": 1,
+        "textile": 15,
+        "water": 4,
+        "pollution": 8,
+        "accent_warm": 1,
+        "earth": 95,
+        "ground": 68,
+        "snow": 7
+      },
+      "alphaSha256": "f1094915b013c1f9fe59e68377844eb00adbc136f725bb285ec116d6cb39c9ab"
+    },
+    "ch01_study": {
+      "image": "ch01_study.png",
+      "size": [
+        512,
+        512
+      ],
+      "changedOpaquePixels": 56779,
+      "opaquePixels": 59252,
+      "uniqueOpaqueColors": 88,
+      "groups": {
+        "stone": 31,
+        "wood": 46,
+        "vegetation": 16,
+        "metal": 1,
+        "textile": 27,
+        "water": 4,
+        "pollution": 8,
+        "accent_warm": 1,
+        "earth": 47,
+        "ground": 8,
+        "snow": 7
+      },
+      "alphaSha256": "dabc57e3b19c4f267425b0d97c765d41605c2e213774023d38cfacece299f5f8"
+    },
+    "ch02_jerusalem": {
+      "image": "ch02_jerusalem.png",
+      "size": [
+        512,
+        512
+      ],
+      "changedOpaquePixels": 63213,
+      "opaquePixels": 65619,
+      "uniqueOpaqueColors": 92,
+      "groups": {
+        "stone": 57,
+        "wood": 30,
+        "vegetation": 16,
+        "metal": 1,
+        "textile": 15,
+        "water": 4,
+        "pollution": 8,
+        "accent_warm": 1,
+        "earth": 71,
+        "ground": 8,
+        "snow": 7
+      },
+      "alphaSha256": "12ce88d39664e368a2a64d213ddefbace937107c643934ad7b6bb31219266c72"
+    },
+    "ch02_darkwood": {
+      "image": "ch02_darkwood.png",
+      "size": [
+        512,
+        512
+      ],
+      "changedOpaquePixels": 64903,
+      "opaquePixels": 70985,
+      "uniqueOpaqueColors": 97,
+      "groups": {
+        "stone": 41,
+        "wood": 30,
+        "vegetation": 16,
+        "metal": 1,
+        "textile": 15,
+        "water": 4,
+        "pollution": 8,
+        "accent_warm": 1,
+        "earth": 74,
+        "ground": 40,
+        "snow": 7
+      },
+      "alphaSha256": "a339e90250ae498463f2e171c00b4fcca86049dfecd3be5970347e54ae73a341"
+    },
+    "ch02_road": {
+      "image": "ch02_road.png",
+      "size": [
+        512,
+        512
+      ],
+      "changedOpaquePixels": 69767,
+      "opaquePixels": 75849,
+      "uniqueOpaqueColors": 95,
+      "groups": {
+        "stone": 47,
+        "wood": 30,
+        "vegetation": 16,
+        "metal": 1,
+        "textile": 15,
+        "water": 4,
+        "pollution": 8,
+        "accent_warm": 1,
+        "earth": 91,
+        "ground": 36,
+        "snow": 7
+      },
+      "alphaSha256": "500d8de4cbb7b2357b1a03bc329153a9a1c6e6f947a2602877cc1e44593d4b98"
+    },
+    "ch03_venice": {
+      "image": "ch03_venice.png",
+      "size": [
+        512,
+        512
+      ],
+      "changedOpaquePixels": 87725,
+      "opaquePixels": 93779,
+      "uniqueOpaqueColors": 100,
+      "groups": {
+        "stone": 53,
+        "wood": 72,
+        "vegetation": 16,
+        "metal": 1,
+        "textile": 23,
+        "water": 4,
+        "pollution": 8,
+        "accent_warm": 1,
+        "earth": 135,
+        "ground": 8,
+        "snow": 7
+      },
+      "alphaSha256": "97f72f850ac995636c5212fa3b803aba558f7d49bc799d469c82b6b2607be79d"
+    },
+    "ch04_sea": {
+      "image": "ch04_sea.png",
+      "size": [
+        512,
+        512
+      ],
+      "changedOpaquePixels": 60653,
+      "opaquePixels": 63059,
+      "uniqueOpaqueColors": 90,
+      "groups": {
+        "stone": 31,
+        "wood": 70,
+        "vegetation": 16,
+        "metal": 1,
+        "textile": 15,
+        "water": 4,
+        "pollution": 8,
+        "accent_warm": 1,
+        "earth": 47,
+        "ground": 8,
+        "snow": 7
+      },
+      "alphaSha256": "25d8a5e61e1f9a4d6efc1df8f643a65d073713609b5b7c75b21aaa6981b02cc0"
+    },
+    "ch05_zara": {
+      "image": "ch05_zara.png",
+      "size": [
+        512,
+        512
+      ],
+      "changedOpaquePixels": 67757,
+      "opaquePixels": 73811,
+      "uniqueOpaqueColors": 98,
+      "groups": {
+        "stone": 54,
+        "wood": 30,
+        "vegetation": 16,
+        "metal": 1,
+        "textile": 15,
+        "water": 4,
+        "pollution": 21,
+        "accent_warm": 1,
+        "earth": 93,
+        "ground": 8,
+        "snow": 7
+      },
+      "alphaSha256": "a92cb896745f6aea979e395001c6fe7c74f997184c90c56b6fb3ad8aa8d012d7"
+    },
+    "ch06_winter": {
+      "image": "ch06_winter.png",
+      "size": [
+        512,
+        512
+      ],
+      "changedOpaquePixels": 69022,
+      "opaquePixels": 74082,
+      "uniqueOpaqueColors": 92,
+      "groups": {
+        "stone": 31,
+        "wood": 30,
+        "vegetation": 16,
+        "metal": 1,
+        "textile": 15,
+        "water": 4,
+        "pollution": 47,
+        "accent_warm": 1,
+        "earth": 55,
+        "ground": 8,
+        "snow": 46
+      },
+      "alphaSha256": "edb45685e5d3058dc53eb9a42736dfae826164e5c8b23ada2fb4b6e55005b3d2"
+    },
+    "ch06_island": {
+      "image": "ch06_island.png",
+      "size": [
+        512,
+        512
+      ],
+      "changedOpaquePixels": 64530,
+      "opaquePixels": 70529,
+      "uniqueOpaqueColors": 91,
+      "groups": {
+        "stone": 37,
+        "wood": 30,
+        "vegetation": 16,
+        "metal": 1,
+        "textile": 15,
+        "water": 4,
+        "pollution": 8,
+        "accent_warm": 1,
+        "earth": 90,
+        "ground": 29,
+        "snow": 7
+      },
+      "alphaSha256": "eea09458a1ad874ccbb1338e39a2e6c882990788cc5adec36820fdc2e515a57d"
+    },
+    "ch07_constantinople": {
+      "image": "ch07_constantinople.png",
+      "size": [
+        512,
+        1024
+      ],
+      "changedOpaquePixels": 95923,
+      "opaquePixels": 101962,
+      "uniqueOpaqueColors": 99,
+      "groups": {
+        "stone": 138,
+        "wood": 30,
+        "vegetation": 16,
+        "metal": 1,
+        "textile": 28,
+        "water": 4,
+        "pollution": 8,
+        "accent_warm": 1,
+        "earth": 119,
+        "ground": 8,
+        "snow": 7
+      },
+      "alphaSha256": "8ed77aa135bc32b27f702079d10f42fb19a9f63da8e6bfa7271550e0f0a85a4c"
+    },
+    "ch07_palace": {
+      "image": "ch07_palace.png",
+      "size": [
+        512,
+        512
+      ],
+      "changedOpaquePixels": 59448,
+      "opaquePixels": 61770,
+      "uniqueOpaqueColors": 100,
+      "groups": {
+        "stone": 50,
+        "wood": 30,
+        "vegetation": 16,
+        "metal": 1,
+        "textile": 31,
+        "water": 4,
+        "pollution": 8,
+        "accent_warm": 1,
+        "earth": 47,
+        "ground": 8,
+        "snow": 7
+      },
+      "alphaSha256": "88b8e8a3c93ff0da28d160fa57cb9753a4817567cbc402b322443199eef774c8"
+    },
+    "ch08_shattered": {
+      "image": "ch08_shattered.png",
+      "size": [
+        512,
+        512
+      ],
+      "changedOpaquePixels": 79277,
+      "opaquePixels": 85331,
+      "uniqueOpaqueColors": 95,
+      "groups": {
+        "stone": 58,
+        "wood": 51,
+        "vegetation": 16,
+        "metal": 1,
+        "textile": 36,
+        "water": 4,
+        "pollution": 8,
+        "accent_warm": 1,
+        "earth": 68,
+        "ground": 25,
+        "snow": 27
+      },
+      "alphaSha256": "76d0ba928a4b452a4ac308dd607a9a9574abae629cd853e4fba672a557a9e72f"
+    },
+    "ch08_study": {
+      "image": "ch08_study.png",
+      "size": [
+        512,
+        512
+      ],
+      "changedOpaquePixels": 56779,
+      "opaquePixels": 59252,
+      "uniqueOpaqueColors": 99,
+      "groups": {
+        "stone": 31,
+        "wood": 46,
+        "vegetation": 16,
+        "metal": 1,
+        "textile": 27,
+        "water": 4,
+        "pollution": 8,
+        "accent_warm": 1,
+        "earth": 47,
+        "ground": 8,
+        "snow": 7
+      },
+      "alphaSha256": "dabc57e3b19c4f267425b0d97c765d41605c2e213774023d38cfacece299f5f8"
+    },
+    "ch08_greenzone": {
+      "image": "ch08_greenzone.png",
+      "size": [
+        512,
+        512
+      ],
+      "changedOpaquePixels": 67243,
+      "opaquePixels": 73676,
+      "uniqueOpaqueColors": 94,
+      "groups": {
+        "stone": 59,
+        "wood": 30,
+        "vegetation": 16,
+        "metal": 1,
+        "textile": 15,
+        "water": 4,
+        "pollution": 8,
+        "accent_warm": 1,
+        "earth": 58,
+        "ground": 53,
+        "snow": 7
+      },
+      "alphaSha256": "f860767388c18c1c59a9cb993e77c771cd04d6f596b43370ec9ec303f05bd088"
+    }
+  }
+}

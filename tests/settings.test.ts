@@ -65,8 +65,17 @@ describe('settings, records and coins', () => {
     expect(loadSettings().muted).toBe(false);
     expect(loadSettings().textSpeed).toBe('normal');
     expect(loadSettings().lives).toBe(2);
-    saveSettings({ muted: true, music: 0.25, sounds: 1, textSpeed: 'fast', lives: 5, controls: DEFAULT_CONTROLS });
-    expect(loadSettings()).toEqual({ muted: true, music: 0.25, sounds: 1, textSpeed: 'fast', lives: 5, controls: DEFAULT_CONTROLS });
+    saveSettings({ muted: true, music: 0.25, sounds: 1, textSpeed: 'fast', lives: 5, controls: DEFAULT_CONTROLS, newArt: true });
+    expect(loadSettings()).toEqual({ muted: true, music: 0.25, sounds: 1, textSpeed: 'fast', lives: 5, controls: DEFAULT_CONTROLS, newArt: true });
+  });
+
+  it('keeps the current art unless the new one was chosen (OPTIONS > ART, a test option)', () => {
+    expect(loadSettings().newArt).toBe(false);
+    // An old save's art version from the removed OPTIONS > ART ('new' / 'old' / 'v1') is not a choice.
+    storage.set('settings', { art: 'new', newArt: 'yes' });
+    expect(loadSettings().newArt).toBe(false);
+    storage.set('settings', { newArt: true });
+    expect(loadSettings().newArt).toBe(true);
   });
 
   it('with nothing saved, music and sounds both start at the default level', () => {
@@ -81,7 +90,7 @@ describe('settings, records and coins', () => {
     const old = { muted: false, volume: 0.5, textSpeed: 'slow', lives: 3, controls: { ...DEFAULT_CONTROLS, hand: 'left' } };
     localStorage.setItem('supervillained:settings', JSON.stringify(old));
     const s = loadSettings();
-    expect(s).toEqual({ muted: false, music: 0.5, sounds: 0.5, textSpeed: 'slow', lives: 3, controls: { ...DEFAULT_CONTROLS, hand: 'left' } });
+    expect(s).toEqual({ muted: false, music: 0.5, sounds: 0.5, textSpeed: 'slow', lives: 3, controls: { ...DEFAULT_CONTROLS, hand: 'left' }, newArt: false });
     saveSettings(s);
     const saved = JSON.parse(localStorage.getItem('supervillained:settings')!);
     expect(saved).not.toHaveProperty('volume');

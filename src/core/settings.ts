@@ -92,6 +92,11 @@ export interface Settings {
   lives: number;
   /** Buttons and gestures (OPTIONS > CONTROLS). */
   controls: ControlSettings;
+  /**
+   * OPTIONS > ART, a temporary testing option: the new (vibrant v2) environment art instead of
+   * the current Color Ink banks (assets/environment.ts). Off unless chosen.
+   */
+  newArt: boolean;
 }
 
 export interface LevelRecord {
@@ -113,6 +118,8 @@ export function loadSettings(): Settings {
     textSpeed: TEXT_SPEEDS.includes(s.textSpeed as TextSpeed) ? (s.textSpeed as TextSpeed) : 'normal',
     lives: clampLives(typeof s.lives === 'number' ? s.lives : LIVES.START),
     controls: validControls(s.controls),
+    // Only `true` counts (an old save's `art: 'new'`, from the removed art versions, does not).
+    newArt: s.newArt === true,
   };
 }
 

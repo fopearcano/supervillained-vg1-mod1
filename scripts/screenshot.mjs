@@ -5,13 +5,20 @@
  *
  * Starts a Vite dev server, opens the game in a phone-sized viewport, drives it through the
  * debug hook `window.__sv`, and writes PNGs to docs/screens/.
+ *
+ *   SV_ART=new npm run screens -- m1          the same scenarios in OPTIONS > ART: NEW (TEST)
+ *                                             (the vibrant environment art), in docs/screens/art-new/
  */
 import { spawn } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
 import { chromium, devices } from 'playwright';
 
 const PORT = Number(process.env.SV_PORT ?? 5199); // SV_PORT: run two checks side by side
-const OUT = 'docs/screens';
+// SV_ART=new: the vibrant environment bank (OPTIONS > ART, a test option), kept apart.
+const ART = process.env.SV_ART === 'new' ? 'new' : null;
+const OUT = ART ? 'docs/screens/art-new' : 'docs/screens';
+/** The address with the chosen art bank, if one was asked for. */
+const withArt = (query) => (ART ? `${query}${query.includes('?') ? '&' : '?'}art=${ART}` : query);
 const VIEWPORT = { width: 400, height: 860 };
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -40,7 +47,7 @@ async function openGame(browser, query = '') {
     if (m.type() === 'error' || m.type() === 'warning') console.log(`[page ${m.type()}] ${m.text()}`);
   });
   page.on('pageerror', (e) => console.log(`[page error] ${e.message}`));
-  await page.goto(`http://127.0.0.1:${PORT}/${query}`);
+  await page.goto(`http://127.0.0.1:${PORT}/${withArt(query)}`);
   await page.waitForFunction(() => window.__sv && window.__sv.scene(), null, { timeout: 30000 });
   await wait(300);
   return page;
@@ -770,7 +777,7 @@ const SCENARIOS = {
     const ctx = await browser.newContext({ ...devices['Pixel 7'] });
     const page = await ctx.newPage();
     page.on('pageerror', (e) => console.log(`[page error] ${e.message}`));
-    await page.goto(`http://127.0.0.1:${PORT}/`);
+    await page.goto(`http://127.0.0.1:${PORT}/${withArt('')}`);
     await page.waitForFunction(() => window.__sv && window.__sv.scene(), null, { timeout: 30000 });
     await wait(1300);
     await page.screenshot({ path: `${OUT}/m6-phone-title.png` });

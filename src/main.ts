@@ -1,6 +1,8 @@
 import { Application, TextureSource } from 'pixi.js';
 import { buildGlobalTextures, ensureCharacters } from './assets/build';
 import { Game } from './core/game';
+import { loadSettings } from './core/settings';
+import { chosenArtBank, environmentDiagnostics, preloadEnvironmentArt } from './assets/environment';
 import { levelByNumber } from './levels';
 import { Flow } from './scenes/flow';
 import { SpriteViewerScene } from './scenes/spriteViewerScene';
@@ -35,9 +37,17 @@ async function boot(): Promise<void> {
   });
   app.ticker?.stop();
   await loadPixelFont();
-  await buildGlobalTextures();
+  // The environment art bank: OPTIONS > ART (a temporary test option), or ?art=new|current.
+  await buildGlobalTextures(chosenArtBank(loadSettings().newArt, location.search));
   await loadTitleArt();
   const game = new Game(app, canvas);
+  // OPTIONS > ART changed: the other bank is decoded now; stages built from then on use it.
+  let newArt = game.settings.newArt;
+  game.settingsListeners.push((st) => {
+    if (st.newArt === newArt) return;
+    newArt = st.newArt;
+    void preloadEnvironmentArt(chosenArtBank(st.newArt));
+  });
   // Start decoding the title's animated portrait now (its frames play as they arrive).
   titleFrames(Math.round(game.width * TITLE.DOG_WIDTH));
   document.getElementById('boot')?.remove();
@@ -83,6 +93,8 @@ async function boot(): Promise<void> {
     // Scripted sub-levels (the 1.0 Green Zone walk is covered by the walk's own scenarios).
     storyIds: () => CHAPTERS.flatMap((c) => c.subLevels.filter((s) => !s.greenZone).map((s) => s.id)),
     step: (n: number) => game.loop.stepNow(n),
+    // The environment art in use (OPTIONS > ART / ?art=): bank, decoded zones, warnings.
+    art: () => environmentDiagnostics(),
     faceToward: (x: number, y: number) => {
       const s = flow.current;
       if (s) s.player.face(dirFromGridVector(x - s.player.gx, y - s.player.gy));

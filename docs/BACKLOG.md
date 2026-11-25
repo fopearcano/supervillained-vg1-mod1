@@ -71,25 +71,31 @@ is to be changed.** The Green Zone walk got the band's ambush and more treats fi
 
 ## 5. Polish and release
 
-1. **The Green Zone ambush needs playing by a person**: its numbers were set by eye and checked
+1. **OPTIONS > ART is a temporary testing option**: the owner chooses between the current
+   environment art and the vibrant recolour (`DECISIONS.md`, "Vibrant environment art on
+   trial"), on a device. Then: the chosen bank becomes `public/environment-ink/` (the other moves
+   to `art-archive/`), the ART row, `Settings.newArt`, `?art=`, `SV_ART` and the second bank in
+   `environment.ts` go, and `docs/screens/environments/` keeps one set. A saved `newArt` is then
+   simply ignored (`loadSettings` keeps only known fields), so no migration is needed.
+2. **The Green Zone ambush needs playing by a person**: its numbers were set by eye and checked
    by scripts, not by play. Timings in `AMBUSH` (`config.ts`: how often the voices come, the
    fright's length, six poop piles, the grace before Bagnaskiz comes back); where it starts and
    springs (25 % / 50 %), the band's spot and the lines in the level data
    (`LEVEL_1.events.ambush`). Jack's and Watson's squat and sit wait for their animation
    delivery (`ASSETS.md`); the voices are barks until recorded lines exist.
-2. **Android release signing**: `android:release` signs with the debug key
+3. **Android release signing**: `android:release` signs with the debug key
    (`android/app/build.gradle`, `signingConfig signingConfigs.debug`). A store upload needs a
    real upload key, kept out of the repository.
-3. **Application id** `com.zampano.supervillained` is marked as a placeholder in `DECISIONS.md`
+4. **Application id** `com.zampano.supervillained` is marked as a placeholder in `DECISIONS.md`
    (M6); fix it before the first store upload, since it cannot change afterwards.
-4. **APK size** (~40 MB debug): mostly the recorded music (`assets/music`, ~6 MB a track).
-5. **Device checks**: the owner confirmed Back works on an installed build from before these
+5. **APK size** (~40 MB debug): mostly the recorded music (`assets/music`, ~6 MB a track).
+6. **Device checks**: the owner confirmed Back works on an installed build from before these
    passes. The newer changes (Back on a level's scene list, the double-tap guard, the MENU
    corner, Escape on OPTIONS / NEW GAME?, the wrapped rumour heading) were checked in a desktop
    Chromium with phone emulation and the same `svback` event the app sends, not on a phone.
    Play through once on a device: Back on every screen, double taps on QUIT / SKIP / CONTINUE,
    rotate or resize while paused, the rumour (6.2).
-6. **The committed screenshots in `docs/screens/` were stale** (older art in several) until this
+7. **The committed screenshots in `docs/screens/` were stale** (older art in several) until this
    pass regenerated them; regenerate after visual changes (`npm run screens`).
-7. **Gameplay feel and balance are not covered by any check.** The playtest proves every scene
+8. **Gameplay feel and balance are not covered by any check.** The playtest proves every scene
    can be finished by the autopilot, not that it is fun or fair at human speed.

@@ -39,14 +39,56 @@ interface DeliveredFrame extends FrameDef {
   image: PixelBuffer;
 }
 
-const framesByZone = new Map<string, Map<string, DeliveredFrame>>();
-const palettesByZone = new Map<string, Partial<Palette>>();
+/**
+ * The environment art banks. `current` is the Color Ink delivery the game ships with
+ * (public/environment-ink/); `new` is its vibrant v2 recolour on trial
+ * (public/environment-ink-vibrant/: same frames, anchors, floors and alpha, other colours),
+ * chosen by OPTIONS > ART, a temporary testing option (or `?art=new`).
+ */
+export type ArtBank = 'current' | 'new';
+const BANK_DIRS: Record<ArtBank, string> = { current: 'environment-ink/', new: 'environment-ink-vibrant/' };
+
+/** Everything one bank's manifest and atlases give, decoded once. */
+interface BankState {
+  readonly framesByZone: Map<string, Map<string, DeliveredFrame>>;
+  readonly palettesByZone: Map<string, Partial<Palette>>;
+  readonly floorDesigns: Map<string, FloorDesign>;
+  chapterThemes: Record<string, Record<string, string>>;
+  themeFallbacks: Record<string, string>;
+  preload?: Promise<void>;
+}
+
+const banks = new Map<ArtBank, BankState>();
+/** The bank new stages are built from (it changes only once the other bank is loaded)... */
+let active: ArtBank = 'current';
+/** ...and the one last asked for. */
+let wanted: ArtBank = 'current';
 const warned = new Set<string>();
 const warnings: string[] = [];
-const floorDesigns = new Map<string, FloorDesign>();
-let chapterThemes: Record<string, Record<string, string>> = {};
-let themeFallbacks: Record<string, string> = {};
-let preload: Promise<void> | undefined;
+
+function bankState(which: ArtBank): BankState {
+  let b = banks.get(which);
+  if (!b) {
+    b = { framesByZone: new Map(), palettesByZone: new Map(), floorDesigns: new Map(), chapterThemes: {}, themeFallbacks: {} };
+    banks.set(which, b);
+  }
+  return b;
+}
+
+/** The bank in use: also part of the level texture cache key (assets/build.ts). */
+export function environmentArtBank(): ArtBank {
+  return active;
+}
+
+/**
+ * The bank to show: `?art=new|current` in the address (screenshots, a quick look) wins over the
+ * saved OPTIONS > ART choice (`Settings.newArt`).
+ */
+export function chosenArtBank(newArt: boolean, search = ''): ArtBank {
+  const asked = new URLSearchParams(search).get('art');
+  if (asked === 'new' || asked === 'current') return asked;
+  return newArt ? 'new' : 'current';
+}
 
 function warnOnce(key: string, message: string): void {
   if (warned.has(key)) return;
@@ -55,8 +97,8 @@ function warnOnce(key: string, message: string): void {
   console.warn(`[environment-ink] ${message}`);
 }
 
-export function environmentDiagnostics(): { loadedZones: string[]; warnings: string[] } {
-  return { loadedZones: [...framesByZone.keys()], warnings: [...warnings] };
+export function environmentDiagnostics(): { bank: ArtBank; loadedZones: string[]; warnings: string[] } {
+  return { bank: active, loadedZones: [...bankState(active).framesByZone.keys()], warnings: [...warnings] };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -68,7 +110,7 @@ const HEX = /^#[0-9a-fA-F]{6}$/;
 const FLOOR_FRAME = /^floorArt_[a-z][A-Za-z0-9_]*$/;
 
 /** Optional design data can fail independently of the chapter art banks. */
-function readFloorDesigns(raw: unknown, manifest: EnvironmentManifest): void {
+function readFloorDesigns(raw: unknown, manifest: EnvironmentManifest, bank: BankState): void {
   if (raw === undefined) return;
   if (!isRecord(raw)) { warnOnce('floor:metadata', 'bad floorDesigns; using native ground choices'); return; }
   for (const [key, candidate] of Object.entries(raw)) {
@@ -88,7 +130,7 @@ function readFloorDesigns(raw: unknown, manifest: EnvironmentManifest): void {
         if (!frame || frame.w !== 32 || frame.h !== 16 || frame.anchorX !== 16 || frame.anchorY !== 0) throw new Error(`missing or non-native frame '${name}'`);
         choices[index] = name;
       }
-      floorDesigns.set(key, Object.freeze({ environment, width, height, tiles: Object.freeze(choices) }));
+      bank.floorDesigns.set(key, Object.freeze({ environment, width, height, tiles: Object.freeze(choices) }));
     } catch (error) {
       warnOnce(`floor:${key}`, `${key}: ${String(error)}; using native ground choices`);
     }
@@ -98,9 +140,10 @@ function readFloorDesigns(raw: unknown, manifest: EnvironmentManifest): void {
 /** A design is only valid for the exact current map dimensions and chapter art. */
 export function floorDesignForMap(chapter: number, mapKey: string, palette: Palette, level: { width: number; height: number }): FloorDesign | undefined {
   const key = `${chapter}:${mapKey}`;
-  const design = floorDesigns.get(key);
+  const bank = bankState(active);
+  const design = bank.floorDesigns.get(key);
   if (!design) return undefined;
-  if (design.environment !== palette.environment || design.width !== level.width || design.height !== level.height || !framesByZone.has(design.environment)) {
+  if (design.environment !== palette.environment || design.width !== level.width || design.height !== level.height || !bank.framesByZone.has(design.environment)) {
     warnOnce(`floor:selection:${key}`, `${key}: floor layout does not match the current map/art bank; using native ground choices`);
     return undefined;
   }
@@ -162,12 +205,13 @@ function clonePalette(palette: Palette): Palette {
 
 /** Same map can have its own opening, dream and homecoming colour identity. */
 export function paletteForChapter(chapter: number, theme: string, fallback: Palette): Palette {
-  const id = chapterThemes[String(chapter)]?.[theme] ?? themeFallbacks[theme] ?? fallback.environment;
+  const bank = bankState(active);
+  const id = bank.chapterThemes[String(chapter)]?.[theme] ?? bank.themeFallbacks[theme] ?? fallback.environment;
   if (!id) return clonePalette(fallback);
-  return clonePalette({ ...fallback, ...(palettesByZone.get(id) ?? {}), environment: id });
+  return clonePalette({ ...fallback, ...(bank.palettesByZone.get(id) ?? {}), environment: id });
 }
 
-async function decodeZone(id: string, def: ZoneDef, manifestUrl: URL): Promise<void> {
+async function decodeZone(id: string, def: ZoneDef, manifestUrl: URL, bank: BankState): Promise<void> {
   const image = new Image();
   image.decoding = 'async';
   image.src = new URL(def.image, manifestUrl).href;
@@ -188,42 +232,53 @@ async function decodeZone(id: string, def: ZoneDef, manifestUrl: URL): Promise<v
       new Uint8ClampedArray(buffer.data.buffer).set(rgba.data);
       decoded.set(name, { ...frame, image: buffer });
     }
-    framesByZone.set(id, decoded);
+    bank.framesByZone.set(id, decoded);
   } finally {
     canvas.width = 0;
     canvas.height = 0;
   }
 }
 
-/** Decode once at asynchronous boot; World and level texture construction stay synchronous. */
-export function preloadEnvironmentArt(): Promise<void> {
-  preload ??= (async () => {
-    const url = new URL('environment-ink/manifest.json', document.baseURI);
-    try {
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(`manifest HTTP ${response.status}`);
-      const manifest = parseManifest(await response.json());
-      chapterThemes = manifest.chapterThemes ?? {};
-      themeFallbacks = manifest.themeFallbacks ?? {};
-      readFloorDesigns(manifest.floorDesigns, manifest);
-      for (const [id, zone] of Object.entries(manifest.zones)) palettesByZone.set(id, zone.palette ?? {});
-      await Promise.all(Object.entries(manifest.zones).map(async ([id, zone]) => {
-        try { await decodeZone(id, zone, url); }
-        catch (error) { warnOnce(`load:${id}`, `${id}: ${String(error)}; using generated art for this zone`); }
-      }));
-      console.info(`[environment-ink] loaded ${framesByZone.size}/${Object.keys(manifest.zones).length} delivered zones`);
-    } catch (error) {
-      warnOnce('manifest', `${String(error)}; using generated environment art`);
-    }
-  })();
-  return preload;
+/**
+ * Decode a bank once (at asynchronous boot, or when OPTIONS > ART changes) and make it the one new
+ * stages are built from; World and level texture construction stay synchronous. Without an
+ * argument: the bank in use. The switch happens only once the bank is decoded, so a stage built
+ * meanwhile still has a complete bank.
+ */
+export async function preloadEnvironmentArt(which: ArtBank = wanted): Promise<void> {
+  wanted = which;
+  const bank = bankState(which);
+  bank.preload ??= loadBank(which, bank);
+  await bank.preload;
+  // Switched back and forth quickly: the last bank asked for wins, whichever loads last.
+  if (wanted === which) active = which;
+}
+
+async function loadBank(which: ArtBank, bank: BankState): Promise<void> {
+  const url = new URL(`${BANK_DIRS[which]}manifest.json`, document.baseURI);
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`manifest HTTP ${response.status}`);
+    const manifest = parseManifest(await response.json());
+    bank.chapterThemes = manifest.chapterThemes ?? {};
+    bank.themeFallbacks = manifest.themeFallbacks ?? {};
+    readFloorDesigns(manifest.floorDesigns, manifest, bank);
+    for (const [id, zone] of Object.entries(manifest.zones)) bank.palettesByZone.set(id, zone.palette ?? {});
+    await Promise.all(Object.entries(manifest.zones).map(async ([id, zone]) => {
+      try { await decodeZone(id, zone, url, bank); }
+      catch (error) { warnOnce(`${which}:load:${id}`, `${which} art, ${id}: ${String(error)}; using generated art for this zone`); }
+    }));
+    console.info(`[environment-ink] ${which} art: loaded ${bank.framesByZone.size}/${Object.keys(manifest.zones).length} delivered zones`);
+  } catch (error) {
+    warnOnce(`${which}:manifest`, `${which} art: ${String(error)}; using generated environment art`);
+  }
 }
 
 /** Only replace existing native frames; geometry and gameplay footprints remain authoritative. */
 export function withEnvironmentArt(palette: Palette, entries: AtlasEntry[]): AtlasEntry[] {
   const id = palette.environment;
   if (!id) return entries;
-  const delivered = framesByZone.get(id);
+  const delivered = bankState(active).framesByZone.get(id);
   if (!delivered) {
     warnOnce(`missing:${id}`, `no delivered atlas for '${id}'; using generated art`);
     return entries;

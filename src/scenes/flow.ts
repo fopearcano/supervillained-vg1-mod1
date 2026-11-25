@@ -138,6 +138,12 @@ export class Flow {
         controls: () => this.game.scenes.push(new ControlsScene(this.game, () => this.game.scenes.pop())),
         levels: () => this.glitch(() => this.story.openMenu()),
         book: () => this.game.scenes.push(new BookScene(this.game, this.story.state, () => this.game.scenes.pop())),
+        newArt: () => s.newArt,
+        // The other environment art from the next stage on (main.ts loads it); a click to confirm.
+        toggleArt: () => {
+          this.game.updateSettings((st) => (st.newArt = !st.newArt));
+          this.game.audio.play('click');
+        },
         back: () => this.closeOverTitle(),
       }),
     );

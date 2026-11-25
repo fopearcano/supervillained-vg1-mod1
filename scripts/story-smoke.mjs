@@ -4,7 +4,7 @@
  * bad sprite key...). Then four groups of checks through the real menus and keys: `progress`
  * (what a scene saves on restart / quit / skip), `menus` (double presses during a transition,
  * Escape and the Android Back button on each kind of screen, the MENU button after a resize, the
- * continue / confirm keys, OPTIONS' MUSIC and SOUNDS levels), `keys` (the letter and rumour
+ * continue / confirm keys, OPTIONS' MUSIC and SOUNDS levels and ART), `keys` (the letter and rumour
  * mini-games played from the keyboard) and `walk` (the Green Zone: Bagnaskiz's band's ambush half
  * way).
  *
@@ -229,6 +229,45 @@ async function menuChecks(page) {
   await press('Escape');
   await wait(300);
   await page.evaluate(() => window.__sv.game.updateSettings((st) => ((st.music = 0.7), (st.sounds = 0.7))));
+
+  // OPTIONS > ART (a temporary test option): NEW (TEST) decodes the vibrant environment bank,
+  // saves the choice and is still chosen after a restart of the game; CURRENT goes back.
+  const artNow = () =>
+    page.evaluate(() => ({
+      row: window.__sv.top().menu?.rows[7]?.text.content.map((s) => s.text).join('') ?? null,
+      saved: JSON.parse(localStorage.getItem('supervillained:settings') ?? 'null')?.newArt,
+      bank: window.__sv.art().bank,
+      zones: window.__sv.art().loadedZones.length,
+    }));
+  const bankIs = (bank) => page.waitForFunction((b) => window.__sv?.art().bank === b, bank, { timeout: 15000 }).catch(() => {});
+  await page.evaluate(() => window.__sv.top().actions.options());
+  await wait(500);
+  await press('ArrowDown', 7); // SOUND, MUSIC, SOUNDS, TEXT, CONTROLS, LEVELS, BOOK, ART
+  await press('Enter');
+  await bankIs('new');
+  const artNew = await artNow();
+  check(
+    artNew.row === 'ART: NEW (TEST)' && artNew.saved === true && artNew.bank === 'new' && artNew.zones === 15,
+    `OPTIONS > ART: NEW (TEST) loads and saves the vibrant art (${JSON.stringify(artNew)})`,
+  );
+  // A second start of the game (same storage, a fresh page): it boots with the saved choice.
+  const second = await page.context().browser().newContext({ storageState: await page.context().storageState() });
+  const restarted = await second.newPage();
+  await restarted.goto(`http://127.0.0.1:${PORT}/`);
+  await restarted.waitForFunction(() => window.__sv?.top()?.constructor.name === 'TitleScene', null, { timeout: 30000 });
+  const artReloaded = await restarted.evaluate(() => window.__sv.art().bank);
+  await second.close();
+  check(artReloaded === 'new', `the saved ART choice is used at the next start (${artReloaded})`);
+  // Still on OPTIONS, the ART row selected: once more.
+  await press('Enter');
+  await bankIs('current');
+  const artBack = await artNow();
+  check(
+    artBack.row === 'ART: CURRENT' && artBack.saved === false && artBack.bank === 'current' && artBack.zones === 15,
+    `OPTIONS > ART: CURRENT goes back to the current art (${JSON.stringify(artBack)})`,
+  );
+  await press('Escape');
+  await wait(300);
 
   // The story menu's level list: Escape and Back return to the story menu, once.
   await page.evaluate(() => window.__sv.flow.story.openMenu());

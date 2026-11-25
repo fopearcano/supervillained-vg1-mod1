@@ -30,6 +30,8 @@ npm run typecheck
 npm test             # Vitest (pure logic)
 npm run screens      # Playwright verification screenshots → docs/screens/ (all scenarios)
 npm run screens -- m1 joystick   # selected scenarios (see scripts/screenshot.mjs)
+SV_ART=new npm run screens -- m1 # the same in the vibrant environment art → docs/screens/art-new/
+npm run screens:environments     # every chapter's stage in both art banks → docs/screens/environments/
 npm run smoke        # plays every story sub-level start to finish (fails on errors / missing textures),
                      # then the flow checks: saving (restart / quit / skip) and menus / Back button
 npm run smoke -- 7.3 8.1         # selected sub-levels
@@ -49,9 +51,10 @@ GitHub-hosted Mac at every push that touches the game or `ios/` (artifact *SUPER
 Debug URLs: `?skip=game` (straight into the Green Zone walk, outside the story), `?story=7.3` (straight into a story
 sub-level), `?auto=1` (the autopilot plays the story; `&skill=0.7&ending=knight|alpha&choice=first|last|random`),
 `?as=sbrimbrulon|bagnaskiz` (the story's scenes played as that dog, in his own costumes),
+`?art=new|current` (the environment art bank for this visit, whatever OPTIONS > ART says),
 `?debug=sprites&char=zampano|bagnaskiz|cat|<cast key>`.
 `window.__sv` exposes the game for automation (`__sv.scene()` = top scene, `__sv.top()`,
-`__sv.storyIds()`, `__sv.flow.story.debugPlay(id)`; a `StoryScene` has `debugState()`,
+`__sv.storyIds()`, `__sv.flow.story.debugPlay(id)`, `__sv.art()` = the art bank in use; a `StoryScene` has `debugState()`,
 `debugSkip()`, `marker(m)`).
 
 ## Architecture (src/)
@@ -66,7 +69,8 @@ sub-level), `?auto=1` (the autopilot plays the story; `&skill=0.7&ending=knight|
   gestures: swipe up / down and double tap, bound by the CONTROLS settings; RUN held or toggled;
   actions `action` (the round button), `bark`, `strike`, `guard`, `switch`; `consumeContinue()` is
   the one rule for continue / confirm / pick: Space, Enter, J, X, taps aside), `settings.ts`
-  (sound on/off, the `music` and `sounds` levels, text speed, lives, `controls`),
+  (sound on/off, the `music` and `sounds` levels, text speed, lives, `controls`, and `newArt`:
+  OPTIONS > ART, a temporary testing option for the environment art bank),
   `scene.ts` (scene stack; a scene's optional `back()` is what the Android Back button does on it),
   `display.ts` (logical resolution + integer scale), `assets.ts`
   (texture registry + atlas packer), `storage.ts` (guarded localStorage), `rng.ts`.
@@ -122,7 +126,9 @@ sub-level), `?auto=1` (the autopilot plays the story; `&skill=0.7&ending=knight|
   `PLAYABLE_CHARACTER_KEYS`, `costumeFor`, `ARMOURED_SKINS` for the player-ready dogs),
   `build.ts` (load the delivered PNGs or generate placeholders), `environment.ts` (the Color Ink
   environment atlases in `public/environment-ink/`: chapter palettes, native tile/prop frames,
-  visual-only story floor designs; procedural fallback), `placeholders/*` (procedural
+  visual-only story floor designs; procedural fallback; two banks, the current one and the vibrant
+  `public/environment-ink-vibrant/` on trial, switched by OPTIONS > ART once the other is
+  decoded), `placeholders/*` (procedural
   pixel art for the cast without delivered sheets, and the fallback environment art), `fonts/`.
 - Repo-root `assets/music` and `assets/sounds` — recorded audio, wired in `src/fx/audioFiles.ts`
   (table in `ASSETS.md`); `core/audio.ts` plays them (sfx decoded, music streamed) alongside the

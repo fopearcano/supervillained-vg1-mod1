@@ -712,6 +712,9 @@ export class OptionsScene extends Overlay {
       controls: () => void;
       levels: () => void;
       book: () => void;
+      /** ART: the environment art in use (a temporary testing option). */
+      newArt: () => boolean;
+      toggleArt: () => void;
       back: () => void;
     },
   ) {
@@ -732,6 +735,14 @@ export class OptionsScene extends Overlay {
         { label: 'CONTROLS', action: actions.controls, color: C.green },
         { label: 'LEVELS (REPLAY)', action: actions.levels, color: C.yellow },
         { label: 'MERAVIGLIA BOOK', action: actions.book, color: C.pink },
+        {
+          label: () => (actions.newArt() ? 'ART: NEW (TEST)' : 'ART: CURRENT'),
+          action: () => {
+            actions.toggleArt();
+            this.menu.refreshLabels();
+          },
+          color: C.cyan,
+        },
         { label: 'BACK', action: actions.back, color: C.white },
       ],
       160,

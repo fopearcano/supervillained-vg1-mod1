@@ -9,7 +9,7 @@ import * as items from './placeholders/items';
 import * as props from './placeholders/props';
 import * as tiles from './placeholders/tiles';
 import type { PixelBuffer } from './placeholders/pixel';
-import { preloadEnvironmentArt, withEnvironmentArt } from './environment';
+import { environmentArtBank, preloadEnvironmentArt, withEnvironmentArt, type ArtBank } from './environment';
 import {
   CHARACTERS,
   SHEET_DIRS,
@@ -90,9 +90,9 @@ function sprite(def: SpriteDef, variant: number, image: PixelBuffer): AtlasEntry
   return { name: spriteName(def.key as SpriteKey, variant), image, anchorX: def.anchorX, anchorY: def.anchorY };
 }
 
-/** Palette-independent textures: characters, items, FX, HUD icons. */
-export async function buildGlobalTextures(): Promise<void> {
-  await preloadEnvironmentArt();
+/** Palette-independent textures: characters, items, FX, HUD icons; and the environment art bank. */
+export async function buildGlobalTextures(art: ArtBank = 'current'): Promise<void> {
+  await preloadEnvironmentArt(art);
   const entries: AtlasEntry[] = [];
   for (const key of BOOT_CHARACTERS) {
     const def = (CHARACTERS as Record<string, CharacterDef>)[key]!;
@@ -166,7 +166,8 @@ const STORY_PROPS = [
 
 /** Zone-specific textures: ground tiles and props, colored by the level palette. */
 export function buildLevelTextures(pal: Palette): void {
-  const key = JSON.stringify(pal);
+  // The art bank too (OPTIONS > ART): the same palette in the other bank is other art.
+  const key = `${environmentArtBank()}|${JSON.stringify(pal)}`;
   if (key === builtPalette) return;
   builtPalette = key;
   const entries: AtlasEntry[] = [];

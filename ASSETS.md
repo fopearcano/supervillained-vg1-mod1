@@ -126,6 +126,19 @@ belongs to the former single-corridor 96 × 96 park, so the redesigned branching
 not select it; it still uses the complete `ch01_greenzone` native ground and prop bank. This avoids
 painting an obsolete route over the new ponds, plazas and optional circuits.
 
+**Two banks, on trial.** `public/environment-ink-vibrant/` holds the vibrant v2 recolour of the
+same 15 atlases (delivered as `Supervillained_Complete_Vibrant_Level_Gameplay_Implementation.zip`):
+one dominant hue per chapter, with separate ramps for water, ground, vegetation, earth, masonry,
+wood, textiles, snow, pollution and metal. Frame rectangles, anchors, names, floor compositions,
+themes and every alpha byte are those of the current bank; only colours differ. OPTIONS > ART
+chooses between them (CURRENT, the default, or NEW (TEST)); `?art=new|current` in the address
+overrides the choice for one visit. This is a temporary testing option: when the owner picks one,
+the other folder moves to `art-archive/` and the option goes (see `docs/BACKLOG.md`).
+`scripts/recolor_environment_atlases.py` (Python 3 + Pillow) rebuilds the vibrant bank from the
+current one, pixel for pixel; the art direction is in `docs/art-direction/`. Compare the two with
+`npm run screens:environments` (`docs/screens/environments/current/` and `new/`) and
+`SV_ART=new npm run screens -- m1` (`docs/screens/art-new/`).
+
 ## Directions
 
 Eight facing directions, named as seen by the camera (screen space, **N = up/away from the camera**):

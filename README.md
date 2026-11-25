@@ -30,7 +30,8 @@ pilgrims to their oath himself at the sack. The story, scene by scene, is in
 [`docs/STORY-SOURCES.md`](docs/STORY-SOURCES.md). Saves from the earlier version of the dream are
 migrated (the walk and the unchanged Level 1 scenes are kept; the old save is kept aside). Progress is saved after every scene; OPTIONS has
 sound on/off, separate MUSIC and SOUNDS (sound effects) levels (OFF, 25, 50, 70, 100 %), text
-speed, the controls, level replays and the book.
+speed, the controls, level replays, the book, and ART: CURRENT / NEW (TEST), a temporary testing
+option that shows the vibrant recolour of the environment art instead of the current one.
 
 ## Run it
 
@@ -156,6 +157,7 @@ and launch images come from the logo too: `npm run ios:icons` (the same script a
 npm run build      # typecheck + production build (dist/)
 npm test           # unit tests (Vitest)
 npm run screens    # Playwright screenshots into docs/screens/
+npm run screens:environments   # every chapter's stage in both environment art banks
 npm run smoke      # runs every story script start to finish (skipping steps), then the flow checks
 npm run playtest   # the autopilot plays the whole campaign for real; report in docs/PLAYTEST.md
 ```

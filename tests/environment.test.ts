@@ -72,8 +72,9 @@ describe('Color Ink environment loader', () => {
     const mock = browser(fixture());
     const m = await import('../src/assets/environment');
     const first = m.preloadEnvironmentArt();
-    expect(m.preloadEnvironmentArt()).toBe(first);
-    await first;
+    // Asked twice while loading: one fetch, one decode per atlas.
+    const second = m.preloadEnvironmentArt();
+    await Promise.all([first, second]);
     await m.preloadEnvironmentArt();
     expect(mock.fetchMock).toHaveBeenCalledTimes(1);
     expect(String(mock.fetchMock.mock.calls[0]![0])).toBe('https://example.test/supervillained/environment-ink/manifest.json');
@@ -207,3 +208,66 @@ describe('Color Ink environment loader', () => {
     expect(m.floorFrameForGround(design, 1, Ground.Floor)).toBeUndefined();
   });
 });
+
+describe('two environment art banks (OPTIONS > ART: CURRENT / NEW, a temporary test option)', () => {
+  /** The same zones in another bank, with its own colours (as the vibrant v2 recolour). */
+  function vibrant() {
+    const m = fixture();
+    m.zones.opening.palette = { grass: ['#16a765', '#107e4f', '#96d29c'] };
+    return m;
+  }
+
+  function twoBanks() {
+    const fetchMock = vi.fn(async (url: URL) => ({ ok: true, json: async () => (String(url).includes('environment-ink-vibrant/') ? vibrant() : fixture()) }));
+    browser(fixture());
+    vi.stubGlobal('fetch', fetchMock);
+    return fetchMock;
+  }
+
+  it('starts on the current bank and switches to the new one from its own folder', async () => {
+    const fetchMock = twoBanks();
+    const m = await import('../src/assets/environment');
+    await m.preloadEnvironmentArt();
+    expect(m.environmentArtBank()).toBe('current');
+    expect(m.paletteForChapter(1, 'greenzone', fallback).grass[0]).toBe('#159b59');
+    await m.preloadEnvironmentArt('new');
+    expect(m.environmentArtBank()).toBe('new');
+    expect(String(fetchMock.mock.calls[1]![0])).toBe('https://example.test/supervillained/environment-ink-vibrant/manifest.json');
+    expect(m.paletteForChapter(1, 'greenzone', fallback).grass[0]).toBe('#16a765');
+    expect(m.withEnvironmentArt(m.paletteForChapter(1, 'greenzone', fallback), [entry()])[0]!.image).not.toBe(entry().image);
+    expect(m.environmentDiagnostics().bank).toBe('new');
+  });
+
+  it('switching back reuses the decoded bank (no second fetch)', async () => {
+    const fetchMock = twoBanks();
+    const m = await import('../src/assets/environment');
+    await m.preloadEnvironmentArt('current');
+    await m.preloadEnvironmentArt('new');
+    await m.preloadEnvironmentArt('current');
+    await m.preloadEnvironmentArt('new');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(m.environmentArtBank()).toBe('new');
+  });
+
+  it('shows the bank chosen in OPTIONS, unless the address asks for one (?art=new|current)', async () => {
+    const { chosenArtBank } = await import('../src/assets/environment');
+    expect(chosenArtBank(false)).toBe('current');
+    expect(chosenArtBank(true)).toBe('new');
+    expect(chosenArtBank(false, '?story=1.1&art=new')).toBe('new');
+    expect(chosenArtBank(true, '?art=current')).toBe('current');
+    expect(chosenArtBank(true, '?art=vibrant')).toBe('new');
+  });
+
+  it('keeps building from the bank in use until the other one is decoded, and the last request wins', async () => {
+    twoBanks();
+    const m = await import('../src/assets/environment');
+    await m.preloadEnvironmentArt('current');
+    const loading = m.preloadEnvironmentArt('new');
+    // Not decoded yet: stages built now still get the complete current bank.
+    expect(m.environmentArtBank()).toBe('current');
+    // Back to CURRENT before NEW finished loading: CURRENT stays.
+    await Promise.all([loading, m.preloadEnvironmentArt('current')]);
+    expect(m.environmentArtBank()).toBe('current');
+  });
+});
+
