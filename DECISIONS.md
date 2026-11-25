@@ -1192,15 +1192,21 @@ temporary testing option in the settings, not in place of the current art.
   its own level palette and takes the bank's frames.
 - **The setting**: `Settings.newArt` (boolean, default false; any other saved value is false),
   OPTIONS > ART: CURRENT / ART: NEW (TEST), the row after MERAVIGLIA BOOK (9 rows: on the shortest
-  screen, 192 × 310, the last ends at 302). It is applied from the next stage on: OPTIONS opens
-  only over the title, where no stage is on screen. The boot loads the chosen bank before the
-  first texture is built; `?art=new|current` overrides the choice for one visit (screenshots) and
-  is not saved. Not in the pause menus.
+  screen, 192 × 310, the last ends at 302). Not in the pause menus: OPTIONS opens only over the
+  title. Pressing it (`Flow.toggleArt`) saves the choice and starts decoding the other bank at
+  once; every stage built from then on is drawn in it. The title itself stands on a live Green
+  Zone backdrop drawn in the bank of its time, so leaving OPTIONS after a change builds the title
+  again (as QUIT TO TITLE does) once the bank is decoded; leaving without a change does not. The
+  boot loads the chosen bank before the first texture is built. `?art=new|current` starts one
+  visit with that bank without saving it (screenshots, a quick look); the row shows the bank
+  asked for (`wantedArtBank`), so it always names the art on screen, and a press switches from
+  there.
 - **Tooling, adapted**: `scripts/recolor_environment_atlases.py` reads the current bank and
   writes the vibrant one (the delivery read `art-archive/environment-ink-color-ink-v1/`, which is
   byte-identical to the current bank); run here it reproduces the delivered PNGs pixel for pixel
-  and the same manifest. The report records repository paths instead of the machine paths it was
-  delivered with. `npm run screens:environments` captures every chapter's stage in both banks
+  and the manifest byte for byte (the delivered manifest's Windows line endings were changed to
+  the repository's; the script now writes `\n` on every system). The report records repository
+  paths instead of the machine paths it was delivered with. `npm run screens:environments` captures every chapter's stage in both banks
   (`docs/screens/environments/current/`, `new/`) and fails if the bank shown is not the one asked
   for or a zone is not decoded; `SV_ART=new npm run screens -- <scenario>` writes any scenario in
   the new art to `docs/screens/art-new/`.
@@ -1209,5 +1215,13 @@ temporary testing option in the settings, not in place of the current art.
   loader tests cover the two banks (own folder, decoded once, switch after decode, last request
   wins, `?art=`); `npm run smoke -- menus` toggles ART from the keyboard, checks the save, the
   bank in use and a fresh start with the saved choice, and goes back to CURRENT.
+- An adversarial review of the change found and fixed: the title's backdrop keeping the old art
+  after a toggle (and this file saying no stage was on screen), the row disagreeing with the art
+  under `?art=`, a test assertion that could not fail, and the manifest's line endings; it
+  set aside two other claims. A bank that fails to load still becomes the one in use: its stages
+  fall back to the procedural art, exactly as the current bank's would, and the console says
+  why; nothing breaks, and a missing bank is then plain to see. The asset test does not read
+  pixels: alpha invariance rests on the report's hashes and on the comparison made when
+  integrating.
 - Nothing else changes: no gameplay, map, marker, collision or story data; no runtime dependency;
   the APK grows by the second bank (1.6 MB).

@@ -230,11 +230,17 @@ describe('two environment art banks (OPTIONS > ART: CURRENT / NEW, a temporary t
     await m.preloadEnvironmentArt();
     expect(m.environmentArtBank()).toBe('current');
     expect(m.paletteForChapter(1, 'greenzone', fallback).grass[0]).toBe('#159b59');
+    const currentFrame = m.withEnvironmentArt(m.paletteForChapter(1, 'greenzone', fallback), [entry()])[0]!.image;
     await m.preloadEnvironmentArt('new');
     expect(m.environmentArtBank()).toBe('new');
+    expect(m.wantedArtBank()).toBe('new');
     expect(String(fetchMock.mock.calls[1]![0])).toBe('https://example.test/supervillained/environment-ink-vibrant/manifest.json');
     expect(m.paletteForChapter(1, 'greenzone', fallback).grass[0]).toBe('#16a765');
-    expect(m.withEnvironmentArt(m.paletteForChapter(1, 'greenzone', fallback), [entry()])[0]!.image).not.toBe(entry().image);
+    // A delivered frame replaces the generated one, and it is the new bank's own decoded frame.
+    const generated = entry();
+    const newFrame = m.withEnvironmentArt(m.paletteForChapter(1, 'greenzone', fallback), [generated])[0]!.image;
+    expect(newFrame).not.toBe(generated.image);
+    expect(newFrame).not.toBe(currentFrame);
     expect(m.environmentDiagnostics().bank).toBe('new');
   });
 
@@ -278,8 +284,10 @@ describe('two environment art banks (OPTIONS > ART: CURRENT / NEW, a temporary t
     const m = await import('../src/assets/environment');
     await m.preloadEnvironmentArt('current');
     const loading = m.preloadEnvironmentArt('new');
-    // Not decoded yet: stages built now still get the complete current bank.
+    // Not decoded yet: stages built now still get the complete current bank, while OPTIONS
+    // already shows the bank asked for.
     expect(m.environmentArtBank()).toBe('current');
+    expect(m.wantedArtBank()).toBe('new');
     // Back to CURRENT before NEW finished loading: CURRENT stays.
     await Promise.all([loading, m.preloadEnvironmentArt('current')]);
     expect(m.environmentArtBank()).toBe('current');

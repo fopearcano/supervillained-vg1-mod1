@@ -51,7 +51,7 @@ GitHub-hosted Mac at every push that touches the game or `ios/` (artifact *SUPER
 Debug URLs: `?skip=game` (straight into the Green Zone walk, outside the story), `?story=7.3` (straight into a story
 sub-level), `?auto=1` (the autopilot plays the story; `&skill=0.7&ending=knight|alpha&choice=first|last|random`),
 `?as=sbrimbrulon|bagnaskiz` (the story's scenes played as that dog, in his own costumes),
-`?art=new|current` (the environment art bank for this visit, whatever OPTIONS > ART says),
+`?art=new|current` (the environment art bank this visit starts with, not saved; OPTIONS > ART shows it and still switches),
 `?debug=sprites&char=zampano|bagnaskiz|cat|<cast key>`.
 `window.__sv` exposes the game for automation (`__sv.scene()` = top scene, `__sv.top()`,
 `__sv.storyIds()`, `__sv.flow.story.debugPlay(id)`, `__sv.art()` = the art bank in use; a `StoryScene` has `debugState()`,

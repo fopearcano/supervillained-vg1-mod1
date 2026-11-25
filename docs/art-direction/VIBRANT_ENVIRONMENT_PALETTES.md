@@ -29,7 +29,7 @@ pollution, metal and small accents now use separate luminance-ordered ramps.
 In this repository the vibrant pass is a second bank on trial, beside the current one:
 `public/environment-ink/` is the current Color Ink delivery (v1, what the game shows by default)
 and `public/environment-ink-vibrant/` is this recolour, shown when OPTIONS > ART is set to
-NEW (TEST) (a temporary testing option; `?art=new` in the address does the same for one visit).
+NEW (TEST) (a temporary testing option; `?art=new` in the address starts one visit in it).
 `scripts/recolor_environment_atlases.py` reads the current bank and writes the vibrant one; it
 reproduces the delivered vibrant PNGs pixel for pixel.
 

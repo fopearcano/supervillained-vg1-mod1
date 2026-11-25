@@ -230,8 +230,10 @@ async function menuChecks(page) {
   await wait(300);
   await page.evaluate(() => window.__sv.game.updateSettings((st) => ((st.music = 0.7), (st.sounds = 0.7))));
 
-  // OPTIONS > ART (a temporary test option): NEW (TEST) decodes the vibrant environment bank,
-  // saves the choice and is still chosen after a restart of the game; CURRENT goes back.
+  // OPTIONS > ART (a temporary test option): NEW (TEST) decodes the vibrant environment bank and
+  // saves the choice; leaving OPTIONS rebuilds the title, whose Green Zone backdrop is drawn in
+  // the bank; a fresh start uses the saved choice, and ?art= starts a visit with another bank
+  // (shown on the row); CURRENT goes back.
   const artNow = () =>
     page.evaluate(() => ({
       row: window.__sv.top().menu?.rows[7]?.text.content.map((s) => s.text).join('') ?? null,
@@ -240,34 +242,57 @@ async function menuChecks(page) {
       zones: window.__sv.art().loadedZones.length,
     }));
   const bankIs = (bank) => page.waitForFunction((b) => window.__sv?.art().bank === b, bank, { timeout: 15000 }).catch(() => {});
-  await page.evaluate(() => window.__sv.top().actions.options());
-  await wait(500);
-  await press('ArrowDown', 7); // SOUND, MUSIC, SOUNDS, TEXT, CONTROLS, LEVELS, BOOK, ART
-  await press('Enter');
-  await bankIs('new');
-  const artNew = await artNow();
+  /** ART from the title's OPTIONS, then out with Escape: the title built again, in that art. */
+  const toggleArtAndLeave = async (bank) => {
+    await page.evaluate(() => window.__sv.top().actions.options());
+    await wait(500);
+    await press('ArrowDown', 7); // SOUND, MUSIC, SOUNDS, TEXT, CONTROLS, LEVELS, BOOK, ART
+    await press('Enter');
+    await bankIs(bank);
+    const state = await artNow();
+    await page.evaluate(() => {
+      window.__backdrop = window.__sv.flow.current;
+    });
+    await press('Escape');
+    await page
+      .waitForFunction(() => window.__sv.flow.current !== window.__backdrop && window.__sv.top().constructor.name === 'TitleScene', null, { timeout: 10000 })
+      .catch(() => {});
+    await wait(900);
+    const after = await page.evaluate(() => ({
+      top: window.__sv.top().constructor.name,
+      rebuilt: window.__sv.flow.current !== window.__backdrop,
+      shown: window.__sv.top().root.visible,
+    }));
+    return { ...state, ...after };
+  };
+  const artNew = await toggleArtAndLeave('new');
   check(
     artNew.row === 'ART: NEW (TEST)' && artNew.saved === true && artNew.bank === 'new' && artNew.zones === 15,
     `OPTIONS > ART: NEW (TEST) loads and saves the vibrant art (${JSON.stringify(artNew)})`,
   );
-  // A second start of the game (same storage, a fresh page): it boots with the saved choice.
+  check(artNew.top === 'TitleScene' && artNew.rebuilt && artNew.shown, `leaving OPTIONS after ART rebuilds the title's backdrop in that art (${JSON.stringify(artNew)})`);
+  // Other starts of the game (same storage, fresh pages).
   const second = await page.context().browser().newContext({ storageState: await page.context().storageState() });
-  const restarted = await second.newPage();
-  await restarted.goto(`http://127.0.0.1:${PORT}/`);
-  await restarted.waitForFunction(() => window.__sv?.top()?.constructor.name === 'TitleScene', null, { timeout: 30000 });
-  const artReloaded = await restarted.evaluate(() => window.__sv.art().bank);
+  const startWith = async (query) => {
+    const p = await second.newPage();
+    await p.goto(`http://127.0.0.1:${PORT}/${query}`);
+    await p.waitForFunction(() => window.__sv?.top()?.constructor.name === 'TitleScene', null, { timeout: 30000 });
+    await p.evaluate(() => window.__sv.top().actions.options());
+    await wait(500);
+    const seen = await p.evaluate(() => ({ bank: window.__sv.art().bank, row: window.__sv.top().menu.rows[7].text.content.map((s) => s.text).join('') }));
+    await p.close();
+    return seen;
+  };
+  const restarted = await startWith('');
+  const overridden = await startWith('?art=current');
   await second.close();
-  check(artReloaded === 'new', `the saved ART choice is used at the next start (${artReloaded})`);
-  // Still on OPTIONS, the ART row selected: once more.
-  await press('Enter');
-  await bankIs('current');
-  const artBack = await artNow();
+  check(restarted.bank === 'new' && restarted.row === 'ART: NEW (TEST)', `the saved ART choice is used at the next start (${JSON.stringify(restarted)})`);
+  check(overridden.bank === 'current' && overridden.row === 'ART: CURRENT', `?art=current starts a visit in the current art, and the row says so (${JSON.stringify(overridden)})`);
+  const artBack = await toggleArtAndLeave('current');
   check(
-    artBack.row === 'ART: CURRENT' && artBack.saved === false && artBack.bank === 'current' && artBack.zones === 15,
-    `OPTIONS > ART: CURRENT goes back to the current art (${JSON.stringify(artBack)})`,
+    artBack.row === 'ART: CURRENT' && artBack.saved === false && artBack.bank === 'current' && artBack.zones === 15 && artBack.rebuilt,
+    `OPTIONS > ART: CURRENT goes back to the current art, title included (${JSON.stringify(artBack)})`,
   );
-  await press('Escape');
-  await wait(300);
 
   // The story menu's level list: Escape and Back return to the story menu, once.
   await page.evaluate(() => window.__sv.flow.story.openMenu());
@@ -368,9 +393,14 @@ async function menuChecks(page) {
   await page.evaluate(() => window.__sv.top().actions.options());
   await wait(500);
   const options = await top();
+  await page.evaluate(() => {
+    window.__backdrop = window.__sv.flow.current;
+  });
   await press('Escape');
   await wait(300);
+  const sameBackdrop = await page.evaluate(() => window.__sv.flow.current === window.__backdrop);
   check(options === 'OptionsScene' && (await titleShown()), `Escape closes OPTIONS and shows the title again (${options} -> ${await top()})`);
+  check(sameBackdrop, 'without an ART change, the title is not built again on the way out');
   // A saved story, so NEW GAME asks first.
   await page.evaluate(() => {
     const story = window.__sv.flow.story;

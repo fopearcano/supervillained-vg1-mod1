@@ -94,7 +94,8 @@ export interface Settings {
   controls: ControlSettings;
   /**
    * OPTIONS > ART, a temporary testing option: the new (vibrant v2) environment art instead of
-   * the current Color Ink banks (assets/environment.ts). Off unless chosen.
+   * the current Color Ink banks (assets/environment.ts). Off unless chosen. Read at boot; the
+   * OPTIONS row (Flow.toggleArt) saves it and loads the other bank at once.
    */
   newArt: boolean;
 }

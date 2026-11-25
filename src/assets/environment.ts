@@ -83,8 +83,16 @@ export function environmentArtBank(): ArtBank {
 }
 
 /**
- * The bank to show: `?art=new|current` in the address (screenshots, a quick look) wins over the
- * saved OPTIONS > ART choice (`Settings.newArt`).
+ * The bank last asked for (at boot or by OPTIONS > ART): the one in use, or the one being decoded
+ * to replace it. OPTIONS shows this one, so `?art=` and the row always agree.
+ */
+export function wantedArtBank(): ArtBank {
+  return wanted;
+}
+
+/**
+ * The bank a visit starts with: `?art=new|current` in the address (screenshots, a quick look; not
+ * saved) wins over the saved OPTIONS > ART choice (`Settings.newArt`).
  */
 export function chosenArtBank(newArt: boolean, search = ''): ArtBank {
   const asked = new URLSearchParams(search).get('art');

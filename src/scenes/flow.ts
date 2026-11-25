@@ -27,6 +27,7 @@ import { TitleGlitchFilter } from '../fx/titleGlitchFilter';
 import { openUrl, quitApp } from '../core/native';
 import { GlossaryScene } from './glossaryScene';
 import { CouchScene } from './couchScene';
+import { preloadEnvironmentArt, wantedArtBank, type ArtBank } from '../assets/environment';
 
 /**
  * One game. Title (NEW GAME / CONTINUE / OPTIONS / QUIT) → the story, whose first scene (1.0) is
@@ -125,28 +126,47 @@ export class Flow {
 
   private openOptions(): void {
     const s = this.game.settings;
-    this.overTitle(
-      new OptionsScene(this.game, {
-        toggleSound: () => this.toggleSound(),
-        muted: () => s.muted,
-        cycleMusic: () => this.cycleMusic(),
-        music: () => s.music,
-        cycleSounds: () => this.cycleSounds(),
-        sounds: () => s.sounds,
-        cycleTextSpeed: () => this.game.updateSettings((st) => (st.textSpeed = nextTextSpeed(st.textSpeed))),
-        textSpeed: () => s.textSpeed.toUpperCase(),
-        controls: () => this.game.scenes.push(new ControlsScene(this.game, () => this.game.scenes.pop())),
-        levels: () => this.glitch(() => this.story.openMenu()),
-        book: () => this.game.scenes.push(new BookScene(this.game, this.story.state, () => this.game.scenes.pop())),
-        newArt: () => s.newArt,
-        // The other environment art from the next stage on (main.ts loads it); a click to confirm.
-        toggleArt: () => {
-          this.game.updateSettings((st) => (st.newArt = !st.newArt));
-          this.game.audio.play('click');
-        },
-        back: () => this.closeOverTitle(),
-      }),
-    );
+    // The title's Green Zone backdrop is drawn in the art bank of its time: when ART changes, the
+    // title is built again on the way out, once the other bank is decoded.
+    const artAtOpen = wantedArtBank();
+    let leaving = false;
+    const options: OptionsScene = new OptionsScene(this.game, {
+      toggleSound: () => this.toggleSound(),
+      muted: () => s.muted,
+      cycleMusic: () => this.cycleMusic(),
+      music: () => s.music,
+      cycleSounds: () => this.cycleSounds(),
+      sounds: () => s.sounds,
+      cycleTextSpeed: () => this.game.updateSettings((st) => (st.textSpeed = nextTextSpeed(st.textSpeed))),
+      textSpeed: () => s.textSpeed.toUpperCase(),
+      controls: () => this.game.scenes.push(new ControlsScene(this.game, () => this.game.scenes.pop())),
+      levels: () => this.glitch(() => this.story.openMenu()),
+      book: () => this.game.scenes.push(new BookScene(this.game, this.story.state, () => this.game.scenes.pop())),
+      newArt: () => wantedArtBank() === 'new',
+      toggleArt: () => {
+        if (!leaving) this.toggleArt();
+      },
+      back: () => {
+        if (wantedArtBank() === artAtOpen) return this.closeOverTitle();
+        if (leaving) return;
+        leaving = true;
+        void preloadEnvironmentArt(wantedArtBank()).then(() => {
+          if (this.game.scenes.top === options) this.glitch(() => this.toTitle());
+        });
+      },
+    });
+    this.overTitle(options);
+  }
+
+  /**
+   * OPTIONS > ART (a temporary testing option): the other environment art bank than the one shown
+   * (`?art=` included), saved, and decoded now; every stage built from then on is drawn in it.
+   */
+  private toggleArt(): void {
+    const next: ArtBank = wantedArtBank() === 'new' ? 'current' : 'new';
+    this.game.updateSettings((st) => (st.newArt = next === 'new'));
+    void preloadEnvironmentArt(next);
+    this.game.audio.play('click');
   }
 
   /** QUIT: closes the app on Android; a browser tab or an iOS app cannot close itself, so it says goodbye. */

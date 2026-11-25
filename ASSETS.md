@@ -132,7 +132,7 @@ one dominant hue per chapter, with separate ramps for water, ground, vegetation,
 wood, textiles, snow, pollution and metal. Frame rectangles, anchors, names, floor compositions,
 themes and every alpha byte are those of the current bank; only colours differ. OPTIONS > ART
 chooses between them (CURRENT, the default, or NEW (TEST)); `?art=new|current` in the address
-overrides the choice for one visit. This is a temporary testing option: when the owner picks one,
+starts one visit with that bank, without saving it. This is a temporary testing option: when the owner picks one,
 the other folder moves to `art-archive/` and the option goes (see `docs/BACKLOG.md`).
 `scripts/recolor_environment_atlases.py` (Python 3 + Pillow) rebuilds the vibrant bank from the
 current one, pixel for pixel; the art direction is in `docs/art-direction/`. Compare the two with

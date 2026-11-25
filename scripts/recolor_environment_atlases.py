@@ -411,7 +411,7 @@ def main() -> None:
         "source": "deterministic semantic-frame recolor of Color Ink v1",
     }
     output_dir.mkdir(parents=True, exist_ok=True)
-    (output_dir / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    (output_dir / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8", newline="\n")
 
     report = {
         "version": 2,
@@ -422,7 +422,7 @@ def main() -> None:
         "zones": results,
     }
     args.report.parent.mkdir(parents=True, exist_ok=True)
-    args.report.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    args.report.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8", newline="\n")
     print(json.dumps({"zones": len(results), "output": str(output_dir), "report": str(args.report)}, indent=2))
 
 
