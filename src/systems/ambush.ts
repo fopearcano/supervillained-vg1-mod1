@@ -18,6 +18,8 @@ interface Member {
   barkIn: number;
   poopIn: number;
   poopsLeft: number;
+  /** Seconds left of a squat: it keeps its place on the circle meanwhile. */
+  squatLeft: number;
 }
 
 /** A band member's body radius for placement checks (an Actor moves as a 0.25 circle). */
@@ -63,10 +65,10 @@ export class Ambush {
         if (s) ({ x, y } = s);
       }
       const actor = new Actor(`band-${key}`, key as CharacterKey, x, y);
-      // Waiting, they watch for him (Bagnaskiz, who has the animation, sits down after a while).
+      // Waiting, they watch for him, and sit down after a while (Actor: every band member has `sit`).
       actor.setBehavior({ kind: 'idle', face: 'player' });
       world.addEntity(actor);
-      this.band.push({ key, actor, angle: 0, barkIn: 0, poopIn: 0, poopsLeft: 0 });
+      this.band.push({ key, actor, angle: 0, barkIn: 0, poopIn: 0, poopsLeft: 0, squatLeft: 0 });
     });
   }
 
@@ -165,7 +167,11 @@ export class Ambush {
     const u = Math.min(1, this.director.phaseTime / AMBUSH.SCARE_TIME);
     const radius = AMBUSH.RING + (AMBUSH.RING_WIDEN_TO - AMBUSH.RING) * u;
     for (const m of this.band) {
-      m.angle += (AMBUSH.CIRCLE_SPEED / radius) * dt;
+      // Squatting, it stays where it is on the circle; then it goes on round from there (if its
+      // place kept moving, it would cut across the circle afterwards, dropping the next pile close
+      // to him).
+      if (m.squatLeft > 0) m.squatLeft -= dt;
+      else m.angle += (AMBUSH.CIRCLE_SPEED / radius) * dt;
       m.actor.setBehavior({ kind: 'goto', to: this.ringPoint(m.angle, radius), speed: AMBUSH.CIRCLE_SPEED * 1.8 });
       m.barkIn -= dt;
       if (m.barkIn <= 0) {
@@ -193,13 +199,14 @@ export class Ambush {
       ({ x, y } = s);
     }
     this.rules.dropPoop(x, y);
-    // The squat, for whoever has it drawn (Bagnaskiz; Jack and Watson once their sheets have it):
-    // the whole clip, sped up to fit, and no bark until it is over.
+    // The squat (all three have it drawn): the whole clip, sped up to fit, and no bark until it is
+    // over. A band member without a `poop` clip would just drop the pile.
     const clip = CHARACTERS[m.key as CharacterKey]?.anims.poop;
     if (clip && a.animator) {
       a.playAction('poop', AMBUSH.POOP_SQUAT);
       a.animator.speed = animationDuration(clip) / AMBUSH.POOP_SQUAT;
       m.barkIn = Math.max(m.barkIn, AMBUSH.POOP_SQUAT + 0.05);
+      m.squatLeft = AMBUSH.POOP_SQUAT;
     }
     this.world.events.emit('bandPoop', { x, y, who: m.key });
   }

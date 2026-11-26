@@ -400,7 +400,8 @@ const SCENARIOS = {
    * 7.8 Niketas's doorway), plus 2.3 played as Sbrimbrulòn (?as=).
    */
   async cast(browser) {
-    for (const key of ['bagnaskiz', 'bagnaskizEmperor', 'bagnaskizMarshal', 'niketas', 'santina', 'jack']) {
+    const delivered = ['jack', 'jackKnight', 'watson', 'watsonKnight', 'santina', 'santinaKnight', 'confusione', 'confusioneKnight'];
+    for (const key of ['bagnaskiz', 'bagnaskizEmperor', 'bagnaskizMarshal', 'niketas', ...delivered]) {
       const page = await openGame(browser, `?debug=sprites&char=${key}`);
       await wait(900);
       await page.screenshot({ path: `${OUT}/s-${key}.png` });
@@ -410,6 +411,8 @@ const SCENARIOS = {
       ['2.2', 'SayStep', 1, 'c2-fulk'],
       ['7.3', 'SayStep', 2, 'c7-emperor'],
       ['7.8', 'WalkStep', 2, 'c7-doorway'],
+      // Aleaume and Jack in arms at the breach.
+      ['7.7', 'SayStep', 2, 'c7-breach'],
     ];
     for (const [id, kind, nth, name] of scenes) {
       const page = await openGame(browser, `?story=${id}`);

@@ -23,6 +23,7 @@ describe('sprite sheets match the manifest layout', () => {
         'santina', 'professor', 'doge', 'niketas', 'fulk', 'clerk', 'abbot', 'envoy',
         'bishop', 'cook', 'sailmaker', 'prince', 'householdWoman', 'knight', 'pilgrim',
         'venetian', 'greek', 'varangian', 'marquis',
+        'jackKnight', 'watsonKnight', 'santinaKnight', 'confusioneKnight',
       ].sort(),
     );
   });

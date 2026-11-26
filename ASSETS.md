@@ -26,10 +26,11 @@ Two deliveries uploaded to main together:
 
 All runtime cells are **40 × 40 RGBA**, ground anchor **(20, 36)**, rows `N NE E SE S SW W NW`.
 
-Dedicated NPC sheets (`pixel-cast/<key>.png`, 160 × 1600): `santina`, `professor`, `doge`,
+Dedicated NPC sheets (`pixel-cast/<key>.png`, 160 × 1600): `professor`, `doge`,
 `niketas`, `fulk`, `clerk`, `abbot`, `envoy`, `bishop`, `cook`, `sailmaker`, `prince`,
-`householdWoman`, `knight`, `pilgrim`, `venetian`, `greek`, and refreshed `jack`, `watson`,
-`confusione`, `bagnaskizMarshal` (the French marshal), `varangian` and `marquis`. Layout: **idle 2,
+`householdWoman`, `knight`, `pilgrim`, `venetian`, `greek`, `bagnaskizMarshal` (the French
+marshal), `varangian` and `marquis` (Jack, Watson, Santina and Confusione had pixel-cast sheets
+too, now replaced by their animation deliveries and archived in `art-archive/pixel-cast-replaced/`). Layout: **idle 2,
 walk 4, run 4, bark/gesture 2, hurt/recover 2**; running reuses the walk poses at 13 fps. On the
 human cast the `bark` slot is a speaking or working gesture: `say()` and `ask()` play it once
 when that character is on stage and idle (`story/dialogueGestures.ts`); walking, following and
@@ -70,7 +71,9 @@ action in `preview/actions.png` and the motion in `preview/animations.gif`;
 `Supervillained_VG1_Armoured_Zampano_Animations.zip` has the knight's 256 px source sheets in
 five views, their timings in `animations.json` and a contact sheet in `preview/`; the two
 `Supervillained_VG1_Sbrimbrulon_*_Animations.zip` the same for Sbrimbrulòn, plain and armoured,
-whose installer script and patch were not run: the integration was merged by hand).
+whose installer script and patch were not run: the integration was merged by hand; the eight
+`Supervillained_VG1_{Jack,Watson,Santina,Confusione}_{Normal,Armoured}_Animations.zip` the same
+for those four, with their large source sheets, previews and pixel checks).
 
 | file in `public/sprites/` | size | what it is |
 |---|---|---|
@@ -82,9 +85,11 @@ whose installer script and patch were not run: the integration was merged by han
 | `pixel-cast/*.png` | 160 × 1600 (`professorFace.png` 24 × 24) | the pixel cast above; Jack, Watson and Confusione replace update 1's |
 | `sbrimbrulon.png`, `sbrimbrulon-tired.png` | 320 × 3520, 80 × 320 | Sbrimbrulòn, long-haired rust, dark and white Shih-tzu: the same 12 actions as Zampanò (Sbrimbrulòn animations) |
 | `sbrimbrulonKnight.png`, `sbrimbrulonKnight-tired.png` | 320 × 3520, 80 × 320 | Sbrimbrulòn armoured (helm with nose guard, shoulder plates, mail, red cross on the back), in the dream: 3.1, 5.2, 7.3 |
-| `pixel-cast/jack.png` | 160 × 1600 | black chihuahua, pink-lined ears (pixel cast; update 1's is archived) |
-| `pixel-cast/watson.png` | 160 × 1600 | white-and-orange Jack Russell, teal cap, cigar (pixel cast) |
-| `pixel-cast/confusione.png` | 160 × 1600 | orange tabby fighting cat (pixel cast) |
+| `jack.png`, `jack-tired.png` | 320 × 3520, 80 × 320 | Jack, black chihuahua, pink-lined ears: the same 12 actions as Sbrimbrulòn, eight real directions (Jack animations; the pixel cast's sheet is archived) |
+| `watson.png`, `watson-tired.png` | 320 × 3520, 80 × 320 | Watson, cream-and-orange terrier, teal-and-red cap, cigar: 12 actions in four views (his diagonal rows reuse the side profiles, as delivered) |
+| `santina.png`, `santina-tired.png` | 320 × 3520, 80 × 320 | Santina, white Maltese with a red bow: 12 actions, eight directions |
+| `confusione.png`, `confusione-tired.png` | 320 × 3520, 80 × 320 | Confusione, grumpy orange tabby cat: 12 actions, eight directions; his `bark` is a meow or a hiss, his `pee` a feline crouch |
+| `jackKnight.png`, `watsonKnight.png`, `santinaKnight.png`, `confusioneKnight.png` (each with its `-tired.png`) | 320 × 3520, 80 × 320 | the same four in armour (helm, mail, shoulder plates, red cross on the back); armoured Watson is drawn about 15 % smaller than plain Watson |
 | `runIcon.png` | 13 × 11 | the RUN button's double chevron (update 1) |
 
 Update 2's own QA notes (the zip's `reports/QA.md`): NE reads more like a side view, the S idle is
@@ -174,7 +179,8 @@ anchor (20, 36), animations **idle 2, walk 4, run 4, bark 2, hurt 2** (same shee
 |-----|------------------------|
 | `zampanoCross`, `zampanoKnight` | Zampanò in armour, in the dream (2.1 onwards; `zampanoCross` is an alias of the knight's sheet) |
 | `sbrimbrulon`, `sbrimbrulonKnight` | Shih-tzu, on the lawn / armoured in the dream (3.1, 5.2; Pierre d'Amiens in 7.3). Both have Zampanò's 12 actions: standing still 3 s he sits, and `Actor.playAction(anim, seconds?)` plays any action in place |
-| `jack`, `watson`, `santina`, `confusione` | the band and friends (Jack the absent general / looter, Watson the sailor, Santina the purple-born princess, Confusione as Aleaume) |
+| `jack`, `watson`, `santina`, `confusione` | the band and friends (Jack the camp's worst impulses / the looter, Watson the Venetian sailor, Santina the woman on the walls, Confusione as Aleaume). The 12 actions, like Sbrimbrulòn |
+| `jackKnight`, `watsonKnight`, `santinaKnight`, `confusioneKnight` | the same four in armour (helm, mail, red cross on the back): Aleaume at the breach and the common pile (7.7, 7.9), Jack at the oath and in the sack (7.7, 7.8); Watson's and Santina's are not cast yet |
 | `bagnaskizMarshal`, `bagnaskizEmperor` | Bagnaskiz's masks: Villehardouin, then the usurpers |
 | `doge`, `king`, `emir`, `legate`, `cellarer`, `preacher`, `stranger`, `marquis`, `prince`, `burgher`, `lady`, `greek`, `knight`, `varangian`, `clerkA`, `clerkB` | supporting cast |
 | `crowdA`, `crowdB`, `crowdC` | crowds (pilgrims, Venetians) |

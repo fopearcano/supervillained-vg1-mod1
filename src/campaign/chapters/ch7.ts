@@ -378,10 +378,11 @@ export const CH7: ChapterDef = {
       script: () => {
         const rattle = sounder('...RATTLE...', '#b8b8c8');
         return [
+          // From the assault on the host is in arms: Aleaume in his mail (it rattles), Jack too.
           stage('breach', [
             { name: 'legate', who: 'bishop', at: '3', face: 'SE' },
-            { name: 'conf', who: 'confusione', at: '4', face: 'SW' },
-            { name: 'jack', who: 'jack', at: { x: 9.5, y: 10.5 }, face: 'N' },
+            { name: 'conf', who: 'confusioneKnight', at: '4', face: 'SW' },
+            { name: 'jack', who: 'jackKnight', at: { x: 9.5, y: 10.5 }, face: 'N' },
           ]),
           say('bishop', 'SWEAR IT ON THE SAINTS. EVERYTHING TAKEN IS BROUGHT IN AND DECLARED. NO HAND ON A WOMAN. NO HAND ON A PRIEST OR A NUN.'),
           ask('bishop', 'SWEAR.', [{ label: 'SO HELP ME GOD.', effects: { grace: 5, flags: { sworn: true } } }]),
@@ -451,7 +452,8 @@ export const CH7: ChapterDef = {
             ctx.addActor('niketas', 'niketas', DOORWAY, { kind: 'idle', face: 'E' });
             ctx.addActor('venetian', 'venetian', { x: 4.5, y: 20.5 }, { kind: 'idle', face: 'E' });
             ctx.addActor('family', 'greek', { x: 3.5, y: 21.5 }, { kind: 'idle', face: 'E' });
-            const jack = ctx.addActor('jack', 'jack', { x: 4.5, y: 19.5 }, { kind: 'goto', to: { x: 7.5, y: 16.5 }, speed: 0.45 });
+            // In arms, as at the breach (7.7).
+            const jack = ctx.addActor('jack', 'jackKnight', { x: 4.5, y: 19.5 }, { kind: 'goto', to: { x: 7.5, y: 16.5 }, speed: 0.45 });
             ctx.addActor('girl', 'householdWoman', { x: 5, y: 19.8 }, { kind: 'follow', target: jack, distance: 0.7, speed: 0.6 });
             ctx.addActor('p1', 'pilgrim', { x: 8.5, y: 18.5 }, { kind: 'wander', center: { x: 8.5, y: 18.5 }, radius: 1, speed: 0.8 });
             ctx.addActor('p2', 'knight', { x: 9.5, y: 19.5 }, { kind: 'wander', center: { x: 9.5, y: 19.5 }, radius: 1, speed: 0.8 });
@@ -508,7 +510,8 @@ export const CH7: ChapterDef = {
       source:
         "CLARI 81 (THE TREASURE GUARDED IN AN ABBEY; THE BEST TAKEN BY THE GUARDS AND THE RICH; THE POOR KNIGHTS GET ONLY THE COARSE SILVER), 92 (THE PILLARS, READ AFTER THE EVENT), 98 (ALEAUME CLAIMS A KNIGHT'S SHARE AND SAINT-POL ALLOWS IT), 105 (THE POOR KNIGHTS' COMPLAINT). VILLEHARDOUIN PP. 65-66 (COVETOUSNESS; THINGS KEPT BACK; THE COUNT OF SAINT-POL HANGS A KNIGHT WITH HIS SHIELD AT HIS NECK). CHONIATES, DESTROYED MONUMENTS (PARAS. 2-3): BRONZE STATUES THROWN INTO THE FIRE AND TURNED INTO COINAGE; THE HERCULES THROWN DOWN. THE LAMP AND THE CHOICE ARE ADAPTATION.",
       script: () => [
-        stage('city', [{ name: 'conf', who: 'confusione', at: { x: 6.5, y: 19.5 }, face: 'W' }], { at: { x: 5.5, y: 18.5 } }),
+        // Aleaume still in the mail of the breach (7.7): he claims a knight's share at the pile.
+        stage('city', [{ name: 'conf', who: 'confusioneKnight', at: { x: 6.5, y: 19.5 }, face: 'W' }], { at: { x: 5.5, y: 18.5 } }),
         walk({
           objective: 'THE LAMP IS LYING IN THE STREET. PICK IT UP',
           pickups: [{ at: { x: 4.5, y: 20.5 }, kind: 'spot', label: "THE LAMP FROM NIKETAS'S COURTYARD", text: 'STILL WARM FROM LAST NIGHT', sprite: 'lamp' }],

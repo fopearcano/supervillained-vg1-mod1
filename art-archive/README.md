@@ -20,3 +20,6 @@ Kept here for reference, outside `public/`, so it is not bundled.
   keeps their N, E, S and W frames pixel for pixel.
 - `sprites-update-1-cast/` — update 1's Bagnaskiz (`bagnaskiz.png`, 5 animations, four views),
   Jack, Watson and Confusione, replaced by the Bagnaskiz 8-directions delivery and the pixel cast.
+- `pixel-cast-replaced/` — the pixel cast's Jack, Watson, Santina and Confusione (160 × 1600:
+  idle 2, walk 4, run 4, bark 2, hurt 2), replaced by their animation deliveries (the twelve
+  actions, plain and armoured).

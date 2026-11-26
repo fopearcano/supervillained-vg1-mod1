@@ -37,11 +37,11 @@ strangled January 1204) and Alexios V Mourtzouphlos (who takes the throne in 120
 | Greenzone | In the dream | Notes |
 |---|---|---|
 | Zampanò | a small knight of Picardy, in Robert de Clari's place | Not Clari himself: the dream borrows Clari's position (his lord, his brother, his share). |
-| Confusione | Aleaume of Clari, a clerk, Robert's brother | Calls him "brother". The breach (7.7) is Aleaume's deed, not Zampanò's. |
+| Confusione | Aleaume of Clari, a clerk, Robert's brother | Calls him "brother". The breach (7.7) is Aleaume's deed, not Zampanò's. In his mail from the breach on (7.7, 7.9: its rattle guides Zampanò; at the pile he claims a knight's share). |
 | Sbrimbrulòn | Pierre d'Amiens, his lord | The walk beside Pierre (7.3) is the dream's emotional centre. |
 | Bagnaskiz | the marshal, Geoffroi de Villehardouin; also the faces of Alexios III and Alexios V | "The dream runs out of faces": the bully gets every crown. |
 | Watson | a Venetian sailor; a companion in the city | Still says "MAN". |
-| Jack | the lad who wants the helmet on the road (2.3), rumours on deck, the dice at Zara, crossed fingers at the oath, the looter in 7.8 | The camp's worst impulses; invented. |
+| Jack | the lad who wants the helmet on the road (2.3), rumours on deck, the dice at Zara, crossed fingers at the oath, the looter in 7.8 | The camp's worst impulses; invented. In arms from the oath before the assault (7.7, 7.8). |
 | Santina | a woman on the walls (7.3) | Her words are lost in the wind; answered at her gate (8.4). |
 | The Professor | himself; asides at the end of each level | Lecture voice: "YOU UNDERSTAND". |
 | — | the Doge Enrico Dandolo, "an old, blind, very shrewd dog" | |

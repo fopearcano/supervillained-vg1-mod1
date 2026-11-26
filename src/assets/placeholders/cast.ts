@@ -118,3 +118,28 @@ const PIXEL_CAST_FALLBACKS: Record<string, string> = {
 for (const [key, source] of Object.entries(PIXEL_CAST_FALLBACKS)) {
   CAST_SPECS[key] = { ...CAST_SPECS[source]!, colors: { ...CAST_SPECS[source]!.colors } };
 }
+
+// The Jack, Watson, Santina and Confusione animation deliveries: emergency fallbacks in the colours
+// of the delivered art (the deliveries' own specs), plain and in armour (helm and tabard).
+CAST_SPECS.jack = {
+  ...CAST_SPECS.jack!,
+  colors: { ...CAST_SPECS.jack!.colors, base: '#111214', shade: '#303033', deep: '#08090a', outline: '#08090a', eye: '#eacb28', nose: '#493047' },
+  muzzle: '#fff0d5',
+};
+CAST_SPECS.santina = {
+  ...CAST_SPECS.santina!,
+  colors: { ...CAST_SPECS.santina!.colors, base: '#fff8e6', shade: '#91c7bd', deep: '#438d8c', outline: '#02282a', eye: '#fff8e6', nose: '#033b40' },
+  stripes: undefined, muzzle: undefined, eyes: undefined, marks: undefined,
+  fluffy: true, ears: 'floppy', tail: 'fluff',
+  costume: undefined, hat: 'bow', hatColor: '#cc4338',
+};
+CAST_SPECS.confusione = {
+  ...CAST_SPECS.confusione!,
+  colors: { ...CAST_SPECS.confusione!.colors, base: '#ff9414', shade: '#cf6504', deep: '#8e3e02', outline: '#211208', eye: '#fff1ce', nose: '#c65e2c' },
+  stripes: '#a64703', muzzle: '#ffe1aa', eyes: 'sleepy', marks: undefined,
+  costume: undefined, hat: undefined,
+};
+for (const key of ['jack', 'watson', 'santina', 'confusione']) {
+  const plain = CAST_SPECS[key]!;
+  CAST_SPECS[`${key}Knight`] = { ...plain, colors: { ...plain.colors }, costume: 'tabard', hat: 'helm', hatColor: '#99959a' };
+}

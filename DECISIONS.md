@@ -1225,3 +1225,46 @@ temporary testing option in the settings, not in place of the current art.
   integrating.
 - Nothing else changes: no gameplay, map, marker, collision or story data; no runtime dependency;
   the APK grows by the second bank (1.6 MB).
+
+## Jack, Watson, Santina and Confusione: twelve actions, plain and armoured
+
+Eight deliveries on this branch (`Supervillained_VG1_{Jack,Watson,Santina,Confusione}_{Normal,
+Armoured}_Animations.zip`), made against the original repository's commit 95b69c0.
+
+- **What they are**: for each of the four, a plain and an armoured costume (helm, mail, shoulder
+  plates, red cross on the back), each a 320 × 3520 atlas of eleven actions plus a 80 × 320
+  `tired` sheet, 40 × 40 frames, anchor (20, 36): the twelve actions of the player-ready dogs.
+  Their timing modules are Sbrimbrulòn's table hold for hold (Confusione's adds a comment: his
+  `bark` is a meow or a hiss, his `pee` a feline crouch), so the manifest uses that one table,
+  renamed `CAST_ANIMS`, for all of them, instead of copying four identical modules and four
+  one-line definition files. New keys: `jackKnight`, `watsonKnight`, `santinaKnight`,
+  `confusioneKnight` (in `CAST_KEYS`); the plain keys keep their names, so no script or save
+  changes. The emergency fallbacks (`placeholders/cast.ts`) take the deliveries' colours (Jack
+  black, Santina's Maltese coat and red bow, Confusione orange), and the armoured ones a helm and
+  a tabard.
+- **Checked on the pixels before use** (and now by `tests/castAnimations.test.ts`, which decodes
+  the sheets with zlib through the new `tests/pngPixels.ts`): every declared frame drawn in every
+  direction and nothing past the last one, no art touching a cell's edge, both idles and the
+  panting standing on the ground line in every frame, the armour a sheet of its own. Jack,
+  Santina and Confusione have eight distinct views in every frame; Watson four, his diagonal rows
+  reusing the side profiles (his README says so). Armoured Watson is drawn about 15 % smaller than
+  plain Watson. Both are noted for a later delivery (`docs/BACKLOG.md`).
+- **Replaced**: the pixel cast's Jack, Watson, Santina and Confusione (five actions), moved to
+  `art-archive/pixel-cast-replaced/`.
+- **Where the armour is worn**: the deliveries leave it to the story ("only for scenes requiring
+  armour"; no change to progression or to the playable roster). By the rule used for Sbrimbrulòn
+  (armoured where the story makes them fighting crusaders): Aleaume from the breach, where the
+  script already has his mail rattle (7.7, the tug mini-game included), to the common pile, where
+  he claims a knight's share (7.9); Jack from the oath he swears with crossed fingers before the
+  assault (7.7) to the sack (7.8). Plain on the lawn (levels 1 and 8) and before the assault
+  (Aleaume the clerk of 2.3, 5.3, 6.1; Jack the lad of the road, the deck and the dice). Watson
+  (a Venetian sailor) and Santina (a woman on the walls) have no armoured scene yet. Dialogue
+  portraits stay plain, as Zampanò's do.
+- **What the new actions change at once**: these four sit down after three seconds standing still
+  (`Actor`), like Sbrimbrulòn; their bark and hurt play once and hold, like his. In the Green Zone
+  ambush Jack and Watson now squat to poop as Bagnaskiz does. That stopped them for 0.6 s twice
+  during the fright, and since each one's place on the circle kept moving, afterwards they ran
+  across the circle and dropped the next pile close to Zampanò: the piles spread only 1.3 to 2.5
+  tiles and the smoke check (more than one pee's reach, 2.5) failed. A squatting band member now
+  keeps its place on the circle and goes on round from there (`Ambush.scareStep`): 1.3 to 2.9
+  tiles, as before the squats (1 to 3).

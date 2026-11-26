@@ -250,8 +250,8 @@ export class LaddersGame extends MiniGame {
 export interface TugOptions {
   objective: string;
   label: string;
-  /** Who is pulled ahead of Zampanò (Confusione into the breach, the prince's boat). */
-  friend: 'confusione' | 'prince';
+  /** Who is pulled ahead of Zampanò (Confusione into the breach, in his mail as on the stage; the prince's boat). */
+  friend: 'confusioneKnight' | 'prince';
 }
 
 /**
@@ -266,7 +266,7 @@ export class TugGame extends MiniGame {
   private readonly friend: Sprite;
   private pos = 0;
 
-  constructor(private readonly o: TugOptions = { objective: 'HOLD CONFUSIONE BACK BY A HIND LEG', label: 'MASH TO HOLD HIM BACK!', friend: 'confusione' }) {
+  constructor(private readonly o: TugOptions = { objective: 'HOLD CONFUSIONE BACK BY A HIND LEG', label: 'MASH TO HOLD HIM BACK!', friend: 'confusioneKnight' }) {
     super();
     this.objective = o.objective;
     this.label = new PixelText(o.label, { color: C.yellow, shadow: '#000000' }).setOrigin(0.5);

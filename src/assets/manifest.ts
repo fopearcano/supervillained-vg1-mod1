@@ -69,9 +69,13 @@ export const CAST_KEYS = [
   'sbrimbrulon',
   'sbrimbrulonKnight',
   'jack',
+  'jackKnight',
   'watson',
+  'watsonKnight',
   'santina',
+  'santinaKnight',
   'confusione',
+  'confusioneKnight',
   'doge',
   'king',
   'emir',
@@ -162,13 +166,18 @@ const DELIVERED: Partial<Record<string, Pick<CharacterDef, 'sheet' | 'animSheets
   bagnaskizEmperor: { sheet: 'sprites/bagnaskizArmoured.png', animSheets: tired('sprites/bagnaskizArmoured-tired.png') },
   sbrimbrulon: { sheet: 'sprites/sbrimbrulon.png', animSheets: tired('sprites/sbrimbrulon-tired.png') },
   sbrimbrulonKnight: { sheet: 'sprites/sbrimbrulonKnight.png', animSheets: tired('sprites/sbrimbrulonKnight-tired.png') },
-  jack: { sheet: 'sprites/pixel-cast/jack.png' },
-  watson: { sheet: 'sprites/pixel-cast/watson.png' },
-  confusione: { sheet: 'sprites/pixel-cast/confusione.png' },
+  // The Jack, Watson, Santina and Confusione animation deliveries: the twelve actions, plain and
+  // in armour (helm, mail, red cross on the back). The pixel cast's sheets are archived.
+  ...Object.fromEntries(
+    ['jack', 'jackKnight', 'watson', 'watsonKnight', 'santina', 'santinaKnight', 'confusione', 'confusioneKnight'].map((key) => [
+      key,
+      { sheet: `sprites/${key}.png`, animSheets: tired(`sprites/${key}-tired.png`) },
+    ]),
+  ),
   varangian: { sheet: 'sprites/pixel-cast/varangian.png' },
   marquis: { sheet: 'sprites/pixel-cast/marquis.png' },
   ...Object.fromEntries([
-    'santina', 'professor', 'doge', 'niketas', 'fulk', 'clerk', 'abbot', 'envoy',
+    'professor', 'doge', 'niketas', 'fulk', 'clerk', 'abbot', 'envoy',
     'bishop', 'cook', 'sailmaker', 'prince', 'householdWoman', 'knight', 'pilgrim',
     'venetian', 'greek',
   ].map((key) => [key, { sheet: `sprites/pixel-cast/${key}.png` }])),
@@ -194,15 +203,22 @@ const ZAMPANO_ANIMS = {
 } satisfies Partial<Record<AnimName, AnimDef>>;
 
 /**
- * Sbrimbrulòn, plain and armoured (the Sbrimbrulòn animation deliveries): Zampanò's twelve
- * actions and holds, in the same atlas row order, except that fetch and hurt play once (an actor
- * plays them as actions and then goes back to what it was doing).
+ * The rest of the delivered dog cast, plain and armoured: Sbrimbrulòn, Bagnaskiz's emperor, Jack,
+ * Watson, Santina and Confusione (a cat: his `bark` is a meow or a hiss, his `pee` a crouch).
+ * Zampanò's twelve actions and holds, in the same atlas row order, except that fetch and hurt
+ * play once (an actor plays them as actions and then goes back to what it was doing).
  */
-const SBRIMBRULON_ANIMS = {
+const CAST_ANIMS = {
   ...ZAMPANO_ANIMS,
   fetch: { frames: 4, fps: 13, loop: false },
   hurt: { frames: 2, fps: 10, loop: false },
 } satisfies Partial<Record<AnimName, AnimDef>>;
+
+/** The cast with the twelve actions (CAST_ANIMS); the others have idle, walk, run, bark, hurt. */
+const FULL_SET_KEYS: ReadonlySet<string> = new Set([
+  'sbrimbrulon', 'sbrimbrulonKnight', 'bagnaskizEmperor',
+  'jack', 'jackKnight', 'watson', 'watsonKnight', 'santina', 'santinaKnight', 'confusione', 'confusioneKnight',
+]);
 
 /** Story characters: idle / walk / run / bark, 40x40, anchored like Zampanò. */
 function castDefs<K extends string>(keys: readonly K[]): Record<K, CharacterDef> {
@@ -218,8 +234,8 @@ function castDefs<K extends string>(keys: readonly K[]): Record<K, CharacterDef>
       anims:
         key === 'zampanoKnight' || key === 'zampanoCross'
           ? ZAMPANO_ANIMS
-          : key === 'sbrimbrulon' || key === 'sbrimbrulonKnight' || key === 'bagnaskizEmperor'
-          ? SBRIMBRULON_ANIMS
+          : FULL_SET_KEYS.has(key)
+          ? CAST_ANIMS
           : {
               idle: { frames: 2, fps: 3, loop: true },
               walk: { frames: 4, fps: 9, loop: true },
@@ -250,9 +266,9 @@ export const CHARACTERS = {
     anchorY: 36,
     ...DELIVERED.bagnaskiz,
     anims: {
-      ...SBRIMBRULON_ANIMS,
+      ...CAST_ANIMS,
       // The Green Zone bully remains stunned for longer than this two-frame clip.
-      hurt: { ...SBRIMBRULON_ANIMS.hurt, loop: true },
+      hurt: { ...CAST_ANIMS.hurt, loop: true },
     },
   },
   cat: {

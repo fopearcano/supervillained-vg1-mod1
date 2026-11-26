@@ -41,7 +41,7 @@ None blocks work; fix each when the code around it is next changed.
    (JS heap only; every use is guarded). Clear it when the story takes over.
 4. **Per-scene filters are not destroyed** (title glitch, blur, attack, bleach). They hold no
    textures, so this is ordinary garbage; destroy them if a GPU profile ever points there.
-5. **The art deliveries are committed as zips at the repository root (~170 MB)**, as delivered
+5. **The art deliveries are committed as zips at the repository root (~300 MB)**, as delivered
    (`DECISIONS.md`, sprite updates). Every clone pays for them; Git LFS or release attachments
    would keep the history smaller. Owner's decision.
 
@@ -69,6 +69,13 @@ with history by the Professor, his human dad, and hopeless with girls). **Santin
 is to be changed.** The Green Zone walk got the band's ambush and more treats first (see
 `DECISIONS.md`).
 
+**Who wears armour, and where.** Jack, Watson, Santina and Confusione now have armoured costumes
+(`jackKnight`, `watsonKnight`, `santinaKnight`, `confusioneKnight`). Cast so far by the rule used for
+Sbrimbrulòn (armoured where the story makes them fighting crusaders): Aleaume from the breach
+(7.7, 7.9), Jack from the oath before the assault (7.7, 7.8). No scene calls for Watson (a
+Venetian sailor) or Santina (a woman on the walls) in armour yet; their costumes are ready for the
+rewrite (`ctx.addActor(name, 'watsonKnight', ...)` or `who: 'santinaKnight'` in a stage).
+
 ## 5. Polish and release
 
 1. **OPTIONS > ART is a temporary testing option**: the owner chooses between the current
@@ -77,25 +84,28 @@ is to be changed.** The Green Zone walk got the band's ambush and more treats fi
    to `art-archive/`), the ART row, `Settings.newArt`, `?art=`, `SV_ART` and the second bank in
    `environment.ts` go, and `docs/screens/environments/` keeps one set. A saved `newArt` is then
    simply ignored (`loadSettings` keeps only known fields), so no migration is needed.
-2. **The Green Zone ambush needs playing by a person**: its numbers were set by eye and checked
+2. **Watson's art, for a later delivery**: his sheets (plain and armoured) draw four views, the
+   diagonal rows reusing the side profiles, where the other dogs have eight; and armoured Watson
+   is drawn about 15 % smaller than plain Watson (idle height 22 px against 26). As delivered;
+   `tests/castAnimations.test.ts` records the four views.
+3. **The Green Zone ambush needs playing by a person**: its numbers were set by eye and checked
    by scripts, not by play. Timings in `AMBUSH` (`config.ts`: how often the voices come, the
    fright's length, six poop piles, the grace before Bagnaskiz comes back); where it starts and
    springs (25 % / 50 %), the band's spot and the lines in the level data
-   (`LEVEL_1.events.ambush`). Jack's and Watson's squat and sit wait for their animation
-   delivery (`ASSETS.md`); the voices are barks until recorded lines exist.
-3. **Android release signing**: `android:release` signs with the debug key
+   (`LEVEL_1.events.ambush`). The voices are barks until recorded lines exist.
+4. **Android release signing**: `android:release` signs with the debug key
    (`android/app/build.gradle`, `signingConfig signingConfigs.debug`). A store upload needs a
    real upload key, kept out of the repository.
-4. **Application id** `com.zampano.supervillained` is marked as a placeholder in `DECISIONS.md`
+5. **Application id** `com.zampano.supervillained` is marked as a placeholder in `DECISIONS.md`
    (M6); fix it before the first store upload, since it cannot change afterwards.
-5. **APK size** (~40 MB debug): mostly the recorded music (`assets/music`, ~6 MB a track).
-6. **Device checks**: the owner confirmed Back works on an installed build from before these
+6. **APK size** (~40 MB debug): mostly the recorded music (`assets/music`, ~6 MB a track).
+7. **Device checks**: the owner confirmed Back works on an installed build from before these
    passes. The newer changes (Back on a level's scene list, the double-tap guard, the MENU
    corner, Escape on OPTIONS / NEW GAME?, the wrapped rumour heading) were checked in a desktop
    Chromium with phone emulation and the same `svback` event the app sends, not on a phone.
    Play through once on a device: Back on every screen, double taps on QUIT / SKIP / CONTINUE,
    rotate or resize while paused, the rumour (6.2).
-7. **The committed screenshots in `docs/screens/` were stale** (older art in several) until this
+8. **The committed screenshots in `docs/screens/` were stale** (older art in several) until this
    pass regenerated them; regenerate after visual changes (`npm run screens`).
-8. **Gameplay feel and balance are not covered by any check.** The playtest proves every scene
+9. **Gameplay feel and balance are not covered by any check.** The playtest proves every scene
    can be finished by the autopilot, not that it is fun or fair at human speed.
