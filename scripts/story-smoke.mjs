@@ -5,8 +5,8 @@
  * (what a scene saves on restart / quit / skip), `menus` (double presses during a transition,
  * Escape and the Android Back button on each kind of screen, the MENU button after a resize, the
  * continue / confirm keys, OPTIONS' MUSIC and SOUNDS levels and ART), `keys` (the letter and rumour
- * mini-games played from the keyboard) and `walk` (the Green Zone: Bagnaskiz's band's ambush half
- * way).
+ * mini-games played from the keyboard) and `walk` (the Green Zone: Bagnaskiz's band rushing in
+ * from off-screen half way, at a big NOW!).
  *
  *   npm run smoke                 all sub-levels, then the four groups of checks
  *   npm run smoke -- 7.3 8.1      selected sub-levels
@@ -513,7 +513,7 @@ async function walkChecks(page) {
     ev.on('ambushBark', () => window.__heard.barks++);
   });
   let st = await state();
-  check(st.phase === 'waiting' && st.band === 3, `the band waits from the start (${st.phase}, ${st.band} of them)`);
+  check(st.phase === 'waiting' && st.band === 0, `no band in sight before the middle: they lie in wait off-screen (${st.phase}, ${st.band} on the field)`);
   // Just short of a quarter of the way: still silent.
   await page.evaluate(() => window.__sv.scene().teleport(71.5, 71.5)); // on the road, about 22 %
   await wait(2500);
@@ -532,7 +532,7 @@ async function walkChecks(page) {
     return +s.map.health().toFixed(3);
   });
   st = await state();
-  check(dirty < 0.95 && !st.pug && st.attack === 'calm' && st.held, `Bagnaskiz's usual attack waits while he waits with his band, even with the zone dirty (health ${dirty})`);
+  check(dirty < 0.95 && !st.pug && st.attack === 'calm' && st.held, `Bagnaskiz's usual attack waits while his band lies in wait, even with the zone dirty (health ${dirty})`);
   // Up the road to the middle.
   await page.evaluate(() => window.__sv.scene().teleport(51.1, 48.6));
   await wait(300);
@@ -540,7 +540,20 @@ async function walkChecks(page) {
   for (let k = 0; k < 60 && (await state()).phase === 'voices'; k++) await wait(40);
   await page.keyboard.up('KeyW');
   st = await state();
-  check(st.phase === 'now' || st.phase === 'jump', `NOW! at the middle of the walk (${st.phase})`);
+  // NOW! and, in the same moment, the band running in from outside the view.
+  const rush = await page.evaluate(() => {
+    const s = window.__sv.scene();
+    return {
+      shout: s.shout.active,
+      scale: s.shout.scale,
+      band: s.ambush.band.length,
+      outside: s.ambush.band.filter((m) => m.entry.offscreen).length,
+      running: s.ambush.band.filter((m) => m.actor.behavior.kind === 'goto').length,
+    };
+  });
+  check(st.phase === 'jump', `NOW! at the middle of the walk, and they rush in at once (${st.phase})`);
+  check(rush.shout && rush.scale >= 4, `the NOW! is big: a sound word over the screen (scale ${rush.scale})`);
+  check(rush.band === 3 && rush.outside === 3 && rush.running === 3, `all three come from outside the view, running (${rush.outside} of ${rush.band} off-screen)`);
   for (let k = 0; k < 60 && (await state()).phase !== 'scare'; k++) await wait(50);
   st = await state();
   check(st.phase === 'scare' && st.player === 'scared', `they jump in and he is frozen with fright (${st.phase}, ${st.player})`);
@@ -583,7 +596,7 @@ async function walkChecks(page) {
   });
   check((await state()).phase === 'scare' && near.every((d) => d < 3.6), `walking away at NOW!, he is still caught (band at ${near.join(', ')} tiles)`);
 
-  // On the west trail, far from where they wait: they pop up ahead of him, clear of hedges.
+  // On the west trail: they still come in from outside the view, clear of hedges, and reach him.
   await page.evaluate(() => window.__sv.flow.play(1));
   await wait(900);
   await page.evaluate(() => window.__sv.scene().teleport(38.5, 58.5));
@@ -600,7 +613,7 @@ async function walkChecks(page) {
       far: s.ambush.band.map((m) => +Math.hypot(m.actor.gx - s.player.gx, m.actor.gy - s.player.gy).toFixed(1)),
     };
   });
-  check(west.phase === 'scare' && west.stuck === 0 && west.far.every((d) => d < 3.6), `from the west trail they pop up ahead and reach him (${west.phase}, band at ${west.far.join(', ')}, stuck ${west.stuck})`);
+  check(west.phase === 'scare' && west.stuck === 0 && west.far.every((d) => d < 3.6), `on the west trail too they run in and reach him (${west.phase}, band at ${west.far.join(', ')}, stuck ${west.stuck})`);
 
   // Jumping past the middle (a teleport): no ambush, nothing held.
   await page.evaluate(() => window.__sv.flow.play(1));

@@ -3,15 +3,18 @@ import { Rng } from '../core/rng';
 import { animationDuration } from '../assets/animationTiming';
 import { CHARACTERS, type CharacterKey } from '../assets/manifest';
 import { Actor } from '../entities/actor';
+import { screenToGrid } from '../iso/projection';
 import type { AmbushSettings } from '../world/level';
-import { Ground } from '../world/tiles';
 import { AmbushDirector, type AmbushSignal } from './ambushLogic';
+import { offscreenEntry, standsAt, type Entry, type Point } from './ambushEntry';
 import { randomSpotNear } from './placement';
 import type { Rules, WorldAccess } from './rules';
 
 interface Member {
   readonly key: string;
   readonly actor: Actor;
+  /** Where it came in from: outside the view (or, failing that, the farthest clear spot inside). */
+  readonly entry: Entry;
   /** Their place around Zampanò while they circle him (radians). */
   angle: number;
   /** Seconds to the next bark / the next poop while they scare him. */
@@ -22,23 +25,17 @@ interface Member {
   squatLeft: number;
 }
 
-/** A band member's body radius for placement checks (an Actor moves as a 0.25 circle). */
-const BODY = 0.3;
-
-/** Where each one waits, around the band's spot (grid tiles): the leader in front. */
-const WAIT_OFFSETS = [
-  { x: 0.2, y: 0.2 },
-  { x: -0.9, y: -0.4 },
-  { x: 0.7, y: -0.9 },
-  { x: -0.5, y: 0.9 },
-];
+/** The logical size of the view (px), for "outside the view". */
+export type ViewSize = () => { w: number; h: number };
 
 /**
- * Bagnaskiz's band in the Green Zone walk (story 1.0): they wait half way along the route, their
- * voices come closer, and when Zampanò reaches the middle they jump in barking, frighten him,
- * poop around him and run off. The sequence is AmbushDirector (pure); this moves the band
- * (story Actors), freezes him and drops the piles (Rules.dropPoop: they pollute like his, are
- * cleaned by his pee, and are not counted as his). Effects and sounds react to the events.
+ * Bagnaskiz's band in the Green Zone walk (story 1.0). Out of sight until the middle of the walk:
+ * from a quarter of the way their voices come from off-screen, from the sides they will come from,
+ * more and more often; when Zampanò reaches the middle a big NOW! and, at that very moment, they
+ * rush in from outside the view, from the sides, frighten him, poop around him and run off. The
+ * sequence is AmbushDirector (pure); where they come in from, ambushEntry (pure); this makes the
+ * actors, freezes him and drops the piles (Rules.dropPoop: they pollute like his, are cleaned by
+ * his pee, and are not counted as his). Effects and sounds react to the events.
  */
 export class Ambush {
   readonly director: AmbushDirector;
@@ -50,26 +47,13 @@ export class Ambush {
     private readonly rules: Rules,
     readonly settings: AmbushSettings,
     seed: number,
+    private readonly view: ViewSize,
   ) {
     this.rng = new Rng(seed ^ 0x2c1b3c6d);
     this.director = new AmbushDirector(
       { warnFrom: settings.warnFrom, at: settings.at, until: settings.until, lines: settings.voices.length },
       this.rng,
     );
-    settings.band.forEach((key, k) => {
-      const off = WAIT_OFFSETS[k % WAIT_OFFSETS.length]!;
-      let x = settings.spot.x + off.x;
-      let y = settings.spot.y + off.y;
-      if (!this.clearAt(x, y)) {
-        const s = this.clearSpotNear(settings.spot.x, settings.spot.y, 0.5, 2.2);
-        if (s) ({ x, y } = s);
-      }
-      const actor = new Actor(`band-${key}`, key as CharacterKey, x, y);
-      // Waiting, they watch for him, and sit down after a while (Actor: every band member has `sit`).
-      actor.setBehavior({ kind: 'idle', face: 'player' });
-      world.addEntity(actor);
-      this.band.push({ key, actor, angle: 0, barkIn: 0, poopIn: 0, poopsLeft: 0, squatLeft: 0 });
-    });
   }
 
   /** Bagnaskiz's usual attack must wait (he is with his band, or they have only just left). */
@@ -79,14 +63,13 @@ export class Ambush {
 
   /** They have shown themselves (for the radar). */
   get revealed(): boolean {
-    const p = this.director.phase;
-    return p === 'now' || p === 'jump' || p === 'scare' || p === 'leave';
+    return this.band.length > 0;
   }
 
   update(dt: number): void {
     const { player, map } = this.world;
     const progress = map.progressAt(player.gx, player.gy);
-    const arrived = this.band.every((m) => m.actor.arrived || this.distance(m.actor) <= AMBUSH.RING + 0.5);
+    const arrived = this.band.length > 0 && this.band.every((m) => m.actor.arrived || this.distance(m.actor) <= AMBUSH.RING + 0.5);
     for (const s of this.director.update(dt, progress, arrived)) this.handle(s);
     const phase = this.director.phase;
     // They run at where he is now, not where he stood at the shout.
@@ -107,36 +90,27 @@ export class Ambush {
 
   private handle(s: AmbushSignal): void {
     const { player, events } = this.world;
-    const lead = this.band[0];
     switch (s.kind) {
       case 'voice': {
+        // From off-screen, on the side the speaker will come from (the view keeps the text in).
         const line = this.settings.voices[s.line]!;
-        const m = this.band.find((b) => b.key === line.who) ?? lead;
-        if (m) events.emit('ambushVoice', { x: m.actor.gx, y: m.actor.gy, text: line.text, who: m.key, loud: s.loud });
+        const k = Math.max(0, this.settings.band.indexOf(line.who));
+        const p = this.beyondView(k);
+        events.emit('ambushVoice', { x: p.x, y: p.y, text: line.text, who: line.who, loud: s.loud });
         break;
       }
       case 'now': {
-        if (!lead) break;
-        // He took another lane: they pop out of cover a few tiles ahead of him instead.
-        if (this.distance(lead.actor) > AMBUSH.REACH) this.regroupAhead();
-        lead.actor.faceToward(player.gx, player.gy);
-        lead.actor.emote('bark', 0.6);
-        events.emit('ambushNow', { x: lead.actor.gx, y: lead.actor.gy, text: this.settings.now, who: lead.key });
+        const lead = this.settings.band[0] ?? 'bagnaskiz';
+        events.emit('ambushNow', { x: player.gx, y: player.gy, text: this.settings.now, who: lead });
         break;
       }
-      case 'jump': {
-        // Around him, the leader on the side he came from.
-        const base = lead ? Math.atan2(lead.actor.gy - player.gy, lead.actor.gx - player.gx) : 0;
-        this.band.forEach((m, k) => {
-          m.angle = base + (k * Math.PI * 2) / this.band.length;
-          m.actor.setBehavior({ kind: 'goto', to: this.ringPoint(m.angle), speed: AMBUSH.JUMP_SPEED, run: true });
-          m.actor.emote('bark', 0.5);
-        });
+      case 'jump':
+        this.rushIn();
         events.emit('ambushJump', { x: player.gx, y: player.gy });
         break;
-      }
       case 'scare': {
         player.startAction('scared', AMBUSH.SCARE_TIME);
+        const lead = this.band[0];
         if (lead) player.knockback(player.gx - lead.actor.gx, player.gy - lead.actor.gy, AMBUSH.SCARE_KNOCK);
         const every = (AMBUSH.SCARE_TIME - 0.5) / Math.max(1, AMBUSH.POOPS_EACH);
         this.band.forEach((m, k) => {
@@ -157,6 +131,51 @@ export class Ambush {
         this.band.length = 0;
         break;
     }
+  }
+
+  /**
+   * NOW!: the band appears just outside the view, each from its side (AMBUSH.ENTRY_DIRS), and
+   * runs straight at him, barking. Each one lands on the circle around him on the side it came from.
+   */
+  private rushIn(): void {
+    const { player, map } = this.world;
+    const { w, h } = this.view();
+    const here = { x: player.gx, y: player.gy };
+    this.settings.band.forEach((key, k) => {
+      const [sx, sy] = AMBUSH.ENTRY_DIRS[k % AMBUSH.ENTRY_DIRS.length]!;
+      const entry =
+        offscreenEntry(map, here, sx, sy, w / 2, h / 2) ??
+        // Nowhere clear on any line in (a pocket of hedges): close by, wherever there is room.
+        this.nearby(here) ?? { ...here, offscreen: false };
+      const actor = new Actor(`band-${key}`, key as CharacterKey, entry.x, entry.y);
+      const angle = Math.atan2(entry.y - here.y, entry.x - here.x);
+      actor.faceToward(here.x, here.y);
+      actor.setBehavior({ kind: 'goto', to: this.ringPoint(angle), speed: AMBUSH.JUMP_SPEED, run: true });
+      actor.emote('bark', 0.5);
+      this.world.addEntity(actor);
+      this.band.push({ key, actor, entry, angle, barkIn: 0, poopIn: 0, poopsLeft: 0, squatLeft: 0 });
+    });
+  }
+
+  /** A point well outside the view in band member k's direction (the voices' place; no ground check). */
+  private beyondView(k: number): Point {
+    const { player } = this.world;
+    const { w, h } = this.view();
+    const [sx, sy] = AMBUSH.ENTRY_DIRS[k % AMBUSH.ENTRY_DIRS.length]!;
+    const len = Math.hypot(sx, sy) || 1;
+    const ux = sx / len;
+    const uy = sy / len;
+    const d = Math.min(Math.abs(ux) > 1e-6 ? w / 2 / Math.abs(ux) : Infinity, Math.abs(uy) > 1e-6 ? h / 2 / Math.abs(uy) : Infinity) + AMBUSH.ENTRY_MARGIN;
+    const g = screenToGrid(ux * d, uy * d);
+    return { x: player.gx + g.x, y: player.gy + g.y };
+  }
+
+  private nearby(here: Point): Entry | null {
+    for (let k = 0; k < 6; k++) {
+      const s = randomSpotNear(this.world.map, here.x, here.y, 2, 4, this.rng);
+      if (s && standsAt(this.world.map, s.x, s.y)) return { ...s, offscreen: false };
+    }
+    return null;
   }
 
   /** They circle him, barking, and each poops on the way round. */
@@ -193,8 +212,9 @@ export class Ambush {
     const a = m.actor;
     let x = a.gx;
     let y = a.gy;
-    if (!this.standable(Math.floor(x), Math.floor(y))) {
-      const s = randomSpotNear(this.world.map, x, y, 0.3, 1.5, this.rng, (i, j) => this.standable(i, j));
+    const map = this.world.map;
+    if (!standsAt(map, x, y, 0)) {
+      const s = randomSpotNear(map, x, y, 0.3, 1.5, this.rng);
       if (!s) return;
       ({ x, y } = s);
     }
@@ -211,39 +231,6 @@ export class Ambush {
     this.world.events.emit('bandPoop', { x, y, who: m.key });
   }
 
-  /** The band appears close ahead of him, from cover, when he did not come their way. */
-  private regroupAhead(): void {
-    const { player, map } = this.world;
-    const here = map.progressAt(player.gx, player.gy);
-    const ahead = (i: number, j: number) => this.standable(i, j) && map.progressAt(i + 0.5, j + 0.5) > here;
-    const d = AMBUSH.APPEAR_AT;
-    const spot =
-      this.clearSpotNear(player.gx, player.gy, d - 1, d + 1, ahead) ?? this.clearSpotNear(player.gx, player.gy, d - 1, d + 1);
-    if (!spot) return;
-    this.band.forEach((m, k) => {
-      const off = WAIT_OFFSETS[k % WAIT_OFFSETS.length]!;
-      const x = spot.x + off.x;
-      const y = spot.y + off.y;
-      // Never half inside a hedge or a tree: they could not move again.
-      if (this.clearAt(x, y)) m.actor.setPosition(x, y);
-      else m.actor.setPosition(spot.x, spot.y);
-    });
-  }
-
-  /** A band member fits here: solid dry ground, its body clear of hedges, trees and water. */
-  private clearAt(x: number, y: number): boolean {
-    return this.standable(Math.floor(x), Math.floor(y)) && !this.world.map.circleBlocked(x, y, BODY);
-  }
-
-  /** A spot near (x, y) where a band member fits (randomSpotNear checks only the tile). */
-  private clearSpotNear(x: number, y: number, minD: number, maxD: number, accept = (i: number, j: number) => this.standable(i, j)): { x: number; y: number } | null {
-    for (let k = 0; k < 6; k++) {
-      const s = randomSpotNear(this.world.map, x, y, minD, maxD, this.rng, accept);
-      if (s && this.clearAt(s.x, s.y)) return s;
-    }
-    return null;
-  }
-
   private ringPoint(angle: number, radius: number = AMBUSH.RING): { x: number; y: number } {
     const { player } = this.world;
     return { x: player.gx + Math.cos(angle) * radius, y: player.gy + Math.sin(angle) * radius };
@@ -252,10 +239,5 @@ export class Ambush {
   private distance(a: Actor): number {
     const { player } = this.world;
     return Math.hypot(a.gx - player.gx, a.gy - player.gy);
-  }
-
-  private standable(i: number, j: number): boolean {
-    const map = this.world.map;
-    return map.isWalkable(i, j) && map.groundAt(i, j) !== Ground.Water;
   }
 }

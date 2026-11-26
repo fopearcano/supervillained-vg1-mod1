@@ -705,7 +705,7 @@ const SCENARIOS = {
     const page = await openGame(browser, '?skip=game');
     await wait(1200);
     const phase = () => page.evaluate(() => window.__sv.scene().debugState().ambush);
-    // On the road at about 38 % of the walk: voices from ahead, kept in view below the HUD.
+    // On the road at about 38 % of the walk: voices from off-screen, at the sides of the view.
     await page.evaluate(() => window.__sv.scene().teleport(58.9, 57.5));
     for (let k = 0; k < 16; k++) {
       await wait(250);
@@ -713,16 +713,18 @@ const SCENARIOS = {
       if (voice) break;
     }
     await page.screenshot({ path: `${OUT}/g-ambush-voices.png` });
-    // 47 %: the band waits on the road ahead.
+    // 47 %: nobody in sight on the road ahead; only their voices.
     await page.evaluate(() => window.__sv.scene().teleport(51.1, 48.6));
     await wait(2400);
     await page.screenshot({ path: `${OUT}/g-ambush-waiting.png` });
-    // Up the road to the middle: NOW!
+    // Up the road to the middle: the big NOW!, and the band rushing in from the sides.
     await page.keyboard.down('KeyW');
     for (let k = 0; k < 40 && (await phase()) === 'voices'; k++) await wait(50);
     await page.keyboard.up('KeyW');
-    await wait(150);
+    await wait(200);
     await page.screenshot({ path: `${OUT}/g-ambush-now.png` });
+    await wait(250);
+    await page.screenshot({ path: `${OUT}/g-ambush-rush.png` });
     for (let k = 0; k < 40 && (await phase()) !== 'scare'; k++) await wait(50);
     await wait(1300);
     await page.screenshot({ path: `${OUT}/g-ambush-scare.png` });

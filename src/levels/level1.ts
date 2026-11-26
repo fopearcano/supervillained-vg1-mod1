@@ -216,8 +216,9 @@ export const LEVEL_1: LevelDef = {
     flowers: ['#ffe14a', '#ff7ad9', '#ffffff'],
   },
   spawns: {
-    // A treat every ~3.8 tiles on the road, plus one per progress band out on the loops and spine.
-    treats: { count: 32, maxOffset: 3, minSpacing: 2.2, route: GREEN_ZONE_ROAD, side: 12 },
+    // 88 treats (doubled, the owner's call): one every ~2.5 tiles on the road, and 40 spread
+    // evenly over the loops and the spine (no gravel more than 6 tiles from a treat).
+    treats: { count: 48, maxOffset: 3, minSpacing: 1.8, route: GREEN_ZONE_ROAD, side: 40 },
     cats: { first: 16, interval: [16, 27], max: 2 },
     balls: { first: 28, interval: [22, 34], max: 2 },
   },
@@ -229,13 +230,12 @@ export const LEVEL_1: LevelDef = {
       { progress: 0.43, count: 2, radius: 2.8, strength: 0.82, distance: [3, 8] },
       { progress: 0.72, count: 3, radius: 3, strength: 0.9, distance: [2, 8] },
     ],
-    // Bagnaskiz waits half way with his band, on the road just before the middle plaza: in
-    // full view of Zampano coming up the road from about 40 % of the walk.
+    // Bagnaskiz's band, out of sight: their voices from a quarter of the way, then at the middle
+    // a big NOW! and they rush in from outside the view, from the sides.
     ambush: {
       warnFrom: 0.25,
       at: 0.5,
       until: 0.62,
-      spot: { x: 45.2, y: 44.4 },
       band: ['bagnaskiz', 'jack', 'watson'],
       voices: [
         { who: 'jack', text: "HE'S COMING! HE'S COMING!" },

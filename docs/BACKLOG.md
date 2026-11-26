@@ -92,9 +92,11 @@ rewrite (`ctx.addActor(name, 'watsonKnight', ...)` or `who: 'santinaKnight'` in 
    armoured clip at plain Watson's scale. `tests/castAnimations.test.ts` records the four views.
 3. **The Green Zone ambush needs playing by a person**: its numbers were set by eye and checked
    by scripts, not by play. Timings in `AMBUSH` (`config.ts`: how often the voices come, the
-   fright's length, six poop piles, the grace before Bagnaskiz comes back); where it starts and
-   springs (25 % / 50 %), the band's spot and the lines in the level data
-   (`LEVEL_1.events.ambush`). The voices are barks until recorded lines exist.
+   fright's length, six poop piles, the grace before Bagnaskiz comes back, where they rush in
+   from and how fast, the big NOW!'s timing); where it starts and springs (25 % / 50 %) and the
+   lines in the level data (`LEVEL_1.events.ambush`). The voices are barks until recorded lines
+   exist. The doubled treats (88) mean up to about 12 poops for a dog that eats everything on the
+   road: worth feeling on a phone.
 4. **Android release signing**: `android:release` signs with the debug key
    (`android/app/build.gradle`, `signingConfig signingConfigs.debug`). A store upload needs a
    real upload key, kept out of the repository.

@@ -16,6 +16,7 @@ import { Rules } from '../systems/rules';
 import { Threats } from '../systems/threats';
 import { GlitchFilter } from '../fx/glitchFilter';
 import { AttackBanner } from '../ui/attackBanner';
+import { Shout } from '../ui/shout';
 import { Hud, type RadarDot } from '../ui/hud';
 import { PixelText } from '../ui/pixelText';
 import { TouchControls } from '../ui/touchControls';
@@ -40,10 +41,12 @@ export class GameScene implements Scene {
   readonly events = new Emitter<GameEvents>();
   readonly rules: Rules;
   readonly threats: Threats;
-  /** Bagnaskiz's band waiting half way (level data `events.ambush`), or null. */
+  /** Bagnaskiz's band, rushing in from off-screen half way (level data `events.ambush`), or null. */
   readonly ambush: Ambush | null;
   readonly hud: Hud;
   readonly banner = new AttackBanner();
+  /** The band's big NOW! (over the world, under the buttons). */
+  readonly shout = new Shout();
   private readonly attackFilter = new GlitchFilter();
   /** Smoothed visual intensity of the "under attack" effects. */
   private attackFx = 0;
@@ -86,7 +89,7 @@ export class GameScene implements Scene {
     this.player.speedMul = livesSpeed(lives);
     this.threats = new Threats(this, this.rules, levelDef);
     const ambush = levelDef.events.ambush;
-    this.ambush = ambush ? new Ambush(this, this.rules, ambush, levelDef.seed) : null;
+    this.ambush = ambush ? new Ambush(this, this.rules, ambush, levelDef.seed, () => ({ w: this.game.width, h: this.game.height })) : null;
     // While Bagnaskiz waits with his band (and a little after they leave), he does not also roam.
     this.threats.attackHeld = () => this.ambush?.holdsAttack ?? false;
     this.fx = new GameFx(this.events, this.player, this.camera, () => this.rules.poopWarning);
@@ -102,7 +105,8 @@ export class GameScene implements Scene {
 
     this.hud = new Hud(game.input);
     this.controls = new TouchControls(game.input);
-    this.uiLayer.addChild(this.controls.root, this.hud.root, this.banner.root);
+    this.uiLayer.addChild(this.shout.root, this.controls.root, this.hud.root, this.banner.root);
+    this.events.on('ambushNow', (e) => this.shout.show(e.text));
 
     this.events.on('levelComplete', () => {
       this.controls.setEnabled(false);
@@ -155,6 +159,7 @@ export class GameScene implements Scene {
     this.controls.setLayout({ peeX: w - 60, peeY: h - 50, peeR: 15, barkX: w - 23, barkY: h - 60, barkR: 17, runX: w - 42, runY: h - 98, runR: 15 }, { w, h, top: 60 });
     this.hud.layout(w, h);
     this.banner.layout(w, h);
+    this.shout.layout(w, h);
   }
 
   /** Android Back during the walk: the pause menu (Flow.pause decides whether it may open). */
@@ -221,6 +226,7 @@ export class GameScene implements Scene {
           ? 'PEE TO HEAL THE ZONE!'
           : null;
     this.banner.update(dt, hint);
+    this.shout.update(dt);
   }
 
   render(alpha: number, frameDt: number): void {

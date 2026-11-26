@@ -261,6 +261,19 @@ export class AudioEngine {
   }
 
   /**
+   * Where the music file now playing is heard (seconds into it, less the output latency), for
+   * visuals kept on its beat (the title's disco lights); null when no file plays (before the first
+   * tap, stopped, or the synthesized track).
+   */
+  musicPosition(): { track: MusicTrack; seconds: number } | null {
+    const el = this.playingElement;
+    if (!el || el.paused || el.readyState < 2) return null;
+    const ctx = this.ctx as (AudioContext & { outputLatency?: number }) | null;
+    const latency = (ctx?.baseLatency ?? 0) + (ctx?.outputLatency ?? 0);
+    return { track: this.track, seconds: el.currentTime - latency };
+  }
+
+  /**
    * The music for a new screen: switches to `track` (the same track keeps playing where it is),
    * lifts any ducking and starts the music if it was stopped. Pause menus and the siren duck with
    * setDuck alone.

@@ -10,8 +10,11 @@ Or install the debug APK (see README → Android).
 - No pinch-zoom, no page scroll, no long-press menu. Text and pixels look crisp (not blurry).
 
 ## M2 — Core loop and HUD
-- Walk up the main gravel road: a bone every few steps all the way to the exit; a few more wait
-  out on the side lanes (the loops, the quiet lane along the west and south edges).
+- Walk up the main gravel road: a bone every two or three steps all the way to the exit; plenty
+  more out on the side lanes, spread over every loop and the quiet lane along the west and south
+  edges (88 in all).
+- Half way: voices from off-screen ("HE'S COMING!", "GET READY!"), then a big NOW! fills the screen
+  and Bagnaskiz, Jack and Watson rush in from the sides, frighten Zampanò, poop around him, run off.
 - Eat bones: TREATS goes up, the hunger bar refills; after ~4 bones a poop bubble appears, then a
   poop: try doing it on the path (big brown stain) vs. in a bush/tall grass (tiny stain).
 - Press PEE on a stain: the area turns green again; next to a tree/pole/bush you get "MARKING!".
@@ -19,7 +22,8 @@ Or install the debug APK (see README → Android).
 - Walk into a puddle or next to a fountain with missing pee charges: they refill.
 
 ## M3 — Scenes
-- Title (glitch entrance) → tap → briefing → tap → play. MENU (top right): resume, restart,
+- Title (glitch entrance, disco lights: coloured beams sweeping, mirror-ball specks, a flash on
+  every beat of the title music once it plays after the first tap) → tap → briefing → tap → play. MENU (top right): resume, restart,
   sound, music, sounds, quit. Switch app / lock the screen during play: it comes back paused.
 - Reach the EXIT flag (top of the map): stars pop one by one, bonuses, NEXT/RETRY; best score
   shows on the title. Starve twice → GAME OVER → RETRY.

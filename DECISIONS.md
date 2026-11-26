@@ -1288,3 +1288,43 @@ Armoured}_Animations.zip`), made against the original repository's commit 95b69c
   every delay identical) and decoded in the browser with `ImageDecoder` as the title does. The
   `-3` WebP copy is gone (the `-3` GIF, its source, is kept with the others, unused). The APK
   grows by about 0.7 MB.
+
+## Disco lights on the title; doubled treats; the band rushes in at a big NOW!
+
+The owner asked for strobe disco lights on the title page, "good with the funky music", and, for
+the Green Zone walk (story 1.0): the treats doubled and better distributed, and Bagnaskiz's band
+coming from the sides, from outside the screen, instead of waiting in the middle, "so it's more
+sudden", right when a big NOW! appears, "like a big sound".
+
+- **Disco lights** (`ui/discoLights.ts`, `TITLE.DISCO`): coloured beams sweeping down from the top
+  edge, mirror-ball specks drifting across, a coloured wash on every beat and a short white strobe
+  on the first beat of every bar, over a darker room (a black veil on the backdrop only: the
+  logo, the portrait and the buttons are not lit). On the beat of the title music: its tempo and
+  first beat were measured on the track's kick drum (123.36 BPM, first beat at 0.130 s; the grid
+  holds within 5 ms over its 63 s), and the lights follow the playing element's clock less the
+  output latency (`AudioEngine.musicPosition`), eased in, snapping when the track loops; before
+  the first tap (no music yet) they keep the same tempo by themselves. **Photosensitivity**: about
+  two flashes a second at this tempo, under the three a second of the WCAG general flash
+  threshold, and never a full-white screen (the strobe at most 20 %); `tests/discoLights.test.ts`
+  counts them over a minute.
+- **Doubled treats, spread better**: 88 instead of 44, 48 on the road (one every ~2.5 tiles) and
+  40 out on the lanes. The lane treats used to go one per strip of the walk, which lined them up
+  along the outer lanes and left the loops round the ponds bare; they are now placed farthest-first
+  over the whole lane network (each on the lane tile farthest from every treat so far). Measured
+  on the map: no gravel more than 6 tiles from a treat (14.3 before; the old method with 88 still
+  left 8.3) and 91 % of it within 4 tiles (60 %). The cost is the owner's call and is kept in view
+  by `tests/balance.test.ts`: a dog eating everything on the road eats 48 and poops 12 times (it
+  was 32 and 8); one taking the west spine eats 21 and poops 5; hunger never runs low.
+- **The ambush**: the band is no longer on the field before the middle. Their voices still come
+  from a quarter of the way, now from off-screen, from the side each speaker will come from (kept
+  in view at its edge). At the middle a big NOW! (`ui/shout.ts`: a white flash, the word at the
+  largest whole scale fitting 78 % of the view's width on a red-and-yellow jagged burst, punching
+  in, shaking, blowing away; with a new synthesized `boom` under Bagnaskiz's bark) and, in the same
+  step, the band rushes in: Bagnaskiz from the left, Jack and Watson from the right
+  (`AMBUSH.ENTRY_DIRS`), each starting just outside the view on open ground with a clear straight
+  run in to Zampanò (`systems/ambushEntry.ts`, pure: nearby angles are tried when a hedge or the
+  pond is in the way). Measured on the map from every spot where NOW! can fire, on a phone-sized
+  and a tall view: 344, 350 and 350 of 352 come from off-screen; the rest from the farthest clear
+  spot in view, or close by. The beat between the shout and the jump (`NOW_BEAT`) and the band's
+  waiting spot (`spot`, `REACH`, `APPEAR_AT`) are gone; they run in faster (9 tiles/s) since they
+  come from farther. The fright, the poops and the run off are unchanged.

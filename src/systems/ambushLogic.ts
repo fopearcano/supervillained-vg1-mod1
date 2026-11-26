@@ -5,15 +5,14 @@ import type { Rng } from '../core/rng';
  * The band's ambush, as a sequence (pure: tests/ambush.test.ts). The runtime side (actors, poop,
  * fright) is systems/ambush.ts; this only decides what happens when.
  *
- *  waiting  the band sits at its spot, silent
- *  voices   from `warnFrom`: their lines, more and more often as Zampanò gets closer
- *  now      he reached `at`: the leader shouts; a short beat
- *  jump     they run at him
+ *  waiting  the band is out of sight, silent
+ *  voices   from `warnFrom`: their lines from off-screen, more and more often as he gets closer
+ *  jump     he reached `at`: NOW! and, at the same moment, they rush in from outside the view
  *  scare    he is frozen with fright; they bark around him and poop
  *  leave    they run off
  *  done     gone (or skipped: he got past `until` without triggering it, e.g. a teleport)
  */
-export type AmbushPhase = 'waiting' | 'voices' | 'now' | 'jump' | 'scare' | 'leave' | 'done';
+export type AmbushPhase = 'waiting' | 'voices' | 'jump' | 'scare' | 'leave' | 'done';
 
 export type AmbushSignal =
   /** A voice: the index of the line in `voices`, and how loud (0 at warnFrom .. 1 at `at`). */
@@ -85,8 +84,9 @@ export class AmbushDirector {
         return out;
       }
       if (this.reached >= at) {
-        this.enter('now');
-        out.push({ kind: 'now' });
+        // The shout and the rush are one moment: nothing between NOW! and their running in.
+        this.enter('jump');
+        out.push({ kind: 'now' }, { kind: 'jump' });
         return out;
       }
     }
@@ -108,12 +108,6 @@ export class AmbushDirector {
         }
         break;
       }
-      case 'now':
-        if (this.t >= AMBUSH.NOW_BEAT) {
-          this.enter('jump');
-          out.push({ kind: 'jump' });
-        }
-        break;
       case 'jump':
         if (arrived || this.t >= AMBUSH.JUMP_MAX) {
           this.enter('scare');

@@ -83,12 +83,15 @@ sub-level), `?auto=1` (the autopilot plays the story; `&skill=0.7&ending=knight|
 - `entities/` — `Entity` base (grid position, interpolation, view), `CharacterAnimator`,
   `Zampano`, `PropEntity`, …
 - `systems/` — gameplay rules as small, mostly pure classes (unit-tested). `ambushLogic.ts` (the
-  band's ambush as a pure sequence) and `ambush.ts` (Bagnaskiz, Jack and Watson as story `Actor`s
-  in the Green Zone: waiting half way, voices, NOW!, the fright, their poop via
-  `Rules.dropPoop`); who, where and the lines are level data (`events.ambush`), timings `AMBUSH`.
+  band's ambush as a pure sequence), `ambushEntry.ts` (where they rush in from: outside the view,
+  on a clear run) and `ambush.ts` (Bagnaskiz, Jack and Watson as story `Actor`s in the Green Zone:
+  out of sight, voices from off-screen, a big NOW! (`ui/shout.ts`) and the rush in from the sides,
+  the fright, their poop via `Rules.dropPoop`); who and the lines are level data
+  (`events.ambush`), timings and entry directions `AMBUSH`.
 - `ui/` — `pixelFont.ts` + `pixelText.ts` (crisp bitmap text with glow/outline), HUD, touch controls
   (`touchControls.ts`: the action button's modes, the switcher, gesture hints, left-hand mirror),
-  `titleArt.ts` / `titleAnim.ts` (title portrait: the animated GIF decoded with `ImageDecoder`).
+  `titleArt.ts` / `titleAnim.ts` (title portrait: the animated GIF decoded with `ImageDecoder`),
+  `discoLights.ts` (the title's disco lights on the title music's beat, `TITLE.DISCO`).
 - `fx/` — particles, popups, screen effects, glitch filter.
 - `scenes/` — `flow.ts` (title → new game / continue / options / quit; plays the 1.0 walk for the
   story), Title, Options, Confirm, Goodbye, Briefing, Game (the walk), Pause, LevelEnd, GameOver,

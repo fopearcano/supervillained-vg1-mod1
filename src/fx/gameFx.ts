@@ -229,8 +229,8 @@ export class GameFx {
     events.on('attackStart', () => {
       this.camera.shake(FX.SHAKE_HURT);
     });
-    // The band's ambush (systems/ambush.ts). Voices come from where they wait and are kept in
-    // view (keepIn), brighter as he gets closer.
+    // The band's ambush (systems/ambush.ts). Voices come from off-screen, from the side each one
+    // will rush in from, kept in view at its edge (keepIn), brighter as he gets closer.
     events.on('ambushVoice', (e) => {
       const p = at(e.x, e.y, 44);
       // Four steps of glow (each its own pooled text: a reused text keeps its first glow).
@@ -238,12 +238,11 @@ export class GameFx {
       const style = { color: BAND_COLOR[e.who] ?? C.white, glow: 'self' as const, glowAlpha, align: 'center' as const, maxWidth: 150 };
       this.voices.text(e.text, p.x, p.y, style, 1.1 + 0.5 * e.loud, -12, true);
     });
-    events.on('ambushNow', (e) => {
-      // The shout alone: the voices still floating are cut off by it.
+    events.on('ambushNow', () => {
+      // The shout alone: the voices still floating are cut off by it. The word itself is the
+      // scene's big NOW! (ui/shout.ts), in screen space.
       this.voices.clear();
-      const p = at(e.x, e.y, 56);
-      this.voices.text(e.text, p.x, p.y, { color: BAND_COLOR[e.who] ?? C.orange, glow: 'self', scale: 2 }, 1.4, -10, true);
-      this.camera.shake(AMBUSH.SHAKE * 0.6);
+      this.camera.shake(AMBUSH.SHAKE * 1.4);
     });
     events.on('ambushJump', () => this.camera.shake(AMBUSH.SHAKE));
     events.on('ambushScare', (e) => {

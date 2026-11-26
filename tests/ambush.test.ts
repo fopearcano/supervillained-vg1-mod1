@@ -3,9 +3,10 @@ import { AMBUSH } from '../src/config';
 import { Rng } from '../src/core/rng';
 import { LEVEL_1 } from '../src/levels/level1';
 import { AmbushDirector, type AmbushSignal } from '../src/systems/ambushLogic';
+import { clearRun, offscreenEntry, standsAt } from '../src/systems/ambushEntry';
+import { gridVecToScreen } from '../src/iso/projection';
 import { loadLevel } from '../src/world/level';
 import { GameMap } from '../src/world/map';
-import { Ground } from '../src/world/tiles';
 
 const DT = 1 / 60;
 const TIMING = { warnFrom: 0.25, at: 0.5, until: 0.62, lines: 2 };
@@ -46,14 +47,15 @@ describe("the band's ambush in the Green Zone (sequence)", () => {
     expect(before).toBeCloseTo(0.8, 5);
   });
 
-  it('at the middle: the shout, a beat, the jump, the fright, the run off, in that order and timing', () => {
+  it('at the middle: NOW! and the rush in the same moment, then the fright, the run off', () => {
     const d = new AmbushDirector(TIMING, new Rng(3));
     run(d, 5, () => 0.4);
     const s = run(d, 10, () => 0.5);
     const kinds = s.filter((x) => x.kind !== 'voice').map((x) => x.kind);
     expect(kinds).toEqual(['now', 'jump', 'scare', 'leave', 'done']);
     const at = (k: string) => s.find((x) => x.kind === k)!.t;
-    expect(at('jump') - at('now')).toBeCloseTo(AMBUSH.NOW_BEAT, 1);
+    // Nothing between the shout and their running in.
+    expect(at('jump')).toBe(at('now'));
     expect(at('scare') - at('jump')).toBeCloseTo(AMBUSH.JUMP_MAX, 1);
     expect(at('leave') - at('scare')).toBeCloseTo(AMBUSH.SCARE_TIME, 1);
     expect(at('done') - at('leave')).toBeCloseTo(AMBUSH.LEAVE_TIME, 1);
@@ -73,7 +75,8 @@ describe("the band's ambush in the Green Zone (sequence)", () => {
         if (s.kind === 'scare') scareAt = t;
       }
     }
-    expect(jumpAt).toBeGreaterThan(0);
+    // At the middle at once: NOW! and the rush on the first step.
+    expect(jumpAt).toBeGreaterThanOrEqual(0);
     expect(scareAt - jumpAt).toBeGreaterThan(0.29);
     expect(scareAt - jumpAt).toBeLessThan(0.4);
     expect(scareAt - jumpAt).toBeLessThan(AMBUSH.JUMP_MAX);
@@ -101,29 +104,42 @@ describe("the band's ambush in the Green Zone (sequence)", () => {
   it('a jump straight into the window (no walk through the quarter) still springs it, without voices', () => {
     const d = new AmbushDirector(TIMING, new Rng(5));
     const s = run(d, 0.1, () => 0.55);
-    expect(s.map((x) => x.kind)).toEqual(['now']);
+    expect(s.map((x) => x.kind)).toEqual(['now', 'jump']);
   });
 });
 
-describe("level 1: the band's spot and lines", () => {
+describe("level 1: where the band comes in from, and its lines", () => {
   const map = new GameMap(loadLevel(LEVEL_1));
   const amb = LEVEL_1.events.ambush!;
-
-  it('waits on the road just past the middle, ahead of where it springs', () => {
-    const i = Math.floor(amb.spot.x);
-    const j = Math.floor(amb.spot.y);
-    expect(map.isWalkable(i, j)).toBe(true);
-    expect(map.groundAt(i, j)).not.toBe(Ground.Water);
-    const p = map.progressAt(amb.spot.x, amb.spot.y);
-    expect(p).toBeGreaterThan(amb.at);
-    expect(p).toBeLessThan(amb.until);
-    // On the gravel (the road and its plaza), where Zampano comes up and sees them waiting.
-    expect(map.groundAt(i, j)).toBe(Ground.Path);
-    // Everyone has standing room around the spot.
-    for (const [dx, dy] of [[0.2, 0.2], [-0.9, -0.4], [0.7, -0.9]] as const) {
-      expect(map.isWalkable(Math.floor(amb.spot.x + dx), Math.floor(amb.spot.y + dy))).toBe(true);
-      expect(map.groundAt(Math.floor(amb.spot.x + dx), Math.floor(amb.spot.y + dy))).not.toBe(Ground.Water);
+  // Every spot where NOW! can fire: any lane, from the middle of the walk to a little past it.
+  const triggers: Array<{ x: number; y: number }> = [];
+  for (let j = 0; j < map.height; j++) {
+    for (let i = 0; i < map.width; i++) {
+      const p = map.progressAt(i + 0.5, j + 0.5);
+      if (p >= amb.at && p <= amb.at + 0.08 && standsAt(map, i + 0.5, j + 0.5)) triggers.push({ x: i + 0.5, y: j + 0.5 });
     }
+  }
+
+  it.each([[216, 400], [240, 520]])('rushes in from outside a %i x %i view, from the sides, on a clear straight run', (w, h) => {
+    expect(triggers.length).toBeGreaterThan(200);
+    AMBUSH.ENTRY_DIRS.forEach(([sx], k) => {
+      let outside = 0;
+      for (const from of triggers) {
+        const e = offscreenEntry(map, from, AMBUSH.ENTRY_DIRS[k]![0], AMBUSH.ENTRY_DIRS[k]![1], w / 2, h / 2);
+        if (!e) continue;
+        expect(standsAt(map, e.x, e.y)).toBe(true);
+        expect(clearRun(map, e, from)).toBe(true);
+        if (!e.offscreen) continue;
+        const s = gridVecToScreen(e.x - from.x, e.y - from.y);
+        // Outside the view, on its side of the screen (Bagnaskiz from the left, the others from the right).
+        expect(Math.abs(s.x) > w / 2 || Math.abs(s.y) > h / 2).toBe(true);
+        expect(Math.sign(s.x)).toBe(Math.sign(sx));
+        outside++;
+      }
+      // Measured: 344 / 350 / 350 of 352 spots (a few hedge pockets fall back to the farthest clear
+      // spot in view, or close by).
+      expect(outside / triggers.length, `band member ${k}`).toBeGreaterThan(0.95);
+    });
   });
 
   it('Bagnaskiz leads (he shouts), Jack and Watson say the lines', () => {

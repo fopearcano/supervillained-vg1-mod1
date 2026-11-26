@@ -3,6 +3,7 @@ import { TITLE } from '../config';
 import type { TitleGlitchFilter } from '../fx/titleGlitchFilter';
 import { TextGlitchFilter } from '../fx/textGlitchFilter';
 import { titleFrames, TitlePlayer, type TitleFrames } from '../ui/titleAnim';
+import { DiscoLights } from '../ui/discoLights';
 import { textures } from '../core/assets';
 import type { Game } from '../core/game';
 import type { Scene } from '../core/scene';
@@ -74,6 +75,8 @@ export interface TitleActions {
  * (The "You've been supervillained" logo is kept for the end of each level: SupervillainedScene.)
  */
 export class TitleScene extends Overlay {
+  /** Disco lights on the title music's beat, over the backdrop and under everything else. */
+  private readonly lights = new DiscoLights();
   /** Zampanò's animated portrait over the buttons. */
   private readonly dog = new Sprite();
   /** The animated portrait's frames (filled while the GIF decodes) and its player. */
@@ -167,11 +170,14 @@ export class TitleScene extends Overlay {
       this.footer,
     );
     this.shine.mask = this.shineMask;
+    // Right over the dim (index 0): the backdrop is lit, the lettering and buttons are not.
+    this.root.addChildAt(this.lights.root, 1);
     this.showLives();
   }
 
   protected layout(): void {
     const { w, h } = this;
+    this.lights.resize(w, h);
     // One line, as big as fits: triple size on wide screens, double on phones (186 px).
     const scale = [4, 3, 2, 1].find((sc) => logoWidth(LOGO_TEXT) * sc + 8 <= w) ?? 1;
     if (scale !== this.titleScale) {
@@ -240,6 +246,8 @@ export class TitleScene extends Overlay {
 
   override update(dt: number): void {
     super.update(dt);
+    const music = this.game.audio.musicPosition();
+    this.lights.update(dt, music?.track === 'intro' ? music.seconds : null);
     if (this.player) {
       // The first frame has arrived: lay out with its real size.
       if (!this.dogSized && this.frames!.frames.length) this.layout();

@@ -39,7 +39,9 @@ export function bindGameAudio(events: Emitter<GameEvents>, audio: AudioEngine): 
     audio.play('bark', { rate: bandRate(e.who), volume: quiet + (loud - quiet) * e.loud });
   });
   events.on('ambushNow', (e) => {
-    // A voice may have barked a step before: the shout's bark must not be throttled away.
+    // A big sound for the big word: a boom under Bagnaskiz's bark (a voice may have barked a step
+    // before: the shout's bark must not be throttled away).
+    audio.play('boom', { always: true });
     audio.play('bark', { rate: bandRate(e.who) * 0.92, always: true });
     audio.play('hit', { delay: 0.05 });
   });

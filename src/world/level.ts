@@ -89,9 +89,10 @@ export interface AmbushSettings {
   at: number;
   /** Past this progress without having been triggered (a teleport), the ambush is skipped. */
   until: number;
-  /** Where the band waits (grid); each one stands a little apart around it. */
-  spot: { x: number; y: number };
-  /** The band, leader first (the leader shouts `now`). Character keys of the manifest. */
+  /**
+   * The band, leader first (the leader shouts `now`). Character keys of the manifest. Out of
+   * sight until `at`, then in from outside the view (AMBUSH.ENTRY_DIRS: the leader from the left).
+   */
   band: readonly string[];
   /** The voices heard before, in turn: who says it (a band member) and the line. */
   voices: readonly { who: string; text: string }[];

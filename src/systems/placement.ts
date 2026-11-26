@@ -96,12 +96,6 @@ function distanceToRoute(line: RouteLine, x: number, y: number): number {
   return nearestOnRoute(line, x, y).distance;
 }
 
-/** Which side of the road (x, y) lies on, walking it from start to exit: -1 or 1. */
-function sideOfRoute(line: RouteLine, x: number, y: number): number {
-  const n = nearestOnRoute(line, x, y);
-  return n.vx * (y - n.y) - n.vy * (x - n.x) < 0 ? -1 : 1;
-}
-
 function nearestOnRoute(line: RouteLine, x: number, y: number): { distance: number; x: number; y: number; vx: number; vy: number } {
   let best = { distance: Infinity, x: 0, y: 0, vx: 1, vy: 0 };
   for (let k = 1; k < line.pts.length; k++) {
@@ -123,9 +117,8 @@ function nearestOnRoute(line: RouteLine, x: number, y: number): { distance: numb
  * Treats for a level with a designed road. First `count` along the road at even spacing, so a
  * dog walking it meets one every few tiles; each is nudged sideways only when its tile is water,
  * a solid prop or too close to another treat. Then `side` more on the gravel lanes away from the
- * road, one per progress band, on alternate sides of the road, each on the lane tile (of that
- * side) farthest from every treat placed so far: they land on the loops and the spine, on both
- * sides of the park, rewarding a detour.
+ * road (the loops and the spine), spread evenly over all of them: each on the lane tile farthest
+ * from every treat placed so far, rewarding a detour anywhere in the park.
  */
 function placeAlongRoute(
   map: GameMap,
@@ -169,41 +162,36 @@ function placeAlongRoute(
 
   const extra = settings.side ?? 0;
   if (extra <= 0) return out;
-  const lanes: Array<{ i: number; j: number; progress: number; side: number }> = [];
+  const lanes: Array<{ i: number; j: number; progress: number }> = [];
   for (let j = 0; j < map.height; j++) {
     for (let i = 0; i < map.width; i++) {
       if (map.groundAt(i, j) !== Ground.Path || !fits(i, j)) continue;
       if (distanceToRoute(line, i + 0.5, j + 0.5) < TREAT.SIDE_MIN_ROUTE_DISTANCE) continue;
-      lanes.push({ i, j, progress: map.progressAt(i + 0.5, j + 0.5), side: sideOfRoute(line, i + 0.5, j + 0.5) });
+      lanes.push({ i, j, progress: map.progressAt(i + 0.5, j + 0.5) });
     }
   }
+  // Spread over the whole lane network, not one per strip of the walk: each side treat goes on
+  // the lane tile farthest from every treat placed so far (road trail included), so every loop
+  // and lane gets its share, as evenly as the lanes allow.
   const [p0, p1] = TREAT.SIDE_PROGRESS;
+  const pool = lanes.filter((t) => t.progress >= p0 && t.progress < p1);
+  const gap = pool.map((t) => {
+    let g = Infinity;
+    for (const p of out) g = Math.min(g, Math.hypot(p.x - t.i - 0.5, p.y - t.j - 0.5));
+    return g;
+  });
   for (let b = 0; b < extra; b++) {
-    const lo = p0 + ((p1 - p0) * b) / extra;
-    const hi = p0 + ((p1 - p0) * (b + 1)) / extra;
-    // Strictly farther wins, so ties go to the first tile in row order: deterministic. One side
-    // of the road, then the other (either, where a band has lanes on one side only).
-    const pick = (side: number | null) => {
-      let found: (typeof lanes)[number] | null = null;
-      let gapFound = -1;
-      for (const t of lanes) {
-        if (t.progress < lo || t.progress >= hi || (side !== null && t.side !== side)) continue;
-        let gap = Infinity;
-        for (const p of out) gap = Math.min(gap, Math.hypot(p.x - t.i - 0.5, p.y - t.j - 0.5));
-        if (gap > gapFound) {
-          found = t;
-          gapFound = gap;
-        }
-      }
-      return { found, gapFound };
-    };
-    let { found: best, gapFound: bestGap } = pick(b % 2 === 0 ? -1 : 1);
-    if (!best || bestGap < settings.minSpacing) ({ found: best, gapFound: bestGap } = pick(null));
-    if (!best || bestGap < settings.minSpacing) continue;
-    const x = best.i + rng.range(0.35, 0.65);
-    const y = best.j + rng.range(0.35, 0.65);
+    // Strictly farther wins, so ties go to the first tile in row order: deterministic.
+    let best = -1;
+    for (let k = 0; k < pool.length; k++) if (best < 0 || gap[k]! > gap[best]!) best = k;
+    if (best < 0 || gap[best]! < settings.minSpacing) break;
+    const t = pool[best]!;
+    const x = t.i + rng.range(0.35, 0.65);
+    const y = t.j + rng.range(0.35, 0.65);
     // The tile centre is known to be far enough; the jittered spot is checked again.
-    out.push(free(x, y) ? { x, y } : { x: best.i + 0.5, y: best.j + 0.5 });
+    const spot = free(x, y) ? { x, y } : { x: t.i + 0.5, y: t.j + 0.5 };
+    out.push(spot);
+    for (let k = 0; k < pool.length; k++) gap[k] = Math.min(gap[k]!, Math.hypot(spot.x - pool[k]!.i - 0.5, spot.y - pool[k]!.j - 0.5));
   }
   return out;
 }

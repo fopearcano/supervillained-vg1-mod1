@@ -5,6 +5,7 @@ import { Hunger } from '../src/systems/needs';
 import { placeTreats } from '../src/systems/placement';
 import { loadLevel, type SpawnSettings } from '../src/world/level';
 import { GameMap } from '../src/world/map';
+import { Ground } from '../src/world/tiles';
 
 /** The road's corners in world units (its tile coordinates name tile centres). */
 const ROAD = GREEN_ZONE_ROAD.map((p) => ({ x: p.x + 0.5, y: p.y + 0.5 }));
@@ -88,27 +89,51 @@ describe('level 1 balance (bot)', () => {
     expect(HUNGER.START - HUNGER.DRAIN_WALK * r.time).toBeLessThan(0);
   });
 
-  it('eating treats along the way keeps Zampanò alive, at the cost of a few poops', () => {
-    // Measured: the spine bot eats 10 (2 poops; the side treats out on the spine and a few road
-    // treats near S and E), the road bot all 32 on the trail (8 poops: 32 × 26 / 100). The road
-    // bot sits on the poop bound on purpose: more food on the road should not quietly mean more
-    // poops than a player can clean.
+  it('eating treats along the way keeps Zampanò alive, at the cost of poops to clean', () => {
+    // Measured with the doubled treats (88, the owner's call): the spine bot eats 21 (5 poops: the
+    // lane treats out on the spine and a few road treats near S and E), the road bot all 48 on the
+    // trail (12 poops: 48 × 26 / 100; it was 32 and 8). The road bot sits on the poop bound on
+    // purpose: more food should never quietly mean more poops than this.
     for (const walker of ['spine', 'road'] as const) {
       const r = simulate(2.5, walker);
       expect(r.minHunger, walker).toBeGreaterThan(0);
       expect(r.eaten, walker).toBeGreaterThanOrEqual(4);
       expect(r.poops, walker).toBeGreaterThanOrEqual(1);
-      expect(r.poops, walker).toBeLessThanOrEqual(8);
+      expect(r.poops, walker).toBeLessThanOrEqual(12);
       expect(r.time, walker).toBeLessThan(LEVEL_1.parTime);
     }
   });
 
-  it('a dog walking the road meets a treat about every 4 tiles', () => {
+  it('a dog walking the road meets a treat about every 2.5 tiles', () => {
     // Fails on the old placement: every treat lay on the spine and this walk found one.
     const r = simulate(2.5, 'road');
-    expect(r.eaten * 4.5).toBeGreaterThanOrEqual(ROAD_LENGTH);
+    expect(r.eaten * 3).toBeGreaterThanOrEqual(ROAD_LENGTH);
     // Why the level names its road: the shortest-route trail alone still misses the road.
     const { count, maxOffset, minSpacing } = LEVEL_1.spawns.treats;
     expect(simulate(2.5, 'road', { count, maxOffset, minSpacing }).eaten).toBeLessThan(r.eaten / 3);
+  });
+
+  it('the lane treats cover the whole park: no gravel far from a treat', () => {
+    // Placed farthest-first over all the lanes (placement.ts). Measured: 88 treats, no gravel tile
+    // more than 6 tiles from one, 91 % within 4 tiles (the per-band placement of the same 88 left
+    // gaps of 8.3 tiles and 81 %; the 44 before the doubling, 14.3 tiles and 60 %).
+    const map = new GameMap(loadLevel(LEVEL_1));
+    const treats = placeTreats(map, LEVEL_1.spawns.treats, LEVEL_1.seed);
+    const { count, side } = LEVEL_1.spawns.treats;
+    expect(treats.length).toBe(count + (side ?? 0));
+    expect(treats.length).toBe(88);
+    const gaps: number[] = [];
+    for (let j = 0; j < map.height; j++) {
+      for (let i = 0; i < map.width; i++) {
+        if (map.groundAt(i, j) !== Ground.Path || map.exitDistance[map.index(i, j)]! < 0) continue;
+        gaps.push(Math.min(...treats.map((p) => Math.hypot(p.x - i - 0.5, p.y - j - 0.5))));
+      }
+    }
+    expect(Math.max(...gaps)).toBeLessThanOrEqual(6.5);
+    expect(gaps.filter((g) => g <= 4).length / gaps.length).toBeGreaterThanOrEqual(0.88);
+    // No two treats on top of each other.
+    for (const [k, p] of treats.entries()) {
+      for (const q of treats.slice(k + 1)) expect(Math.hypot(p.x - q.x, p.y - q.y)).toBeGreaterThanOrEqual(LEVEL_1.spawns.treats.minSpacing - 1e-9);
+    }
   });
 });

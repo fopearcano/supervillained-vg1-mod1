@@ -123,6 +123,44 @@ export const TITLE = {
   FOOTER_GLOW_SPEED: 1.2,
   FOOTER_GLOW_BLUR: 3,
   FOOTER_GLOW_COLOR: '#c8ffb8',
+  /**
+   * Disco lights on the title (ui/discoLights.ts), on the beat of the title music
+   * (assets/music/intro-music.mp3: 123.36 BPM, first beat 0.130 s in, measured on its kick drum;
+   * the grid holds within 5 ms over the whole track). Before the music starts they keep the same
+   * tempo by themselves.
+   */
+  DISCO: {
+    BPM: 123.36,
+    FIRST_BEAT: 0.13,
+    /** Following the music's clock: a gap above this many beats snaps, smaller ones ease in. */
+    SNAP_BEATS: 0.35,
+    EASE: 0.12,
+    /** Light beams from the top edge (positions as fractions of the width), their half-spread (rad), sweep (rad) and beats per sweep. */
+    BEAM_X: [0.06, 0.34, 0.66, 0.94],
+    BEAM_SPREAD: 0.085,
+    BEAM_SWEEP: 0.55,
+    BEAM_SWEEP_BEATS: 8,
+    /** The room goes darker under the lights (a black veil over the backdrop only), so they show. */
+    DARKEN: 0.38,
+    /** Beam alpha between beats and added on the beat (decaying at PULSE_DECAY per second). */
+    BEAM_ALPHA: 0.16,
+    BEAM_PULSE: 0.22,
+    PULSE_DECAY: 6,
+    /**
+     * On each beat a coloured wash of the whole screen; on the first beat of every bar a white
+     * strobe instead, shorter. At 123 BPM that is about 2 flashes a second, under the 3 a second
+     * that photosensitive guidelines allow (tests/discoLights.test.ts), and never full white.
+     */
+    WASH_ALPHA: 0.09,
+    STROBE_ALPHA: 0.2,
+    STROBE_DECAY: 16,
+    /** Mirror-ball specks drifting across the screen: how many, and their speed (px per beat). */
+    SPECKS: 22,
+    SPECK_DRIFT: 7,
+    /** The lights fade in over this many seconds as the title appears. */
+    FADE_IN: 0.8,
+    COLORS: ['#ff5ad6', '#3ff0ff', '#ffe23a', '#a77bff', '#4dff5a', '#ff9a1f'],
+  },
   /** SUPERVOID EDITIONS at the bottom links to the publisher. */
   PUBLISHER_URL: 'https://supervoideditions.com/',
   /** Background glitch (mostly vertical): flickering burst strength [min, max], faint level in between. */
@@ -405,11 +443,35 @@ export const AMBUSH = {
   VOICE_VOLUME: [0.3, 0.9] as readonly [number, number],
   /** The voices' text, kept inside the view: below the HUD, inside the sides (px). */
   VOICE_INSET: { SIDE: 6, TOP: 86 },
-  /** Seconds between the shout and the jump. */
-  NOW_BEAT: 0.45,
-  /** Running speed of the band jumping in (tiles/s) and the longest the jump may last (s). */
-  JUMP_SPEED: 7.5,
-  JUMP_MAX: 1.4,
+  /**
+   * At NOW! the band rushes in from outside the view, from the sides: each member's screen
+   * direction from Zampanò (x right, y down), the leader first.
+   */
+  ENTRY_DIRS: [[-1, 0.15], [1, -0.1], [1, 0.45]] as readonly (readonly [number, number])[],
+  /** How far past the view's edge they start (px), and farther tries when that spot is blocked. */
+  ENTRY_MARGIN: 18,
+  ENTRY_STEPS: [0, 14, 28, 44] as readonly number[],
+  /** Angles (degrees) tried around a member's direction when its line in is blocked. */
+  ENTRY_ANGLES: [0, 12, -12, 24, -24, 36, -36, 50, -50] as readonly number[],
+  /** Failing every spot outside the view: the farthest clear one inside, but not closer than this (px). */
+  ENTRY_MIN_PX: 48,
+  /** Body radius checked along a member's straight run in (tiles). */
+  RUN_BODY: 0.25,
+  /** Running speed of the band rushing in (tiles/s) and the longest the rush may last (s). */
+  JUMP_SPEED: 9,
+  JUMP_MAX: 1.6,
+  /**
+   * The big NOW! (ui/shout.ts): seconds to punch in, to hold, to blow away; its start and peak
+   * scale over the resting size; the resting width as a share of the view's width (at most).
+   */
+  SHOUT_IN: 0.12,
+  SHOUT_HOLD: 0.8,
+  SHOUT_OUT: 0.28,
+  SHOUT_FROM: 2.6,
+  SHOUT_WIDTH: 0.78,
+  /** The white flash of the shout's first frames (alpha) and the burst's jitter (px). */
+  SHOUT_FLASH: 0.35,
+  SHOUT_JITTER: 2,
   /** How far around Zampanò they land (tiles), and how wide their circle grows while they scare
    * him: they poop where they run, so the piles spread out of one pee's reach. */
   RING: 2,

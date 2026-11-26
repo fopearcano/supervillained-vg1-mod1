@@ -50,6 +50,12 @@ export const SOUNDS = {
   ],
   click: { wave: 'square', duty: 0.5, freq: 1200, attack: 0.001, sustain: 0.015, decay: 0.02, volume: 0.2 },
   glitch: { wave: 'noise', freq: 3000, freqEnd: 200, attack: 0.001, sustain: 0.08, decay: 0.12, volume: 0.25, crush: 6 },
+  /** The band's NOW!: a big comic-book hit (a low thump, a noise blast, a falling growl). */
+  boom: [
+    { at: 0, def: { wave: 'triangle', freq: 150, freqEnd: 38, attack: 0.001, sustain: 0.14, decay: 0.38, volume: 0.55 } },
+    { at: 0, def: { wave: 'noise', freq: 1600, freqEnd: 110, attack: 0.001, sustain: 0.1, decay: 0.32, volume: 0.36, crush: 3 } },
+    { at: 0.01, def: { wave: 'square', duty: 0.5, freq: 480, freqEnd: 80, attack: 0.002, sustain: 0.09, decay: 0.26, volume: 0.3, crush: 4 } },
+  ],
 } satisfies Record<string, Sound>;
 
 export type SynthSoundName = keyof typeof SOUNDS;

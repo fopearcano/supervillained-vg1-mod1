@@ -295,7 +295,8 @@ libmp3lame -q:a 5 <file>`) to keep the app small; the files as uploaded are kept
 `assets/music/originals/` (not bundled). A new track: put the original there and the re-encoded
 copy in `assets/music/`. Levels 5 to 7
 keep the synthesized medieval loop, and interface sounds (clicks, glitch
-transitions, stars, jingles, game over) stay synthesized in `src/fx/sounds.ts`.
+transitions, stars, jingles, game over, the `boom` under the band's big NOW!) stay synthesized
+in `src/fx/sounds.ts`.
 
 ## Title page art
 
