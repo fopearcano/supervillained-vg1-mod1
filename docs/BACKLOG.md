@@ -85,9 +85,11 @@ rewrite (`ctx.addActor(name, 'watsonKnight', ...)` or `who: 'santinaKnight'` in 
    `environment.ts` go, and `docs/screens/environments/` keeps one set. A saved `newArt` is then
    simply ignored (`loadSettings` keeps only known fields), so no migration is needed.
 2. **Watson's art, for a later delivery**: his sheets (plain and armoured) draw four views, the
-   diagonal rows reusing the side profiles, where the other dogs have eight; and armoured Watson
-   is drawn about 15 % smaller than plain Watson (idle height 22 px against 26). As delivered;
-   `tests/castAnimations.test.ts` records the four views.
+   diagonal rows reusing the side profiles, where the other dogs have eight; and armoured Watson's
+   clips are not drawn at one scale (walk 27 px tall against plain Watson's 25, idle 22 against
+   26, run, sniff, eat, fetch, bark and sit likewise 10-15 % smaller), so he would grow when he
+   starts walking. Not visible yet (he is not cast in armour); the next delivery should draw every
+   armoured clip at plain Watson's scale. `tests/castAnimations.test.ts` records the four views.
 3. **The Green Zone ambush needs playing by a person**: its numbers were set by eye and checked
    by scripts, not by play. Timings in `AMBUSH` (`config.ts`: how often the voices come, the
    fright's length, six poop piles, the grace before Bagnaskiz comes back); where it starts and

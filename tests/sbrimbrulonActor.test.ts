@@ -20,7 +20,11 @@ vi.mock('pixi.js', () => {
 });
 vi.mock('../src/core/assets', () => ({ textures: { get: (name: string) => name } }));
 
-const actionActors = ['sbrimbrulon', 'sbrimbrulonKnight', 'bagnaskiz', 'bagnaskizEmperor'] as const;
+const actionActors = [
+  'sbrimbrulon', 'sbrimbrulonKnight', 'bagnaskiz', 'bagnaskizEmperor',
+  // The Jack, Watson, Santina and Confusione animation deliveries.
+  'jack', 'jackKnight', 'watson', 'watsonKnight', 'santina', 'santinaKnight', 'confusione', 'confusioneKnight',
+] as const;
 
 function context(key: (typeof actionActors)[number]) {
   const actor = new Actor('sbrim', key, 0, 0);
@@ -33,6 +37,20 @@ function context(key: (typeof actionActors)[number]) {
 }
 
 describe.each(actionActors)('%s actor action selection', (key) => {
+  it("a sped-up action's playback rate ends with it (the band's squat, then the run)", () => {
+    const { actor, step } = context(key);
+    actor.setBehavior({ kind: 'goto', to: { x: 30, y: 0 }, speed: 6, run: true });
+    actor.playAction('poop', 0.6);
+    actor.animator!.speed = animationDuration(CHARACTERS[key].anims.poop!) / 0.6;
+    step(0.3);
+    expect(actor.animator!.anim).toBe('poop');
+    expect(actor.animator!.speed).toBeGreaterThan(1);
+    step(0.31);
+    step(0.1);
+    expect(actor.animator!.anim).toBe('run');
+    expect(actor.animator!.speed).toBe(1);
+  });
+
   it('walks, stands when stopping, sits after three seconds, and stands again on movement', () => {
     const { actor, step } = context(key);
     actor.setBehavior({ kind: 'goto', to: { x: 3, y: 0 }, speed: 1 });

@@ -1247,8 +1247,10 @@ Armoured}_Animations.zip`), made against the original repository's commit 95b69c
   direction and nothing past the last one, no art touching a cell's edge, both idles and the
   panting standing on the ground line in every frame, the armour a sheet of its own. Jack,
   Santina and Confusione have eight distinct views in every frame; Watson four, his diagonal rows
-  reusing the side profiles (his README says so). Armoured Watson is drawn about 15 % smaller than
-  plain Watson. Both are noted for a later delivery (`docs/BACKLOG.md`).
+  reusing the side profiles (his README says so). Armoured Watson's clips are not drawn at one
+  scale: his walk is a little taller than plain Watson's (27 px against 25), his idle, run, sniff,
+  eat, fetch, bark and sit 10-15 % smaller (idle 22 against 26), so he would grow when he starts
+  walking. Both are noted for a later delivery (`docs/BACKLOG.md`).
 - **Replaced**: the pixel cast's Jack, Watson, Santina and Confusione (five actions), moved to
   `art-archive/pixel-cast-replaced/`.
 - **Where the armour is worn**: the deliveries leave it to the story ("only for scenes requiring
@@ -1268,3 +1270,9 @@ Armoured}_Animations.zip`), made against the original repository's commit 95b69c
   tiles and the smoke check (more than one pee's reach, 2.5) failed. A squatting band member now
   keeps its place on the circle and goes on round from there (`Ambush.scareStep`): 1.3 to 2.9
   tiles, as before the squats (1 to 3).
+- **An adversarial review** of the integration found and fixed: the band's sped-up squat rate
+  (×2.5) staying on Jack's and Watson's run when the fright ended in the middle of a squat (an
+  action's playback rate now ends with the action, in `Actor`, with a test), Aleaume's 8-frame run
+  in the 7.7 tug played at a fixed 10 fps, half the pace of Zampanò's beside him (both now use the
+  authored timing), and two stale passages here and in `ASSETS.md` (armoured Watson's scale, the
+  band's missing squat).

@@ -307,7 +307,8 @@ export class TugGame extends MiniGame {
     frameRect(g, 20, h * 0.5 + 40, bw, 6, hex(C.yellow));
     this.label.position.set(Math.round(w / 2), Math.round(h * 0.5 - 52));
     this.hero.texture = textures.get(textureName('zampanoKnight', 'run', 'E', animationFrame(CHARACTERS.zampanoKnight.anims.run!, this.time)));
-    this.friend.texture = textures.get(textureName(this.o.friend, 'run', 'E', cycleFrame(this.o.friend, 'run', this.time * 10)));
+    // The authored run timing, as for the hero: the 8-frame cast run keeps pace with Zampanò's.
+    this.friend.texture = textures.get(textureName(this.o.friend, 'run', 'E', animationFrame(CHARACTERS[this.o.friend].anims.run!, this.time)));
     return this.pos >= 1 ? 'lost' : 'running';
   }
 

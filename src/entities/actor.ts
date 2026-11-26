@@ -296,6 +296,8 @@ export class Actor extends Entity {
         this.animator.play(this.emoteAnim, dir);
       } else {
         this.actionLocksMovement = false;
+        // An action's own playback rate (the band's sped-up squat) ends with the action.
+        this.animator.speed = 1;
         this.idleSeconds = moving ? 0 : this.idleSeconds + dt;
         const hasSit = CHARACTERS[this.animator.key].anims.sit !== undefined;
         this.animator.play(moving ? (running ? 'run' : 'walk') : hasSit && this.idleSeconds >= 3 ? 'sit' : 'idle', dir);

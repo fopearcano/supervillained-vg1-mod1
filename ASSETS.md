@@ -82,14 +82,14 @@ for those four, with their large source sheets, previews and pixel checks).
 | `zampanoKnight.png`, `zampanoKnight-tired.png` | 320 × 3520, 80 × 320 | the knight (conical helm, shoulder plates, mail coat, red cross on the back), from 2.5: the same 11 animations + tired as plain Zampanò (armoured animations) |
 | `bagnaskiz.png`, `bagnaskiz-tired.png` | 320 × 3520, 80 × 320 | fawn pug, black ears, yellow eyes: twelve actions in eight directions (Bagnaskiz 8-directions; update 1's 160 × 1600 sheet is archived) |
 | `bagnaskizArmoured.png`, `bagnaskizArmoured-tired.png` | 320 × 3520, 80 × 320 | Bagnaskiz in Byzantine armour, the emperors' face (`bagnaskizEmperor`) |
-| `pixel-cast/*.png` | 160 × 1600 (`professorFace.png` 24 × 24) | the pixel cast above; Jack, Watson and Confusione replace update 1's |
+| `pixel-cast/*.png` | 160 × 1600 (`professorFace.png` 24 × 24) | the pixel cast above (its Jack, Watson, Santina and Confusione are archived in `art-archive/pixel-cast-replaced/`, replaced by their animation deliveries) |
 | `sbrimbrulon.png`, `sbrimbrulon-tired.png` | 320 × 3520, 80 × 320 | Sbrimbrulòn, long-haired rust, dark and white Shih-tzu: the same 12 actions as Zampanò (Sbrimbrulòn animations) |
 | `sbrimbrulonKnight.png`, `sbrimbrulonKnight-tired.png` | 320 × 3520, 80 × 320 | Sbrimbrulòn armoured (helm with nose guard, shoulder plates, mail, red cross on the back), in the dream: 3.1, 5.2, 7.3 |
 | `jack.png`, `jack-tired.png` | 320 × 3520, 80 × 320 | Jack, black chihuahua, pink-lined ears: the same 12 actions as Sbrimbrulòn, eight real directions (Jack animations; the pixel cast's sheet is archived) |
 | `watson.png`, `watson-tired.png` | 320 × 3520, 80 × 320 | Watson, cream-and-orange terrier, teal-and-red cap, cigar: 12 actions in four views (his diagonal rows reuse the side profiles, as delivered) |
 | `santina.png`, `santina-tired.png` | 320 × 3520, 80 × 320 | Santina, white Maltese with a red bow: 12 actions, eight directions |
 | `confusione.png`, `confusione-tired.png` | 320 × 3520, 80 × 320 | Confusione, grumpy orange tabby cat: 12 actions, eight directions; his `bark` is a meow or a hiss, his `pee` a feline crouch |
-| `jackKnight.png`, `watsonKnight.png`, `santinaKnight.png`, `confusioneKnight.png` (each with its `-tired.png`) | 320 × 3520, 80 × 320 | the same four in armour (helm, mail, shoulder plates, red cross on the back); armoured Watson is drawn about 15 % smaller than plain Watson |
+| `jackKnight.png`, `watsonKnight.png`, `santinaKnight.png`, `confusioneKnight.png` (each with its `-tired.png`) | 320 × 3520, 80 × 320 | the same four in armour (helm, mail, shoulder plates, red cross on the back); armoured Watson's clips are not drawn at one scale (walk a little taller than plain Watson, idle, run, sniff, eat, fetch, bark and sit 10-15 % smaller) |
 | `runIcon.png` | 13 × 11 | the RUN button's double chevron (update 1) |
 
 Update 2's own QA notes (the zip's `reports/QA.md`): NE reads more like a side view, the S idle is
@@ -187,12 +187,10 @@ anchor (20, 36), animations **idle 2, walk 4, run 4, bark 2, hurt 2** (same shee
 | `bear`, `leopard`, `hound` | the band as the three beasts of 2.1 (the hound is also the dream that chases him in 8.1) |
 
 **Bagnaskiz's band in the Green Zone** (1.0, `systems/ambush.ts`): Bagnaskiz, Jack and Watson wait
-on the road, jump in barking and poop around Zampanò. Bagnaskiz plays his `sit`, `bark` and
-`poop`; Jack and Watson have only the cast's five animations, so they bark and run but their squat
-is not drawn yet. When their new sheets arrive with `poop` (and `sit`), give `jack` and `watson`
-their own animation list in `castDefs` (`src/assets/manifest.ts`, in the sheet's row order) and
-the ambush plays them with no other change (`Actor.playAction('poop')`, and an idle actor sits
-after 3 s when it has `sit`). The band's voices are the `bark` sound at three pitches, played by
+on the road, jump in barking and poop around Zampanò. All three have the twelve actions (`CAST_ANIMS` in
+`src/assets/manifest.ts`): waiting, they sit after 3 s; scaring him, they bark and squat to poop
+(`Actor.playAction('poop')`, sped up to `AMBUSH.POOP_SQUAT`; each keeps its place on the circle
+while squatting, and the rate ends with the squat). The band's voices are the `bark` sound at three pitches, played by
 the `ambushVoice` handler in `src/fx/gameAudio.ts`; recorded lines would be new files in
 `src/fx/audioFiles.ts` (`SOUND_FILES`), played by that handler instead of the bark.
 
