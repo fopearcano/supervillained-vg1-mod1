@@ -1276,3 +1276,15 @@ Armoured}_Animations.zip`), made against the original repository's commit 95b69c
   in the 7.7 tug played at a fixed 10 fps, half the pace of Zampanò's beside him (both now use the
   authored timing), and two stale passages here and in `ASSETS.md` (armoured Watson's scale, the
   band's missing squat).
+
+## The title portrait: Zampano-Samemala-4
+
+- The owner asked for `assets/starting-page-images/Zampano-Samemala-4.gif` on the title page in
+  place of `-3`. Same size (1024 × 1536, transparent), same 3.9 s loop and delay pattern, the dog
+  in the same place (identical bounds, first frame and all frames, so the title's crop box and
+  layout are unchanged), 110 frames instead of 99, every frame redrawn.
+- Bundled as before: a lossless animated WebP made with Pillow (`app/Zampano-Samemala-4.webp`,
+  3.0 MB against the GIF's 7.5 MB), checked against the GIF frame by frame (visible pixels and
+  every delay identical) and decoded in the browser with `ImageDecoder` as the title does. The
+  `-3` WebP copy is gone (the `-3` GIF, its source, is kept with the others, unused). The APK
+  grows by about 0.7 MB.

@@ -301,16 +301,18 @@ transitions, stars, jingles, game over) stay synthesized in `src/fx/sounds.ts`.
 
 `assets/starting-page-images/` holds the pictures of the title page and the level ends:
 
-- `Zampano-Samemala-3.gif`: Zampanò over the title's buttons, **animated** (99 frames, about
-  4 s, 1024 × 1536, transparent; `src/ui/titleAnim.ts`). The app bundles `app/Zampano-Samemala-3.webp`,
-  the same animation as a lossless animated WebP (identical frames and delays, 2.3 MB instead of
-  6.6 MB; made with Pillow: `save(..., save_all=True, lossless=True, method=6, duration=<the GIF's
-  delays>, loop=0)`). Replacing the GIF means redoing that copy. The browser decodes its frames one after
+- `Zampano-Samemala-4.gif`: Zampanò over the title's buttons, **animated** (110 frames, about
+  4 s, 1024 × 1536, transparent; `src/ui/titleAnim.ts`). The app bundles `app/Zampano-Samemala-4.webp`,
+  the same animation as a lossless animated WebP (identical visible pixels and delays, checked
+  frame by frame; 3.0 MB instead of 7.5 MB; made with Pillow: `save(..., save_all=True,
+  lossless=True, method=6, duration=<the GIF's delays>, loop=0)`). Replacing the GIF means redoing
+  that copy. The browser decodes its frames one after
   another (WebCodecs `ImageDecoder`: Chromium and the Android WebView) and each frame plays as
   soon as it is ready, so the dog moves about a second after the title appears. Every frame is
   cropped to the same box (the first frame's dog plus `TITLE.DOG_CROP_MARGIN`) and scaled to the
   title's size. Without `ImageDecoder` (Safari, the dev server opened over plain http on the
-  LAN) the first frame stays still. The earlier `Zampano-Samemala-1.gif` and `-2.gif` are kept,
+  LAN) the first frame stays still. The earlier `Zampano-Samemala-1.gif`, `-2.gif` and `-3.gif`
+  (the portrait until the owner chose `-4`, which keeps its pose, place and timing) are kept,
   unused.
 - `Retro-16-Bit Ivory Dog Sprite-3-4-front.png`: the first portrait (a still), kept, no longer used.
 - `Youve_Been_Supervillained_Logo.png`: not on the title page; it snaps in at the end of every

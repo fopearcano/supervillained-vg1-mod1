@@ -1,12 +1,12 @@
 import { Texture } from 'pixi.js';
-// Zampano-Samemala-3.gif converted to a lossless animated WebP (same 99 frames and delays, 2.3 MB
-// instead of 6.6 MB); the GIF is kept beside it as the source.
-import gifUrl from '../../assets/starting-page-images/app/Zampano-Samemala-3.webp?url';
+// Zampano-Samemala-4.gif converted to a lossless animated WebP (same 110 frames and delays, 3.0 MB
+// instead of 7.5 MB); the GIF is kept beside it as the source.
+import gifUrl from '../../assets/starting-page-images/app/Zampano-Samemala-4.webp?url';
 import { TITLE } from '../config';
 
 /**
  * The title page's animated portrait of Zampanò (assets/starting-page-images/
- * Zampano-Samemala-3.gif, 99 frames, about 4 s). The GIF is large (1024 x 1536 per frame), so its
+ * Zampano-Samemala-4.gif, 110 frames, about 4 s). The GIF is large (1024 x 1536 per frame), so its
  * frames are decoded one after another by the browser (WebCodecs `ImageDecoder`, in Chromium and
  * the Android WebView) and each is shown as soon as it is ready: decoding runs faster than the GIF
  * plays, so the animation starts at once instead of after the whole file (`TitlePlayer` holds a

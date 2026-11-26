@@ -1,7 +1,7 @@
 import { Texture } from 'pixi.js';
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('../assets/starting-page-images/app/Zampano-Samemala-3.webp?url', () => ({ default: 'zampano.webp' }));
+vi.mock('../assets/starting-page-images/app/Zampano-Samemala-4.webp?url', () => ({ default: 'zampano.webp' }));
 const { TitlePlayer } = await import('../src/ui/titleAnim');
 
 function store(n: number, done: boolean) {
