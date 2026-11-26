@@ -157,7 +157,7 @@ describe('treat placement', () => {
     for (let band = 0; band < 10; band++) {
       expect(trail.some((r) => r.along >= band / 10 && r.along < (band + 1) / 10), `road band ${band}`).toBe(true);
     }
-    // No stretch of road longer than 5 tiles without food (the trail is ~3.8 tiles apart).
+    // No stretch of road longer than 5 tiles without food (the trail is ~2.5 tiles apart).
     const along = trail.map((r) => r.along).sort((a, b) => a - b);
     const length = GREEN_ZONE_ROAD.slice(1).reduce((sum, p, k) => sum + Math.hypot(p.x - GREEN_ZONE_ROAD[k]!.x, p.y - GREEN_ZONE_ROAD[k]!.y), 0);
     for (let k = 1; k < along.length; k++) expect((along[k]! - along[k - 1]!) * length).toBeLessThan(5);

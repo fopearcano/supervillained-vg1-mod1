@@ -1,5 +1,6 @@
 import { Container, Graphics } from 'pixi.js';
 import { TITLE } from '../config';
+import { Rng } from '../core/rng';
 import { hex } from './retro';
 
 const D = TITLE.DISCO;
@@ -84,10 +85,10 @@ export class DiscoLights {
   constructor() {
     for (const g of [this.beams, this.specks, this.flash]) g.blendMode = 'add';
     this.root.addChild(this.veil, this.beams, this.specks, this.flash);
-    // The same specks every time (no Math.random: a fixed scatter).
+    // The same specks every time (a seeded scatter, not Math.random).
+    const rng = new Rng(0xd15c0);
     for (let k = 0; k < D.SPECKS; k++) {
-      const r = (n: number) => (((k + 1) * 9301 + n * 49297) % 233280) / 233280;
-      this.dots.push({ x: r(1), y: 0.06 + r(2) * 0.9, size: r(3) < 0.3 ? 2 : 1, phase: r(4) * Math.PI * 2 });
+      this.dots.push({ x: rng.next(), y: 0.06 + rng.next() * 0.9, size: rng.next() < 0.3 ? 2 : 1, phase: rng.next() * Math.PI * 2 });
     }
   }
 
@@ -114,9 +115,10 @@ export class DiscoLights {
     const { w, h } = this;
     const len = h * 1.25;
     D.BEAM_X.forEach((fx, i) => {
-      // Neighbours sweep against each other; the whole set turns every BEAM_SWEEP_BEATS beats.
+      // Neighbours sweep against each other; the whole set turns every BEAM_SWEEP_BEATS beats. At
+      // rest each leans toward the middle (the edge beams most), so all four stay on the screen.
       const phase = (this.beatPos / D.BEAM_SWEEP_BEATS) * Math.PI * 2 + (i % 2 ? Math.PI : 0) + i * 0.7;
-      const angle = Math.PI / 2 + Math.sin(phase) * D.BEAM_SWEEP - (fx - 0.5) * 0.6;
+      const angle = Math.PI / 2 + Math.sin(phase) * D.BEAM_SWEEP + (fx - 0.5) * 0.6;
       const x0 = Math.round(w * fx);
       const y0 = -4;
       const color = hex(D.COLORS[(lv.color + i * 2) % D.COLORS.length]!);

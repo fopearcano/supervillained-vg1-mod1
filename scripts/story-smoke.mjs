@@ -596,6 +596,22 @@ async function walkChecks(page) {
   });
   check((await state()).phase === 'scare' && near.every((d) => d < 3.6), `walking away at NOW!, he is still caught (band at ${near.join(', ')} tiles)`);
 
+  // Running up the road through NOW!: the one coming from behind still catches him before the fright.
+  await page.evaluate(() => window.__sv.flow.play(1));
+  await wait(900);
+  await page.evaluate(() => window.__sv.scene().teleport(53.5, 51.5));
+  await wait(300);
+  await page.keyboard.down('ShiftLeft');
+  await page.keyboard.down('KeyW');
+  for (let k = 0; k < 80 && (await state()).phase !== 'scare'; k++) await wait(40);
+  const ran = await page.evaluate(() => {
+    const s = window.__sv.scene();
+    return { phase: s.ambush.director.phase, far: s.ambush.band.map((m) => +Math.hypot(m.actor.gx - s.player.gx, m.actor.gy - s.player.gy).toFixed(1)) };
+  });
+  await page.keyboard.up('KeyW');
+  await page.keyboard.up('ShiftLeft');
+  check(ran.phase === 'scare' && ran.far.length === 3 && ran.far.every((d) => d < 3.6), `running up the road at NOW!, all three still reach him (band at ${ran.far.join(', ')} tiles)`);
+
   // On the west trail: they still come in from outside the view, clear of hedges, and reach him.
   await page.evaluate(() => window.__sv.flow.play(1));
   await wait(900);

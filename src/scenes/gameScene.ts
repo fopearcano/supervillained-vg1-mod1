@@ -90,7 +90,7 @@ export class GameScene implements Scene {
     this.threats = new Threats(this, this.rules, levelDef);
     const ambush = levelDef.events.ambush;
     this.ambush = ambush ? new Ambush(this, this.rules, ambush, levelDef.seed, () => ({ w: this.game.width, h: this.game.height })) : null;
-    // While Bagnaskiz waits with his band (and a little after they leave), he does not also roam.
+    // While his band lies in wait (and a little after they leave), Bagnaskiz does not also roam.
     this.threats.attackHeld = () => this.ambush?.holdsAttack ?? false;
     this.fx = new GameFx(this.events, this.player, this.camera, () => this.rules.poopWarning);
     this.world.decalLayer.addChild(this.fx.below, this.magnetG);

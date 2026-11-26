@@ -312,7 +312,7 @@ export const TREAT = {
   ROUTE_WANDER: 0.6,
   /** Side treats lie on gravel at least this far (tiles) from the route: the loops and spine. */
   SIDE_MIN_ROUTE_DISTANCE: 6,
-  /** Level progress range split into one band per side treat (one treat per band). */
+  /** Side treats go only on lane tiles within this progress range (farthest-first over all of them). */
   SIDE_PROGRESS: [0.05, 0.95],
 } as const;
 
@@ -476,10 +476,6 @@ export const AMBUSH = {
    * him: they poop where they run, so the piles spread out of one pee's reach. */
   RING: 2,
   RING_WIDEN_TO: 3.4,
-  /** Farther than this from him at the shout (he took another lane), they first pop up... */
-  REACH: 9,
-  /** ...this far from him, ahead (tiles). */
-  APPEAR_AT: 5,
   /** Seconds Zampanò stays frozen with fright while they bark around him. */
   SCARE_TIME: 2.4,
   /** Push away from the leader when the fright starts (tiles/s). */
@@ -492,7 +488,7 @@ export const AMBUSH = {
   /** Seconds to run off and vanish, and their speed (tiles/s). */
   LEAVE_TIME: 2.2,
   LEAVE_SPEED: 6,
-  /** Bagnaskiz's usual attack waits while the band waits, and this long after it leaves (s). */
+  /** Bagnaskiz's usual attack waits while the band lies in wait, and this long after it leaves (s). */
   ATTACK_GRACE: 8,
   /** Seconds a band member squats to poop (its whole clip, sped up to fit). */
   POOP_SQUAT: 0.6,

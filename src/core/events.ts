@@ -55,7 +55,7 @@ export interface GameEvents extends Record<string, unknown> {
   attackStart: { intensity: number };
   attackEnd: Record<string, never>;
   bagnaskizFled: At & { score: number };
-  /** The band's ambush (systems/ambush.ts): a voice from where they wait (loud 0..1). */
+  /** The band's ambush (systems/ambush.ts): a voice from off-screen, from its speaker's side (loud 0..1). */
   ambushVoice: At & { text: string; who: string; loud: number };
   /** The leader's shout (NOW!). */
   ambushNow: At & { text: string; who: string };

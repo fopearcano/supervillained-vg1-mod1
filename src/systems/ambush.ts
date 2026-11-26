@@ -72,8 +72,12 @@ export class Ambush {
     const arrived = this.band.length > 0 && this.band.every((m) => m.actor.arrived || this.distance(m.actor) <= AMBUSH.RING + 0.5);
     for (const s of this.director.update(dt, progress, arrived)) this.handle(s);
     const phase = this.director.phase;
-    // They run at where he is now, not where he stood at the shout.
-    if (phase === 'jump') for (const m of this.band) m.actor.setBehavior({ kind: 'goto', to: this.ringPoint(m.angle), speed: AMBUSH.JUMP_SPEED, run: true });
+    // They run at where he is now, not where he stood at the shout, and faster than he goes: one
+    // coming from behind a running Zampanò still catches him before the fright.
+    if (phase === 'jump') {
+      const chase = AMBUSH.JUMP_SPEED + Math.hypot(player.vx, player.vy);
+      for (const m of this.band) m.actor.setBehavior({ kind: 'goto', to: this.ringPoint(m.angle), speed: chase, run: true });
+    }
     if (phase === 'scare') this.scareStep(dt);
     if (phase === 'leave') {
       // They vanish in the second half of their run.

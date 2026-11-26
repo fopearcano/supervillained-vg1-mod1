@@ -74,8 +74,8 @@ export interface EventSettings {
    */
   pollutionWaves?: readonly PollutionWaveSettings[];
   /**
-   * Bagnaskiz's band waits half way along the route (systems/ambush.ts): their voices from
-   * `warnFrom`, more and more often; at `at` the first of them shouts, they jump in barking,
+   * Bagnaskiz's band, out of sight (systems/ambush.ts): their voices from off-screen from
+   * `warnFrom`, more and more often; at `at` a big NOW! and they rush in from outside the view,
    * frighten Zampanò, poop around him and run off. Timings are in config.ts (AMBUSH).
    */
   ambush?: AmbushSettings;

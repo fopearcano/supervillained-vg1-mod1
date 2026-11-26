@@ -1328,3 +1328,10 @@ sudden", right when a big NOW! appears, "like a big sound".
   spot in view, or close by. The beat between the shout and the jump (`NOW_BEAT`) and the band's
   waiting spot (`spot`, `REACH`, `APPEAR_AT`) are gone; they run in faster (9 tiles/s) since they
   come from farther. The fright, the poops and the run off are unchanged.
+- **An adversarial review** found and fixed: the mirror-ball specks lay on one diagonal line (the
+  scatter formula was linear; now the seeded `Rng`); the two edge beams leaned outward and were
+  mostly off the screen (they now lean in, and all four cross the room); a Zampanò running up the
+  road through NOW! could outrun the band member coming from behind, so the fright started with
+  him far off (they now run at their speed plus his; a smoke check runs through NOW!); dead
+  `REACH` / `APPEAR_AT` tuning and comments still describing the waiting band; a stale treat
+  placement comment.
