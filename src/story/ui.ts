@@ -87,6 +87,8 @@ export class DialogueBox {
   private keyboard = false;
   /** Typewriter speed in characters per second (text-speed setting). */
   cps: number = STORY.TEXT_CPS.normal;
+  /** The sprite a speaker's portrait shows (the story scene dresses the cast for the dream). */
+  portraitFor: (key: CharacterKey) => CharacterKey = (key) => key;
 
   constructor() {
     this.root.addChild(this.bg, this.portrait, this.name, this.text, this.more, this.choices);
@@ -133,13 +135,14 @@ export class DialogueBox {
       this.portrait.texture = textures.get(spriteName('professorFace'));
       this.portrait.scale.set(1.5);
     } else if (sp.portrait && sp.portrait in CHARACTERS) {
+      const who = this.portraitFor(sp.portrait);
       // Speakers who are not on stage may not have their sprites generated yet.
-      const key = textureName(sp.portrait, 'idle', 'S', 0);
+      const key = textureName(who, 'idle', 'S', 0);
       const token = ++this.portraitToken;
       this.portrait.scale.set(1);
       this.portrait.texture = textures.has(key) ? textures.get(key) : Texture.EMPTY;
       if (!textures.has(key))
-        void ensureCharacters([sp.portrait]).then(() => {
+        void ensureCharacters([who]).then(() => {
           if (token === this.portraitToken && textures.has(key)) this.portrait.texture = textures.get(key);
         });
     } else {

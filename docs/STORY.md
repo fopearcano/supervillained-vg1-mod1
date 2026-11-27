@@ -37,12 +37,12 @@ strangled January 1204) and Alexios V Mourtzouphlos (who takes the throne in 120
 | Greenzone | In the dream | Notes |
 |---|---|---|
 | Zampanò | a small knight of Picardy, in Robert de Clari's place | Not Clari himself: the dream borrows Clari's position (his lord, his brother, his share). |
-| Confusione | Aleaume of Clari, a clerk, Robert's brother | Calls him "brother". The breach (7.7) is Aleaume's deed, not Zampanò's. In his mail from the breach on (7.7, 7.9: its rattle guides Zampanò; at the pile he claims a knight's share). |
-| Sbrimbrulòn | Pierre d'Amiens, his lord | The walk beside Pierre (7.3) is the dream's emotional centre. |
+| Confusione | Aleaume of Clari, a clerk, Robert's brother | Calls him "brother". The breach (7.7) is Aleaume's deed, not Zampanò's. In his mail throughout the dream, from the road (2.3) on (the owner's decision): at the breach its rattle guides Zampanò (7.7); at the pile he claims a knight's share (7.9). |
+| Sbrimbrulòn | Pierre d'Amiens, his lord | The walk beside Pierre (7.3) is the dream's emotional centre. In his armour throughout the dream. |
 | Bagnaskiz | the marshal, Geoffroi de Villehardouin; also the faces of Alexios III and Alexios V | "The dream runs out of faces": the bully gets every crown. |
-| Watson | a Venetian sailor; a companion in the city | Still says "MAN". |
-| Jack | the lad who wants the helmet on the road (2.3), rumours on deck, the dice at Zara, crossed fingers at the oath, the looter in 7.8 | The camp's worst impulses; invented. In arms from the oath before the assault (7.7, 7.8). |
-| Santina | a woman on the walls (7.3) | Her words are lost in the wind; answered at her gate (8.4). |
+| Watson | a Venetian sailor; a companion in the city | Still says "MAN". In armour throughout the dream, like the rest of the cast (4.1, 4.2, 7.4). |
+| Jack | the lad who wants the helmet on the road (2.3), rumours on deck, the dice at Zara, crossed fingers at the oath, the looter in 7.8 | The camp's worst impulses; invented. In arms throughout the dream, already on the road (2.3) (the owner's decision). |
+| Santina | a woman on the walls (7.3) | Her words are lost in the wind; answered at her gate (8.4). In armour on the walls, like the rest of the cast in the dream. |
 | The Professor | himself; asides at the end of each level | Lecture voice: "YOU UNDERSTAND". |
 | — | the Doge Enrico Dandolo, "an old, blind, very shrewd dog" | |
 | — | Niketas Choniates, as himself | No lawn face: "the dream has no face to lend him". |
@@ -66,7 +66,11 @@ strangled January 1204) and Alexios V Mourtzouphlos (who takes the throne in 120
 - **Costumes**: the rag cross (1.5, real: he carries it on his back); in the dream it becomes a
   coat of mail two sizes too big, worn from 2.1 (the helmet that slips is the bucket of 1.1); the
   arms, a sword and a shield, come at 2.3 (the `knight` mark: sword and shield in fights). The
-  vow (2.2) is recorded as the `sermon` mark.
+  vow (2.2) is recorded as the `sermon` mark. The cast wear their armour throughout the dream
+  (levels 2–7; the owner's decision): Sbrimbrulòn, Confusione, Jack, Watson and Santina, on the
+  stage and in their dialogue portraits (`dreamCostume` in `campaign/state.ts`); on the lawn and in
+  the study (levels 1 and 8) they are plain. Bagnaskiz keeps the faces the dream lends him (the
+  marshal, the emperors).
 - **Remembered lines** ("THERE WAS A …, AND IT WAS …"): the dream's grammar, collected in the book.
 - **Fighting** (adaptation): BARK from the start, SWORD and SHIELD once he wears the borrowed
   armour (2.3). Nobody dies: beaten foes are *routed*, and a knocked-down Zampanò starts the

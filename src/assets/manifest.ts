@@ -148,6 +148,20 @@ export function costumeFor(playAs: PlayAs, costume: PlayableCharacterKey): Playa
   return armoured ? 'bagnaskizEmperor' : 'bagnaskiz';
 }
 
+/**
+ * The armour each of the cast wears in the dream (levels 2 to 7): their delivered armoured
+ * sheets, with the same twelve actions as the plain ones. Zampanò's costume follows the campaign
+ * (campaign/state.ts dreamSkin); Bagnaskiz is not here: his dream faces (the marshal, the
+ * emperors) are chosen by the scripts. The rule: campaign/state.ts dreamCostume.
+ */
+export const DREAM_ARMOUR: Readonly<Partial<Record<CharacterKey, CastKey>>> = {
+  jack: 'jackKnight',
+  watson: 'watsonKnight',
+  santina: 'santinaKnight',
+  confusione: 'confusioneKnight',
+  sbrimbrulon: 'sbrimbrulonKnight',
+};
+
 const tired = (path: string) => ({ tired: path });
 
 /**
