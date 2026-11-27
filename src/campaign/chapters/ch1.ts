@@ -1,6 +1,7 @@
 import { STORY } from '../../config';
 import type { PropEntity } from '../../entities/prop';
 import { carry, dropCarried } from '../../story/carry';
+import { putOnHeadGear, takeOffHeadGear } from '../../story/headGear';
 import { ask, call, card, face, flash, fx, move, prof, say, shake, sound, stage, wait } from '../../story/steps';
 import type { StoryScene } from '../../story/storyScene';
 import { walk } from '../../story/walk';
@@ -55,7 +56,11 @@ export const CH1: ChapterDef = {
         card('', 'AFTER THE WALK, ON THE LAWN, HE DOZES OFF...', { color: C.green, seconds: 1.8, dim: 0.9 }),
         sound('hit'),
         shake(3),
-        call((ctx) => (ctx.visor = STORY.VISOR.MAX)),
+        call((ctx) => {
+          // The bucket lands on his head, right down over his eyes.
+          putOnHeadGear(ctx, 'bucket');
+          ctx.visor = STORY.VISOR.MAX;
+        }),
         card('CLONK', 'SOMETHING HAS COME DOWN OVER HIS HEAD', { color: C.yellow, seconds: 1.6, dim: 0.2 }),
         say('watson', 'OOPS, MAN. THE KIDS LEFT THEIR SAND BUCKET. IT SUITS YOU.'),
         walk({
@@ -89,7 +94,12 @@ export const CH1: ChapterDef = {
         sound('hurt'),
         flash(),
         shake(8),
-        call((ctx) => (ctx.visor = 0)),
+        call((ctx) => {
+          // Slapped off: it tumbles away from the paw across the lane and lies there.
+          ctx.visor = 0;
+          const paw = ctx.actor('conf');
+          takeOffHeadGear(ctx, 'knock', { x: paw.gx, y: paw.gy });
+        }),
         card('SLAP!', 'THE BUCKET ROLLS AWAY ACROSS THE LANE', { color: C.red, seconds: 1.4, dim: 0.2 }),
         say('confusione', 'YOU WERE WALKING INTO THE HEDGE WITH A BUCKET ON. THE WHOLE LANE SAW.'),
         say('zampano', 'I WAS KEEPING MY HEAD UP.'),

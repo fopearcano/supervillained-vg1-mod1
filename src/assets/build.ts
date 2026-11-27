@@ -4,6 +4,7 @@ import type { Palette } from '../world/level';
 import type { Texture, TextureSource } from 'pixi.js';
 import { drawCritter, drawShadow, poseFor } from './placeholders/critters';
 import { CAST_SPECS } from './placeholders/cast';
+import { drawBigHelm, drawSandBucket } from './placeholders/headGear';
 import { drawSpecial, drawStoryProp, drawStoryTile } from './placeholders/storyArt';
 import * as items from './placeholders/items';
 import * as props from './placeholders/props';
@@ -129,6 +130,8 @@ export async function buildGlobalTextures(art: ArtBank = 'current'): Promise<voi
     [S.pole, () => props.drawPole()],
     [S.fountain, () => props.drawFountain()],
     [S.exitFlag, () => props.drawExitFlag()],
+    [S.sandBucket, () => drawSandBucket()],
+    [S.bigHelm, () => drawBigHelm()],
   ];
   for (const [def, draw] of gen) {
     if (def.file && (await loadSpriteStrip(def))) continue;

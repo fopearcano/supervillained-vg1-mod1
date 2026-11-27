@@ -1,4 +1,5 @@
 import { STORY } from '../../config';
+import { putOnHeadGear, takeOffHeadGear } from '../../story/headGear';
 import { ask, call, card, emote, fx, prof, say, skin, sound } from '../../story/steps';
 import { walk } from '../../story/walk';
 import { C } from '../../ui/retro';
@@ -33,7 +34,11 @@ export const CH2: ChapterDef = {
       source:
         "DREAM PROLOGUE (ADAPTATION; THE HELMET IS THE BUCKET OF 1.1). JERUSALEM AS THE PROMISED DESTINATION, NEVER REACHED. VILLEHARDOUIN (MARZIALS P. 8): THE COUNCIL WAS TOLD THE REAL OBJECTIVE WAS BABYLON (EGYPT), THE PEOPLE ONLY 'OVERSEAS'.",
       script: () => [
-        call((ctx) => ctx.setStage('jerusalem')),
+        call((ctx) => {
+          ctx.setStage('jerusalem');
+          // The bucket of 1.1, much grander: a great helm far too big for him.
+          putOnHeadGear(ctx, 'helmet');
+        }),
         card('', 'THE BOTTOM OF THE SHIP OPENS...', { color: '#f6c8e0', seconds: 1.8, dim: 0.9 }),
         card('JERUSALEM', 'WHERE EVERYONE SAYS THEY ARE GOING', { color: '#f6c8e0', seconds: 2.2, dim: 0.3 }),
         prof('JERUSALEM, YOU UNDERSTAND. THAT IS WHAT THEY PREACHED. THAT IS WHAT THEY SEWED ON.'),
@@ -69,7 +74,10 @@ export const CH2: ChapterDef = {
             }
           },
         }),
-        call((ctx) => (ctx.visor = 0)),
+        call((ctx) => {
+          ctx.visor = 0;
+          takeOffHeadGear(ctx, 'lift');
+        }),
         card('ONE STEP AWAY', 'THE GATE MOVES BACK BY EXACTLY ONE STEP', { color: '#f6c8e0', seconds: 2 }),
         say('zampano', 'NOBODY SAID ANYTHING ABOUT EGYPT.'),
         say('voice', 'NOBODY SAID ANYTHING TO YOU.'),

@@ -1,4 +1,4 @@
-import { ColorMatrixFilter, Container, Graphics } from 'pixi.js';
+import { ColorMatrixFilter, Container, Graphics, Point as PixiPoint } from 'pixi.js';
 import { ensureCharacters } from '../assets/build';
 import { floorDesignForMap, paletteForChapter } from '../assets/environment';
 import { ARMOURED_SKINS, costumeFor, type CharacterKey, type PlayAs, type PlayableCharacterKey } from '../assets/manifest';
@@ -20,6 +20,7 @@ import { STORY } from '../config';
 import type { Autopilot } from './autopilot';
 import { ResumeStep, type Step } from './step';
 import { CardLayer, DialogueBox, StoryHud } from './ui';
+import { VisorOverlay, type VisorStyle } from './visorOverlay';
 
 export interface StoryHooks {
   /** All steps done: the sub-level is complete. */
@@ -53,6 +54,8 @@ export class StoryScene implements Scene {
   readonly particles = new Particles();
   readonly popups = new Popups();
   readonly overlayG = new Graphics();
+  /** The visor's bands (1.1's bucket, 2.1's helm), under the fog and flash overlay. */
+  readonly visorOverlay = new VisorOverlay();
   world: World | null = null;
   mapKey: MapKey | null = null;
   readonly actors = new Map<string, Actor>();
@@ -87,7 +90,7 @@ export class StoryScene implements Scene {
     this.hud = new StoryHud(game.input);
     this.controls = new TouchControls(game.input);
     this.root.addChild(this.stageLayer, this.gameLayer, this.uiLayer);
-    this.uiLayer.addChild(this.overlayG, this.controls.root, this.hud.root, this.dialogue.root, this.cards.root);
+    this.uiLayer.addChild(this.visorOverlay.g, this.overlayG, this.controls.root, this.hud.root, this.dialogue.root, this.cards.root);
     this.hud.setTitle(sub.id, sub.title);
     // A speaker's portrait wears what his figure on the stage wears (armour in the dream).
     this.dialogue.portraitFor = (key) => this.portraitOf(key);
@@ -173,6 +176,7 @@ export class StoryScene implements Scene {
     this.worldFx.removeFromParent();
     this.bleach = 0;
     this.visor = 0;
+    this.visorStyle = 'helmet';
     this.fog = 0;
     this.world?.destroy();
     this.actors.clear();
@@ -387,8 +391,12 @@ export class StoryScene implements Scene {
   private flashColor = 0xffffff;
   private flashAlpha = 0;
 
-  /** 1.1: the helmet slipping over his eyes (0 = up, 1 = down to a slit). */
+  /**
+   * 1.1's bucket, 2.1's great helm slipping over his eyes (0 = up, STORY.VISOR.MAX = down to a
+   * slit round him). `visorStyle`: what the bands look like (story/headGear.ts sets it).
+   */
   visor = 0;
+  visorStyle: VisorStyle = 'helmet';
   /** 7.4: smoke (0 = clear, 1 = only a small circle around Zampanò is visible). */
   fog = 0;
   /**
@@ -473,22 +481,31 @@ export class StoryScene implements Scene {
     this.controls.update(frameDt);
     if (this.world) this.controls.setEnergy(this.player.energy.fraction, this.player.canRun);
     this.hud.update(frameDt, this.state);
+    // The visor: the bands close in toward him, the slit stays round him (redrawn on change only).
+    const visor = this.world && this.visor > 0.01 ? this.visor : 0;
+    this.visorOverlay.update(this.w, this.h, visor > 0 ? this.playerOnScreen().y : 0, visor, this.visorStyle);
+    const fog = this.fog > 0.01 && !!this.world;
+    const flash = this.flashAlpha > 0;
+    // Cleared only when it shows something now or did last frame.
+    if (!fog && !flash && !this.overlayShown) return;
     const g = this.overlayG;
     g.clear();
-    if (this.fog > 0.01 && this.world) {
-      const p = this.uiLayer.toLocal(this.player.view.getGlobalPosition());
+    this.overlayShown = fog || flash;
+    if (fog) {
+      const p = this.playerOnScreen();
       const r = Math.max(this.w, this.h) * (1 - this.fog) + 34 * this.fog;
       g.rect(0, 0, this.w, this.h).fill({ color: 0x2a2228, alpha: 0.92 }).circle(p.x, p.y - 12, r).cut();
     }
-    if (this.visor > 0.01) {
-      // The helmet comes down from the top, the cheek-pieces up from the bottom: a slit is left.
-      const top = Math.round((this.h / 2) * this.visor);
-      const bottom = Math.round((this.h / 2) * this.visor * 0.82);
-      g.rect(0, 0, this.w, top).fill({ color: 0x14161c });
-      g.rect(0, this.h - bottom, this.w, bottom).fill({ color: 0x14161c });
-      g.rect(0, top - 2, this.w, 2).fill({ color: 0x8a94a8 });
-    }
-    if (this.flashAlpha > 0) g.rect(0, 0, this.w, this.h).fill({ color: this.flashColor, alpha: this.flashAlpha });
+    if (flash) g.rect(0, 0, this.w, this.h).fill({ color: this.flashColor, alpha: this.flashAlpha });
+  }
+
+  private overlayShown = false;
+  private readonly screenPoint = new PixiPoint();
+
+  /** Zampanò's feet in screen (uiLayer) px, as last rendered. */
+  private playerOnScreen(): PixiPoint {
+    this.player.view.getGlobalPosition(this.screenPoint);
+    return this.uiLayer.toLocal(this.screenPoint, undefined, this.screenPoint);
   }
 
   /** Automation (story smoke test): ends the current step at once and starts the next. */

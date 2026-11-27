@@ -664,8 +664,34 @@ export const STORY = {
     AXE_SLIDE_TIME: 0.5,
   },
   TUG: { BASE: 0.08, GROW: 0.05, PULL: 0.035 },
-  /** 1.1: the helmet slips over his eyes when he lowers his head (stands still, barks). */
+  /** 1.1's bucket, 2.1's great helm: it slips over his eyes when he lowers his head (stands still, barks). */
   VISOR: { STILL_AFTER: 0.7, DOWN_RATE: 2.4, UP_RATE: 1.5, MAX: 0.86 },
+  /**
+   * The visor's two bands (story/visorSlit.ts): together they cover COVER x visor of the view
+   * (the old bands' share), closing toward FOCUS px above his feet; ABOVE px over his feet and
+   * BELOW px under them always stay in view (the dog, the bucket or helm on his head, a margin).
+   */
+  VISOR_SLIT: { COVER: 0.91, FOCUS: 22, ABOVE: 50, BELOW: 12 },
+  /**
+   * What he wears on his head in 1.1 and 2.1 (story/headGear.ts). DROP: px it slides down over
+   * his eyes at the visor's MAX. TILT_UP / TILT_DOWN: radians it leans back when pushed up, tips
+   * forward (the way he faces) when down; TILT_STEP: angles snap to this (no shimmering pixels).
+   * JIGGLE: radians it rattles while he walks, JIGGLE_RATE rad/s at walking speed.
+   * TUMBLE (the slap of 1.1): it flies DIST tiles in FLIGHT s, HEIGHT px up, spinning TURNS turns
+   * (and a quarter, to land on its side; angles snap to SPIN_STEP), then rolls ROLL tiles in
+   * ROLL_TIME s rocking ROCK radians at ROCK_RATE rad/s, and lies there; RADIUS: its size against
+   * hedges (tiles). LIFT (2.1): it rises HEIGHT px and fades in TIME s.
+   */
+  HEAD_GEAR: {
+    DROP: 7,
+    TILT_UP: 0.12,
+    TILT_DOWN: 0.2,
+    TILT_STEP: 0.07,
+    JIGGLE: 0.07,
+    JIGGLE_RATE: 16,
+    TUMBLE: { DIST: 2.2, FLIGHT: 0.55, HEIGHT: 22, TURNS: 1, SPIN_STEP: Math.PI / 8, ROLL: 0.7, ROLL_TIME: 0.6, ROCK: 0.3, ROCK_RATE: 22, RADIUS: 0.2 },
+    LIFT: { HEIGHT: 18, TIME: 0.45 },
+  },
   /** Characters he follows (1.2, 3.1, 3.4, 5.2, 7.2): they wait while he lags this far behind. */
   LEAD: { WAIT_DISTANCE: 3.2, SPEED: 2.2, ARRIVE: 1.8 },
   /**
