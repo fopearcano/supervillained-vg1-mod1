@@ -84,12 +84,12 @@ for those four, with their large source sheets, previews and pixel checks).
 | `bagnaskizArmoured.png`, `bagnaskizArmoured-tired.png` | 320 × 3520, 80 × 320 | Bagnaskiz in Byzantine armour, the emperors' face (`bagnaskizEmperor`) |
 | `pixel-cast/*.png` | 160 × 1600 (`professorFace.png` 24 × 24) | the pixel cast above (its Jack, Watson, Santina and Confusione are archived in `art-archive/pixel-cast-replaced/`, replaced by their animation deliveries) |
 | `sbrimbrulon.png`, `sbrimbrulon-tired.png` | 320 × 3520, 80 × 320 | Sbrimbrulòn, long-haired rust, dark and white Shih-tzu: the same 12 actions as Zampanò (Sbrimbrulòn animations) |
-| `sbrimbrulonKnight.png`, `sbrimbrulonKnight-tired.png` | 320 × 3520, 80 × 320 | Sbrimbrulòn armoured (helm with nose guard, shoulder plates, mail, red cross on the back), in the dream: 3.1, 5.2, 7.3 |
+| `sbrimbrulonKnight.png`, `sbrimbrulonKnight-tired.png` | 320 × 3520, 80 × 320 | Sbrimbrulòn armoured (helm with nose guard, shoulder plates, mail, red cross on the back), throughout the dream (Pierre d'Amiens: 2.3, 3.1, 5.2, 6.3, 7.3) |
 | `jack.png`, `jack-tired.png` | 320 × 3520, 80 × 320 | Jack, black chihuahua, pink-lined ears: the same 12 actions as Sbrimbrulòn, eight real directions (Jack animations; the pixel cast's sheet is archived) |
 | `watson.png`, `watson-tired.png` | 320 × 3520, 80 × 320 | Watson, cream-and-orange terrier, teal-and-red cap, cigar: 12 actions in four views (his diagonal rows reuse the side profiles, as delivered) |
 | `santina.png`, `santina-tired.png` | 320 × 3520, 80 × 320 | Santina, white Maltese with a red bow: 12 actions, eight directions |
 | `confusione.png`, `confusione-tired.png` | 320 × 3520, 80 × 320 | Confusione, grumpy orange tabby cat: 12 actions, eight directions; his `bark` is a meow or a hiss, his `pee` a feline crouch |
-| `jackKnight.png`, `watsonKnight.png`, `santinaKnight.png`, `confusioneKnight.png` (each with its `-tired.png`) | 320 × 3520, 80 × 320 | the same four in armour (helm, mail, shoulder plates, red cross on the back); armoured Watson's clips are not drawn at one scale (walk a little taller than plain Watson, idle, run, sniff, eat, fetch, bark and sit 10-15 % smaller) |
+| `jackKnight.png`, `watsonKnight.png`, `santinaKnight.png`, `confusioneKnight.png` (each with its `-tired.png`) | 320 × 3520, 80 × 320 | the same four in armour (helm, mail, shoulder plates, red cross on the back), worn throughout the dream (levels 2-7); armoured Watson's clips are not drawn at one scale (walk a little taller than plain Watson, idle, run, sniff, eat, fetch, bark and sit 10-15 % smaller) |
 | `runIcon.png` | 13 × 11 | the RUN button's double chevron (update 1) |
 
 Update 2's own QA notes (the zip's `reports/QA.md`): NE reads more like a side view, the S idle is
@@ -178,9 +178,9 @@ anchor (20, 36), animations **idle 2, walk 4, run 4, bark 2, hurt 2** (same shee
 | key | role in the VG1 design |
 |-----|------------------------|
 | `zampanoCross`, `zampanoKnight` | Zampanò in armour, in the dream (2.1 onwards; `zampanoCross` is an alias of the knight's sheet) |
-| `sbrimbrulon`, `sbrimbrulonKnight` | Shih-tzu, on the lawn / armoured in the dream (3.1, 5.2; Pierre d'Amiens in 7.3). Both have Zampanò's 12 actions: standing still 3 s he sits, and `Actor.playAction(anim, seconds?)` plays any action in place |
+| `sbrimbrulon`, `sbrimbrulonKnight` | Shih-tzu, on the lawn / armoured in the dream (Pierre d'Amiens: 2.3, 3.1, 5.2, 6.3, 7.3). Both have Zampanò's 12 actions: standing still 3 s he sits, and `Actor.playAction(anim, seconds?)` plays any action in place |
 | `jack`, `watson`, `santina`, `confusione` | the band and friends (Jack the camp's worst impulses / the looter, Watson the Venetian sailor, Santina the woman on the walls, Confusione as Aleaume). The 12 actions, like Sbrimbrulòn |
-| `jackKnight`, `watsonKnight`, `santinaKnight`, `confusioneKnight` | the same four in armour (helm, mail, red cross on the back): Aleaume at the breach and the common pile (7.7, 7.9), Jack at the oath and in the sack (7.7, 7.8); Watson's and Santina's are not cast yet |
+| `jackKnight`, `watsonKnight`, `santinaKnight`, `confusioneKnight` | the same four in armour (helm, mail, red cross on the back), worn throughout the dream (levels 2-7): there a script's `jack`, `watson`, `santina`, `confusione` (and `sbrimbrulon`) is shown in its armoured sheet, on the stage and in the dialogue portrait (`DREAM_ARMOUR` in the manifest, the rule `dreamCostume` in `campaign/state.ts`); plain on the lawn and in the study (levels 1 and 8) |
 | `bagnaskizMarshal`, `bagnaskizEmperor` | Bagnaskiz's masks: Villehardouin, then the usurpers |
 | `doge`, `king`, `emir`, `legate`, `cellarer`, `preacher`, `stranger`, `marquis`, `prince`, `burgher`, `lady`, `greek`, `knight`, `varangian`, `clerkA`, `clerkB` | supporting cast |
 | `crowdA`, `crowdB`, `crowdC` | crowds (pilgrims, Venetians) |

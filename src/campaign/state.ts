@@ -1,3 +1,4 @@
+import { DREAM_ARMOUR, type CastKey, type PlayAs } from '../assets/manifest';
 import { STORY } from '../config';
 import { storage } from '../core/storage';
 
@@ -185,12 +186,30 @@ export function dreamSkin(state: CampaignState): 'zampano' | 'zampanoCross' | 'z
   return 'zampano';
 }
 
+/** Levels 2 to 7 are the dream (the Fourth Crusade); 1 and 8 are the lawn and the study. */
+export function isDreamChapter(chapter: number): boolean {
+  return chapter >= 2 && chapter <= 7;
+}
+
+/**
+ * Who a scene's character is in the dream: the cast wear their armour throughout it (the
+ * owner's decision), so a cast key with an armoured sheet becomes that sheet (jack: jackKnight,
+ * manifest DREAM_ARMOUR). Everything else is left as the script wrote it: levels 1 and 8, keys
+ * already armoured, Bagnaskiz's faces, the cast without armour. `playAs`: the dog the player is
+ * (`?as=`) already wears his own armour, so a plain copy of him in a script stays plain instead of
+ * becoming a second armoured one. Pure (tested).
+ */
+export function dreamCostume<K extends string>(who: K, chapter: number, playAs: PlayAs = 'zampano'): K | CastKey {
+  if (!isDreamChapter(chapter) || who === playAs) return who;
+  return (DREAM_ARMOUR as Partial<Record<string, CastKey>>)[who] ?? who;
+}
+
 /**
  * The feeling fades: every dream sub-level (levels 2 to 7) starts with a little less Commozione,
  * so wonder and weeping must keep filling it. Returns the amount actually lost.
  */
 export function fadeCommozione(state: CampaignState, chapter: number): number {
-  if (chapter < 2 || chapter > 7) return 0;
+  if (!isDreamChapter(chapter)) return 0;
   const before = state.meters.commozione;
   state.meters.commozione = Math.max(0, before - STORY.COMMOZIONE_FADE);
   return before - state.meters.commozione;

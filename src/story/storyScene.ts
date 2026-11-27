@@ -2,7 +2,7 @@ import { ColorMatrixFilter, Container, Graphics } from 'pixi.js';
 import { ensureCharacters } from '../assets/build';
 import { floorDesignForMap, paletteForChapter } from '../assets/environment';
 import { ARMOURED_SKINS, costumeFor, type CharacterKey, type PlayAs, type PlayableCharacterKey } from '../assets/manifest';
-import { applyEffects, dreamSkin, fadeCommozione, type CampaignState, type Effects } from '../campaign/state';
+import { applyEffects, dreamCostume, dreamSkin, fadeCommozione, isDreamChapter, type CampaignState, type Effects } from '../campaign/state';
 import type { ChapterDef, SubLevelDef } from '../campaign/types';
 import type { Game } from '../core/game';
 import type { Scene } from '../core/scene';
@@ -89,6 +89,8 @@ export class StoryScene implements Scene {
     this.root.addChild(this.stageLayer, this.gameLayer, this.uiLayer);
     this.uiLayer.addChild(this.overlayG, this.controls.root, this.hud.root, this.dialogue.root, this.cards.root);
     this.hud.setTitle(sub.id, sub.title);
+    // A speaker's portrait wears what his figure on the stage wears (armour in the dream).
+    this.dialogue.portraitFor = (key) => this.portraitOf(key);
     this.controls.setEnabled(false);
     this.controls.configure({ pee: false, action: 'BARK' });
   }
@@ -213,12 +215,17 @@ export class StoryScene implements Scene {
     return { x: p.i + 0.5, y: p.j + 0.5 };
   }
 
+  /**
+   * Places a character. In the dream the cast wear their armour (`dress`), whatever the script
+   * names: `addActor('jack', 'jack', ...)` in 2.3 is Jack in arms.
+   */
   addActor(name: string, who: Who, at: string | Point, behavior?: Behavior, face?: Dir8): Actor {
     if (!this.world) throw new Error('addActor without a stage');
-    if (!SPECIALS.has(who)) ensureCharactersNow([who as CharacterKey]);
+    const key = this.dress(who);
+    if (!SPECIALS.has(key)) ensureCharactersNow([key as CharacterKey]);
     const p = this.marker(at);
     this.removeActor(name);
-    const a = new Actor(name, who, p.x, p.y);
+    const a = new Actor(name, key, p.x, p.y);
     if (behavior) a.setBehavior(behavior);
     if (face) a.face(face);
     this.actors.set(name, a);
@@ -258,6 +265,23 @@ export class StoryScene implements Scene {
   /** The skin for one of Zampanò's costumes, for whoever is played. */
   costume(key: PlayableCharacterKey): PlayableCharacterKey {
     return costumeFor(this.playAs, key);
+  }
+
+  /** What a script's character wears in this scene: the cast's armour in the dream (levels 2-7). */
+  dress<K extends Who>(who: K): K | CharacterKey {
+    return dreamCostume(who, this.chapter.number, this.playAs);
+  }
+
+  /**
+   * The sprite a speaker's portrait shows: in the dream, Zampanò's is the skin he wears on the stage
+   * and the cast's is their armour, as their figures are; elsewhere the plain one. Unlike `dress`,
+   * the played dog is not left out: Pierre is the armoured Sbrimbrulòn even when Sbrimbrulòn is
+   * played (his scripts place `sbrimbrulonKnight`).
+   */
+  portraitOf(key: CharacterKey): CharacterKey {
+    if (!isDreamChapter(this.chapter.number)) return key;
+    if (key === 'zampano') return this.world?.player.animator.key ?? this.costume(dreamSkin(this.state));
+    return dreamCostume(key, this.chapter.number);
   }
 
   /**

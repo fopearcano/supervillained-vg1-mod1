@@ -1388,3 +1388,32 @@ too much poop, difficult to play."
   tiles, 82 tiles without food along the hedges) never drops below 44.
 - The `m2` screenshot ate the four nearest treats to show the warning; it now eats the nearest
   until the warning starts (29).
+
+## The cast in armour throughout the dream
+
+The owner: "When in Dream part of the game characters must show their armored versions."
+- **The rule** (`dreamCostume(who, chapter, playAs)` in `campaign/state.ts`, pure and tested in
+  `tests/dreamCostume.test.ts`; the map is `DREAM_ARMOUR` in `assets/manifest.ts`): in levels 2-7
+  (`isDreamChapter`, now also used by `fadeCommozione`) a script's `jack`, `watson`, `santina`,
+  `confusione` or `sbrimbrulon` becomes `jackKnight`, `watsonKnight`, `santinaKnight`,
+  `confusioneKnight` or `sbrimbrulonKnight` (the delivered armoured sheets, with the same twelve
+  actions). Everything else is left as written: levels 1 and 8, keys already armoured (the scripts
+  that name `xKnight` keep working), the cast without armour, Zampanò (his costume follows the
+  campaign, `dreamSkin`) and Bagnaskiz, whose dream faces (the marshal, the emperors) stay the
+  scripts' choice until his announced redesign.
+- **Where it applies**: `StoryScene.addActor`, the one place a story character is created (used
+  by `stage()`, `actor()`, the scripts' `ctx.addActor` and so by the chapter helpers, which only
+  move actors already placed); the BoatGame rocks an actor placed that way; the TugGame already
+  pulls `confusioneKnight`; the LaddersGame shows only Zampanò. Every armoured sheet is loaded at
+  boot with the other delivered sheets (`BOOT_CHARACTERS`), and `addActor` still asks for the key
+  it shows.
+- **Portraits** (`DialogueBox.portraitFor`, set by `StoryScene.portraitOf`): in the dream a
+  speaker's portrait is his armoured sheet, as his figure is, and Zampanò's is the skin he wears on
+  the stage (the knight; the other dog's armour with `?as=`). Plain in levels 1 and 8.
+- **Played as another dog** (`?as=sbrimbrulon`): the played dog already wears his own armour, so a
+  plain copy of him in a script stays plain rather than becoming a second armoured one; the
+  scripts' own armoured Pierre (`sbrimbrulonKnight`) is unchanged, and his portrait stays armoured.
+- **Consequences for the story** (in `docs/BACKLOG.md`): Jack, who wants the armourer's things in
+  2.3, already wears his own; Watson (the Venetian sailor) and Santina (a woman on the walls of
+  Constantinople, 7.3) wear the crusaders' red cross; armoured Watson's clips, drawn at uneven
+  scales, are now on screen (4.1, 4.2, 7.4). No line or scene changed.

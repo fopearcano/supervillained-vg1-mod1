@@ -69,12 +69,14 @@ with history by the Professor, his human dad, and hopeless with girls). **Santin
 is to be changed.** The Green Zone walk got the band's ambush and more treats first (see
 `DECISIONS.md`).
 
-**Who wears armour, and where.** Jack, Watson, Santina and Confusione now have armoured costumes
-(`jackKnight`, `watsonKnight`, `santinaKnight`, `confusioneKnight`). Cast so far by the rule used for
-Sbrimbrulòn (armoured where the story makes them fighting crusaders): Aleaume from the breach
-(7.7, 7.9), Jack from the oath before the assault (7.7, 7.8). No scene calls for Watson (a
-Venetian sailor) or Santina (a woman on the walls) in armour yet; their costumes are ready for the
-rewrite (`ctx.addActor(name, 'watsonKnight', ...)` or `who: 'santinaKnight'` in a stage).
+**Who wears armour, and where.** The owner's decision: in the dream (levels 2-7) the cast wear
+their armour throughout, on the stage and in the dialogue portraits: Sbrimbrulòn, Confusione,
+Jack, Watson (a Venetian sailor, 4.1, 4.2, 7.4) and Santina (a woman on the walls of
+Constantinople, 7.3), whatever the script names (`dreamCostume` in `campaign/state.ts`); plain on
+the lawn and in the study. Bagnaskiz keeps his dream faces (the marshal, the emperors) until his
+announced redesign. For the story rewrite: the armour carries a crusader's red cross, also on
+Watson the Venetian and Santina the Greek woman; and in 2.3 Jack, who wants the armourer's things,
+already wears his own.
 
 ## 5. Polish and release
 
@@ -88,8 +90,8 @@ rewrite (`ctx.addActor(name, 'watsonKnight', ...)` or `who: 'santinaKnight'` in 
    diagonal rows reusing the side profiles, where the other dogs have eight; and armoured Watson's
    clips are not drawn at one scale (walk 27 px tall against plain Watson's 25, idle 22 against
    26, run, sniff, eat, fetch, bark and sit likewise 10-15 % smaller), so he would grow when he
-   starts walking. Not visible yet (he is not cast in armour); the next delivery should draw every
-   armoured clip at plain Watson's scale. `tests/castAnimations.test.ts` records the four views.
+   starts walking. Visible now that he wears it in the dream (4.1, 4.2, 7.4: he follows Zampanò
+   in 4.1 and 7.4); the next delivery should draw every armoured clip at plain Watson's scale. `tests/castAnimations.test.ts` records the four views.
 3. **The Green Zone ambush needs playing by a person**: its numbers were set by eye and checked
    by scripts, not by play. Timings in `AMBUSH` (`config.ts`: how often the voices come, the
    fright's length, six poop piles, the grace before Bagnaskiz comes back, where they rush in
