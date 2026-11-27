@@ -7,8 +7,8 @@ interface Point {
 
 /**
  * The park's main gravel road, start (90, 90) to exit (4, 4), in tile coordinates. The map is
- * painted around it, and the treat trail follows it (`spawns.treats.route`): it is the road a
- * player walks, holding "up" follows its diagonal.
+ * painted around it: it is the road a player walks, holding "up" follows its diagonal. The treats
+ * do not follow it: they are scattered in groups over the whole park (`spawns.treats`).
  */
 export const GREEN_ZONE_ROAD: readonly Point[] = [
   { x: 90, y: 90 },
@@ -162,8 +162,7 @@ export function buildGreenZoneRows(): readonly string[] {
 
   // A gravel spine along one unweighted shortest route: traced from the start taking the first
   // neighbour that gets closer (west before north), it hugs the park's south and west edges, a
-  // second, quieter lane to the exit. The treat trail follows the main road instead; some side
-  // treats land out here (`spawns.treats.side`).
+  // second, quieter lane to the exit. Treat groups land out here as everywhere else in the park.
   const distance = new Int32Array(size * size).fill(-1);
   const queue: number[] = [4 * size + 4];
   distance[queue[0]!] = 0;
@@ -216,9 +215,10 @@ export const LEVEL_1: LevelDef = {
     flowers: ['#ffe14a', '#ff7ad9', '#ffffff'],
   },
   spawns: {
-    // 88 treats (doubled, the owner's call): one every ~2.5 tiles on the road, and 40 spread
-    // evenly over the loops and the spine (no gravel more than 6 tiles from a treat).
-    treats: { count: 48, maxOffset: 3, minSpacing: 1.8, route: GREEN_ZONE_ROAD, side: 40 },
+    // 160 treats (88 before), the owner's call: here and there like Sonic's rings, not a trail
+    // to follow. Rows, arcs, little circles and diamonds, a few alone, scattered over the whole
+    // park: the road, the garden loops, the lawns and the spine (TREAT.GROUPS).
+    treats: { count: 160 },
     cats: { first: 16, interval: [16, 27], max: 2 },
     balls: { first: 28, interval: [22, 34], max: 2 },
   },

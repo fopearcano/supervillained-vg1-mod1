@@ -527,16 +527,20 @@ const SCENARIOS = {
     await holdKeys(page, ['KeyW'], 900);
     await wait(300);
     await page.screenshot({ path: `${OUT}/m2-hud.png` });
-    // Eat the four nearest treats.
-    for (let k = 0; k < 4; k++) {
-      await page.evaluate(() => {
+    // Eat the nearest treats until the digestion warning starts (a poop every ~29 treats).
+    for (let k = 0; k < 60; k++) {
+      const warned = await page.evaluate(() => {
         const s = window.__sv.scene();
+        if (s.rules.digestion.warning) return true;
         const p = s.player;
         const t = [...s.rules.treats].sort((a, b) => Math.hypot(a.gx - p.gx, a.gy - p.gy) - Math.hypot(b.gx - p.gx, b.gy - p.gy))[0];
         s.teleport(t.gx + 0.05, t.gy + 0.05);
+        return false;
       });
-      await wait(450);
+      if (warned) break;
+      await wait(k < 4 ? 450 : 150);
     }
+    await wait(300);
     // Stand on the path while the warning runs out → heavy poop.
     await page.evaluate(() => {
       const s = window.__sv.scene();

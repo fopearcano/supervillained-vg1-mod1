@@ -1349,3 +1349,42 @@ title's strobes to start "outside of the screen".
   where its beam used to start, so the sweep on the screen is unchanged but every beam comes in
   already wide (at least 8 px at the top edge) instead of from a visible point; the half-spread
   is narrower (0.06 rad, was 0.085) so the cones are about as wide at the bottom as before.
+
+## Green Zone: treats here and there like Sonic's rings; much less poop
+
+The owner, on the Green Zone walk (story 1.0): "Add more treats, he doesn't have to follow them
+like a trace, must be here and there (like Rings in Sonic The Hedgehog)", and "Zampanò is making
+too much poop, difficult to play."
+
+- **Treats in groups, scattered** (`systems/placement.ts` `treatGroups`, numbers in `TREAT`): 160
+  treats instead of 88, and no trail. They lie in small groups: short rows of 3-5, arcs of 4-6,
+  little circles of 6-8, diamonds of 5 or 8 (a square on the grid is a diamond on screen), 0.9
+  tiles apart inside a group, and the last 6 treats alone in the widest gaps. Each group goes round
+  a spot drawn among those farthest from every treat so far (within 85 % of the farthest), so the
+  whole park is covered evenly but not on a lattice; the park's edge counts as a treat seen in a
+  mirror (1.5 times the distance to the hedge), or the farthest spots would all be against the
+  hedges. A shape that does not fit (a hedge, a trunk, the pond) is turned, shifted, then shrunk,
+  down to one treat, never dropped. Rows never run straight up the screen: there 0.9 tiles is only
+  10 px and the bobbing bones stacked into each other. Treats stay on dry, prop-free ground
+  reachable from the start, clear of hedges and trunks (0.3 tiles), 2.5 tiles from the start and
+  the exit, and 4 tiles from any other group. The level data is just `spawns.treats.count`; the
+  road trail, the side lanes (`route`, `side`, `maxOffset`, `minSpacing`), the trail along the
+  shortest walk for a level without a road (no level used it) and `TREAT.ROUTE_WANDER`,
+  `SIDE_MIN_ROUTE_DISTANCE`, `SIDE_PROGRESS` are gone. Measured on the map (level seed): 36
+  groups, 6 alone, 108 treats on gravel and 52 on the lawns, the longest chain of treats each
+  within 1.6 (or 3) tiles of the next is 8, one group (the old road trail chained 48 at 3 tiles);
+  no reachable dry tile more than 9.5 tiles from a treat, 90 % within 6 (the 88 single treats:
+  10.1 and 96 %, the price of grouping them). Placement takes about 8 ms on the dev
+  machine (30-60 ms the first time). `tests/systems.test.ts` checks all of it.
+- **Much less poop**: treats are the only thing that fills the digestion meter, so `TREAT.DIGESTION`
+  went from 26 to 3.5: a poop every ~29 treats. Eating all 160 makes 5 poops (560 / 100, the meter
+  at 60 at the end), where eating all 88 made 22. The warning, the squat, the surfaces and the pee
+  that cleans are unchanged. `tests/balance.test.ts` checks the bound on the real level data, and
+  plays it through the real meter. Its bots: at 2.5 tiles of greed, the spine bot eats 19 (0
+  poops), the road bot 61 (2; it ate 48 and pooped 12 before); going for any group within 5
+  tiles, 49 and 89 (1 and 3 poops), never more than 33 tiles between two treats.
+- **Hunger per treat unchanged** (16): 160 treats offer 2560, while walking for the whole par time
+  (240 s) burns 715 and running 1085; the hungriest bot (the spine, eating only what is within 2.5
+  tiles, 82 tiles without food along the hedges) never drops below 44.
+- The `m2` screenshot ate the four nearest treats to show the warning; it now eats the nearest
+  until the warning starts (29).
