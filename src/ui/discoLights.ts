@@ -57,6 +57,27 @@ export function lightLevels(beatPos: number, bpm: number = D.BPM): LightLevels {
   };
 }
 
+/** A beam's lamp (above the screen) and the direction of its centre line (rad, PI/2 = straight down). */
+export interface Beam {
+  x0: number;
+  y0: number;
+  angle: number;
+}
+
+/**
+ * Beam `i` (crossing the top edge at `fx` of the width) at a beat position, in a w x h view:
+ * neighbours sweep against each other and the whole set turns every BEAM_SWEEP_BEATS beats; at
+ * rest each leans toward the middle (the edge beams most), so all four stay on the screen. The
+ * lamp sits BEAM_ORIGIN view heights above the top edge, on the line through (fx * w, 0), so the
+ * sweep on the screen is the same wherever the lamp hangs. Pure (tested).
+ */
+export function beamAt(fx: number, i: number, beatPos: number, w: number, h: number): Beam {
+  const phase = (beatPos / D.BEAM_SWEEP_BEATS) * Math.PI * 2 + (i % 2 ? Math.PI : 0) + i * 0.7;
+  const angle = Math.PI / 2 + Math.sin(phase) * D.BEAM_SWEEP + (fx - 0.5) * 0.6;
+  const rise = h * D.BEAM_ORIGIN;
+  return { x0: w * fx - (Math.cos(angle) / Math.sin(angle)) * rise, y0: -rise, angle };
+}
+
 interface Speck {
   x: number;
   y: number;
@@ -66,7 +87,7 @@ interface Speck {
 
 /**
  * Disco lights over the title's backdrop (under the lettering, the portrait and the buttons):
- * coloured beams sweeping down from the top edge, mirror-ball specks drifting across, and a flash
+ * coloured beams sweeping down from lamps above the screen, mirror-ball specks drifting across, and a flash
  * on every beat of the title music. Additive light, drawn at the game's pixel resolution.
  */
 export class DiscoLights {
@@ -109,18 +130,14 @@ export class DiscoLights {
     this.drawFlash(lv, fade);
   }
 
-  /** Light cones from the top edge, sweeping on the beat, two tones (a brighter core). */
+  /** Light cones from lamps above the screen, sweeping on the beat, two tones (a brighter core). */
   private drawBeams(lv: LightLevels, fade: number): void {
     const g = this.beams.clear();
     const { w, h } = this;
-    const len = h * 1.25;
+    // Long enough to pass the bottom edge from the lamp, even leaning.
+    const len = h * (1 + D.BEAM_ORIGIN) * 1.6;
     D.BEAM_X.forEach((fx, i) => {
-      // Neighbours sweep against each other; the whole set turns every BEAM_SWEEP_BEATS beats. At
-      // rest each leans toward the middle (the edge beams most), so all four stay on the screen.
-      const phase = (this.beatPos / D.BEAM_SWEEP_BEATS) * Math.PI * 2 + (i % 2 ? Math.PI : 0) + i * 0.7;
-      const angle = Math.PI / 2 + Math.sin(phase) * D.BEAM_SWEEP + (fx - 0.5) * 0.6;
-      const x0 = Math.round(w * fx);
-      const y0 = -4;
+      const { x0, y0, angle } = beamAt(fx, i, this.beatPos, w, h);
       const color = hex(D.COLORS[(lv.color + i * 2) % D.COLORS.length]!);
       for (const [spread, share] of [[D.BEAM_SPREAD, 1], [D.BEAM_SPREAD * 0.4, 0.9]] as const) {
         const a = Math.max(0, lv.beam * share * fade);

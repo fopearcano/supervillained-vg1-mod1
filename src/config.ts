@@ -135,9 +135,14 @@ export const TITLE = {
     /** Following the music's clock: a gap above this many beats snaps, smaller ones ease in. */
     SNAP_BEATS: 0.35,
     EASE: 0.12,
-    /** Light beams from the top edge (positions as fractions of the width), their half-spread (rad), sweep (rad) and beats per sweep. */
+    /**
+     * Light beams through the top edge (where each crosses it, as fractions of the width), their
+     * half-spread (rad), sweep (rad) and beats per sweep. Each lamp hangs BEAM_ORIGIN view heights
+     * above the screen, so a beam comes in from outside already wide, never from a visible point.
+     */
     BEAM_X: [0.06, 0.34, 0.66, 0.94],
-    BEAM_SPREAD: 0.085,
+    BEAM_ORIGIN: 0.45,
+    BEAM_SPREAD: 0.06,
     BEAM_SWEEP: 0.55,
     BEAM_SWEEP_BEATS: 8,
     /** The room goes darker under the lights (a black veil over the backdrop only), so they show. */
@@ -462,15 +467,15 @@ export const AMBUSH = {
   JUMP_MAX: 1.6,
   /**
    * The big NOW! (ui/shout.ts): seconds to punch in, to hold, to blow away; its start and peak
-   * scale over the resting size; the resting width as a share of the view's width (at most).
+   * scale over the resting size; the resting width as a share of the view's width (at most). Just
+   * the word: no balloon, no flash (the owner's call), so it is drawn wider than before.
    */
   SHOUT_IN: 0.12,
   SHOUT_HOLD: 0.8,
   SHOUT_OUT: 0.28,
   SHOUT_FROM: 2.6,
-  SHOUT_WIDTH: 0.78,
-  /** The white flash of the shout's first frames (alpha) and the burst's jitter (px). */
-  SHOUT_FLASH: 0.35,
+  SHOUT_WIDTH: 0.88,
+  /** The word's shake while it holds (px). */
   SHOUT_JITTER: 2,
   /** How far around Zampanò they land (tiles), and how wide their circle grows while they scare
    * him: they poop where they run, so the piles spread out of one pee's reach. */

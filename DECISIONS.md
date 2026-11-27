@@ -1335,3 +1335,17 @@ sudden", right when a big NOW! appears, "like a big sound".
   him far off (they now run at their speed plus his; a smoke check runs through NOW!); dead
   `REACH` / `APPEAR_AT` tuning and comments still describing the waiting band; a stale treat
   placement comment.
+
+## The NOW! is just the word; the title's beams come from lamps above the screen
+
+The owner asked for the Green Zone's NOW! to be "just a big text (no spiky balloons)" and for the
+title's strobes to start "outside of the screen".
+- **The NOW!** (`ui/shout.ts`): the red-and-yellow jagged burst and the white flash are gone; the
+  word alone, black-edged with a yellow glow so it reads on the lawn, now at the largest whole
+  scale fitting 88 % of the view's width (was 78 %), still punching in, shaking and blowing away.
+  `AMBUSH.SHOUT_FLASH` is removed.
+- **The beams** (`ui/discoLights.ts`, `beamAt`, pure and tested): each lamp hangs
+  `TITLE.DISCO.BEAM_ORIGIN` (0.45) view heights above the top edge, on the line through the point
+  where its beam used to start, so the sweep on the screen is unchanged but every beam comes in
+  already wide (at least 8 px at the top edge) instead of from a visible point; the half-spread
+  is narrower (0.06 rad, was 0.085) so the cones are about as wide at the bottom as before.

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('pixi.js', () => ({ Container: class {}, Graphics: class {} }));
 
-const { beatAt, followBeat, lightLevels } = await import('../src/ui/discoLights');
+const { beamAt, beatAt, followBeat, lightLevels } = await import('../src/ui/discoLights');
 const { TITLE } = await import('../src/config');
 const D = TITLE.DISCO;
 
@@ -65,5 +65,35 @@ describe('the flashes stay safe for photosensitive players', () => {
     expect(between.beam).toBeGreaterThanOrEqual(D.BEAM_ALPHA);
     // A new colour every beat.
     expect(lightLevels(9).color).not.toBe(lightLevels(8).color);
+  });
+});
+
+describe('the beams come in from lamps outside the screen', () => {
+  // The title on a phone (216 wide) and a tall one, at many points of the sweep.
+  const views = [[216, 400], [216, 480]] as const;
+  const beats = Array.from({ length: 64 }, (_, k) => k * 0.37);
+
+  it('every lamp hangs above the top edge, well out of sight', () => {
+    for (const [w, h] of views) {
+      D.BEAM_X.forEach((fx, i) => {
+        for (const b of beats) expect(beamAt(fx, i, b, w, h).y0).toBeLessThanOrEqual(-0.3 * h);
+      });
+    }
+  });
+
+  it('each beam still crosses the top edge where it always did, already wide (no visible point)', () => {
+    for (const [w, h] of views) {
+      D.BEAM_X.forEach((fx, i) => {
+        for (const b of beats) {
+          const { x0, y0, angle } = beamAt(fx, i, b, w, h);
+          // The centre line reaches y = 0 at fx of the width.
+          const t = -y0 / Math.sin(angle);
+          expect(x0 + Math.cos(angle) * t).toBeCloseTo(w * fx, 6);
+          // The cone's two edges meet the top edge at least 8 px apart.
+          const edge = (a: number) => x0 + (Math.cos(a) / Math.sin(a)) * -y0;
+          expect(Math.abs(edge(angle + D.BEAM_SPREAD) - edge(angle - D.BEAM_SPREAD))).toBeGreaterThan(8);
+        }
+      });
+    }
   });
 });
