@@ -1461,3 +1461,48 @@ disappears; the same for the helmet of 2.1.
   (`assets/placeholders/headGear.ts`) registered in `SPRITES`, replaceable with a `file:` strip
   (ASSETS.md says what the fit numbers mean). Dialogue, cards, the walk mechanic, the scene order
   and the autopilot are unchanged; 1.1 and 2.1 are won by the playtest as before.
+
+## The GLOSSARY becomes a dictionary of pages; one beam on the title
+
+The owner: "implement Glossary: add CRUSADER, KNIGHT, JOURNEY (PILGRIMAGE) and the values they
+carry taken from Alessandro Barbero's conference + these entries about bullying (pdf) that you can
+translate to English and synthesize to fit the Glossary format", and on the title "get rid of
+multiple strobe lights, only 1, and its upper origin point outside the screen".
+
+- **The card turns pages** (`scenes/glossaryScene.ts`, data in `scenes/glossaryEntries.ts`).
+  41 pages in 7 sections: THE GAME (supervillain, unchanged and first), THE CRUSADE (crusader,
+  knight, journey/pilgrimage) and the five sections of the bullying glossary (key words 10, roles
+  4, dynamics 6, power 5, what to do 12). Every page keeps the format of the first one: the
+  headword, a rule, a pronunciation or origin line, labelled senses, and the sense the game is
+  about circled in red by hand (it draws itself as the page opens): the **values** for the
+  crusade's words, the **key idea** for the bullying words. A faded note (the book's story for
+  each key word; "move 1 of 3" for the three moves the book puts in order) and the source close
+  the page. `<` and `>` (taps; left and right keys) turn the pages, going round; up and down jump
+  to the previous or next section; CLOSE, a tap outside, Enter / Space / J and Back close it as
+  before. The page counter sits above the buttons.
+- **One card size.** The card is as tall as the tallest page at that width (pure layout,
+  `layoutPage` / `tallestPage`, tested), so the buttons never move as the pages turn. On a phone
+  it uses the normal layout. A desktop window is at most 0.62 as wide as it is tall, so the view
+  can be only 300-325 px high. There the card goes **compact** (`fitCard`): no GLOSSARY heading,
+  no page counter, tighter gaps, narrower margins. Every common window size still shows whole
+  pages with the buttons on screen (tested with `computeViewport`). Below about 300 px the text
+  is cut at the bottom, never the buttons.
+- **Checked by an independent reviewer** against the owner's file (Italian and English) and
+  Barbero's transcript: no claim is unsupported. Ten wordings were corrected, for example the
+  knight's "vanguard" (Barbero's *avanguardia*) for "front rank", "the finest loot" (not "the
+  gold"), and "the bully ends up alone" (the Italian *il prepotente resta solo*). The circled text
+  and the section titles are centred line by line, so the ring holds every line.
+- **The ring** around a block of several lines is a superellipse, squarer than the ellipse of the
+  first page (which keeps its ellipse), so it holds the line ends inside the card's width.
+- **Sources** (`docs/STORY-SOURCES.md`, "The glossary"): the crusade's pages paraphrase Barbero's
+  lecture (the transcript in the repository root), not quoting it; the bullying pages are the
+  owner's glossary from Pellai and Tamborini's *Io dico no al bullismo* (Mondadori, 2021), in the
+  English the owner's file already gives, shortened to fit the card (about 20 characters a
+  line). Each page names its source at the foot.
+- **The title's lights**: one beam (`TITLE.DISCO.BEAM_X = [0.5]`, half-spread 0.08), from a lamp
+  0.45 view heights above the screen (unchanged), so the beam comes in already wide and its
+  source is never seen. The beat's coloured wash and the bar's white strobe stay (they have no
+  source: they tint the whole screen).
+- **Not merged**: the Green Zone band as a constant threat (branch `worktree-wf_ea9ebc2c-027-2`)
+  is set aside at the owner's word ("skip also band as constant threat in the whole game, we are
+  drafting prototype").

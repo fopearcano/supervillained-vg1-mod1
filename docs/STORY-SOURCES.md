@@ -169,6 +169,29 @@ after Niketas).
 | 7.9 | Treasure under guard, coarse silver for poor knights (Clari 81, 105); Aleaume's share (Clari 98); a knight hanged for keeping things back (Villehardouin pp. 65–66); statues melted (Choniates) | The lamp; the walk; the pile scene. |
 | 8.1–8.4 | Clari's "strict truth" (8.2) | All. |
 
+## The glossary
+
+The title's GLOSSARY (`src/scenes/glossaryEntries.ts`) has pages from two sources besides the
+game's own word (*supervillain*):
+
+- **THE CRUSADE** (crusader, knight, journey/pilgrimage), after Barbero's lecture (the transcript
+  above). Paraphrased, never quoted: "crusade" is a modern word, they said the holy voyage or the
+  general passage; the *crucesignati* had a cross sewn on their clothes when they vowed to go, so
+  that all could see it; the Pope promised the pardon of all confessed sins to those who served
+  God a year, "a concrete thing, worth risking your skin"; in their system of values it was not
+  absurd to die for Jerusalem; the witnesses called themselves pilgrims, because it was a
+  pilgrimage; to the peasants a knight is a lord, but Clari divides the world into *li rike
+  homme* and the poor knights; honour and shame; the count of Flanders asks the honour of the
+  front rank, "to show who you are and win glory"; turning back is shameful; the rich men took
+  the best houses and the precious booty, the common people got the silver; a knight paid his
+  passage; Robert came home to Picardy with relics that he gave to his parish. The circled
+  VALUES on each page are the game's summary of these, marked "after A. Barbero".
+- **BULLYING** (37 entries: key words, roles, dynamics, power, what to do), from the owner's
+  *Glossario — Io dico no al bullismo* (an Italian and English table of 37 entries drawn from
+  Alberto Pellai and Barbara Tamborini, *Io dico no al bullismo*, Mondadori, 2021). The game uses
+  the file's English, shortened to fit the card; the "in the book" story of each key word is the
+  file's own. Not checked against the book itself.
+
 ## Save migration
 
 Saves are versioned (`CampaignState.version`, `campaign/state.ts`). Version 1 is the earlier

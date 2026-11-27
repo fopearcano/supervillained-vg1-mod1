@@ -382,6 +382,19 @@ async function menuChecks(page) {
   await page.evaluate(() => window.__sv.top().actions.glossary());
   await wait(500);
   const glossary = await top();
+  // The arrows turn the GLOSSARY's pages (right, right, left: page 2 of 41), down jumps a section.
+  const pageNow = () => page.evaluate(() => window.__sv.top().pageIndex);
+  await press('ArrowRight');
+  await wait(150);
+  await press('ArrowRight');
+  await wait(150);
+  await press('ArrowLeft');
+  await wait(150);
+  const turned = await pageNow();
+  await press('ArrowDown');
+  await wait(150);
+  const jumped = await pageNow();
+  check(turned === 1 && jumped === 4, `the arrows turn the GLOSSARY's pages (right, right, left -> ${turned}; down -> ${jumped})`);
   await press('KeyJ');
   await wait(300);
   const afterGlossary = await top();

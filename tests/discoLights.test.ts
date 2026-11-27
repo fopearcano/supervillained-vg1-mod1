@@ -73,6 +73,10 @@ describe('the beams come in from lamps outside the screen', () => {
   const views = [[216, 400], [216, 480]] as const;
   const beats = Array.from({ length: 64 }, (_, k) => k * 0.37);
 
+  it('there is a single beam (one strobe light, not several)', () => {
+    expect(D.BEAM_X).toHaveLength(1);
+  });
+
   it('every lamp hangs above the top edge, well out of sight', () => {
     for (const [w, h] of views) {
       D.BEAM_X.forEach((fx, i) => {

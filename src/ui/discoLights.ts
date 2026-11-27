@@ -66,8 +66,8 @@ export interface Beam {
 
 /**
  * Beam `i` (crossing the top edge at `fx` of the width) at a beat position, in a w x h view:
- * neighbours sweep against each other and the whole set turns every BEAM_SWEEP_BEATS beats; at
- * rest each leans toward the middle (the edge beams most), so all four stay on the screen. The
+ * it turns every BEAM_SWEEP_BEATS beats (were there several, neighbours would sweep against each
+ * other); at rest a beam leans toward the middle, so it stays on the screen. The
  * lamp sits BEAM_ORIGIN view heights above the top edge, on the line through (fx * w, 0), so the
  * sweep on the screen is the same wherever the lamp hangs. Pure (tested).
  */
@@ -87,7 +87,7 @@ interface Speck {
 
 /**
  * Disco lights over the title's backdrop (under the lettering, the portrait and the buttons):
- * coloured beams sweeping down from lamps above the screen, mirror-ball specks drifting across, and a flash
+ * one coloured beam sweeping down from a lamp above the screen, mirror-ball specks drifting across, and a flash
  * on every beat of the title music. Additive light, drawn at the game's pixel resolution.
  */
 export class DiscoLights {
@@ -130,7 +130,7 @@ export class DiscoLights {
     this.drawFlash(lv, fade);
   }
 
-  /** Light cones from lamps above the screen, sweeping on the beat, two tones (a brighter core). */
+  /** The light cone from its lamp above the screen, sweeping on the beat, two tones (a brighter core). */
   private drawBeams(lv: LightLevels, fade: number): void {
     const g = this.beams.clear();
     const { w, h } = this;

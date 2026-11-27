@@ -96,7 +96,8 @@ sub-level), `?auto=1` (the autopilot plays the story; `&skill=0.7&ending=knight|
 - `scenes/` — `flow.ts` (title → new game / continue / options / quit; plays the 1.0 walk for the
   story), Title, Options, Confirm, Goodbye, Briefing, Game (the walk), Pause, LevelEnd, GameOver,
   `supervillainedScene.ts` (the "You've been supervillained" snap at the end of every level),
-  `glossaryScene.ts` / `couchScene.ts` (the title's GLOSSARY and COUCH cards; `ui/card.ts`),
+  `glossaryScene.ts` / `couchScene.ts` (the title's GLOSSARY and COUCH cards; `ui/card.ts`; the
+  glossary's pages, their sources and their pure layout in `glossaryEntries.ts`),
   sprite viewer. `core/native.ts`: QUIT closes the app on Android and SUPERVOID EDITIONS opens
   the publisher's site in the phone's browser (`QuitPlugin.java`: `quit`, `openUrl`).
 - `world/world.ts` — the shared isometric stage (map + renderer + layers + camera + entities),

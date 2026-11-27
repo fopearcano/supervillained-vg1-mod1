@@ -136,13 +136,14 @@ export const TITLE = {
     SNAP_BEATS: 0.35,
     EASE: 0.12,
     /**
-     * Light beams through the top edge (where each crosses it, as fractions of the width), their
-     * half-spread (rad), sweep (rad) and beats per sweep. Each lamp hangs BEAM_ORIGIN view heights
-     * above the screen, so a beam comes in from outside already wide, never from a visible point.
+     * The light beam through the top edge (where it crosses it, as a fraction of the width), its
+     * half-spread (rad), sweep (rad) and beats per sweep. One beam only (the owner's call: "only
+     * 1"). Its lamp hangs BEAM_ORIGIN view heights above the screen, so the beam comes in from
+     * outside already wide, never from a visible point.
      */
-    BEAM_X: [0.06, 0.34, 0.66, 0.94],
+    BEAM_X: [0.5],
     BEAM_ORIGIN: 0.45,
-    BEAM_SPREAD: 0.06,
+    BEAM_SPREAD: 0.08,
     BEAM_SWEEP: 0.55,
     BEAM_SWEEP_BEATS: 8,
     /** The room goes darker under the lights (a black veil over the backdrop only), so they show. */

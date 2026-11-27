@@ -463,6 +463,12 @@ const SCENARIOS = {
     await page.evaluate(() => window.__sv.top().actions.glossary());
     await wait(1400);
     await page.screenshot({ path: `${OUT}/p-glossary.png` });
+    // The crusade's three words (after Barbero), then the first and the last words about bullying.
+    for (const [key, name] of [['ArrowRight', 'crusader'], ['ArrowRight', 'knight'], ['ArrowRight', 'journey'], ['ArrowRight', 'courage'], ['ArrowLeft', null], ['ArrowLeft', null], ['ArrowLeft', null], ['ArrowLeft', null], ['ArrowLeft', 'seeing']]) {
+      await page.keyboard.press(key);
+      await wait(name ? 1100 : 120);
+      if (name) await page.screenshot({ path: `${OUT}/p-glossary-${name}.png` });
+    }
     await page.keyboard.press('Enter'); // closes it
     await wait(400);
     const k = VIEWPORT.width / (await page.evaluate(() => window.__sv.game.width));
