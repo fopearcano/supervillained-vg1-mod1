@@ -73,7 +73,17 @@ try {
     const st = await page.evaluate(
       ({ steps, max, to }) => {
         const sv = window.__sv;
-        sv.step(steps);
+        // Frame by frame, checking that a walk always has its controls (joystick and buttons) on,
+        // after any card or line that cut in (a 2.3 bug: they stayed off after the second one).
+        for (let k = 0; k < steps; k++) {
+          sv.step(1);
+          const s = sv.top();
+          let inner = s.current;
+          while (inner && inner.constructor.name === 'ResumeStep') inner = inner.inner;
+          if (inner?.constructor.name === 'WalkStep' && !s.controlsWanted && s.debugState) {
+            (window.__noControls ??= new Set()).add(`${s.debugState().sub} (${s.current.constructor.name})`);
+          }
+        }
         const top = sv.top();
         const d = top.debugState ? top.debugState() : null;
         if (d && d.time > max && !d.finished) sv.flow.story.debugSkipCurrent();
@@ -91,6 +101,8 @@ try {
   }
   process.stdout.write('\n');
   const log = await page.evaluate(() => window.__sv.flow.story.log);
+  const noControls = await page.evaluate(() => [...(window.__noControls ?? [])]);
+  if (noControls.length) errors.push(`a walk ran without its controls: ${noControls.join(', ')}`);
   const rows = [];
   let fails = 0;
   let warns = 0;

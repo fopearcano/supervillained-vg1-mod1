@@ -18,11 +18,23 @@ export interface Step {
   pilot?(dt: number, ctx: StoryScene, p: Autopilot): void;
 }
 
-/** Wraps a suspended step so it continues after the interrupting steps. */
+/**
+ * Wraps a suspended step so it continues after the interrupting steps. A step interrupted again
+ * while it resumes is wrapped once, not twice: a wrapper around a wrapper would not pass `resume`
+ * on, and the walk's controls (joystick, buttons) would stay off after the second card or line of
+ * the same walk (2.3: the second pickup).
+ */
 export class ResumeStep implements Step {
-  constructor(private readonly inner: Step) {}
+  /** The suspended step itself (never another ResumeStep). */
+  readonly inner: Step;
+  constructor(inner: Step) {
+    this.inner = inner instanceof ResumeStep ? inner.inner : inner;
+  }
   start(ctx: StoryScene): void {
-    if (this.inner.resume) this.inner.resume(ctx);
+    this.inner.resume?.(ctx);
+  }
+  resume(ctx: StoryScene): void {
+    this.inner.resume?.(ctx);
   }
   update(dt: number, ctx: StoryScene): StepStatus {
     return this.inner.update(dt, ctx);

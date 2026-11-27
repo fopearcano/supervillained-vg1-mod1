@@ -1506,3 +1506,21 @@ multiple strobe lights, only 1, and its upper origin point outside the screen".
 - **Not merged**: the Green Zone band as a constant threat (branch `worktree-wf_ea9ebc2c-027-2`)
   is set aside at the owner's word ("skip also band as constant threat in the whole game, we are
   drafting prototype").
+
+## The controls no longer vanish after a second cut-in during a walk
+
+The owner, on 2.3 (the touch controls gone while picking up the sword, the belt and the shield):
+"check why at level 2.3 the controls suddenly disappear (and I guess in other parts of the game
+as well)".
+
+- **The cause**: a card or a line that cuts into a walk (`StoryScene.interrupt`) turns the
+  controls off and queues the walk again inside a `ResumeStep`, whose start calls the walk's
+  `resume` (the controls come back). A second cut-in during the same walk wrapped that
+  `ResumeStep` in another one, which had no `resume` to pass on: the walk went on with the
+  joystick and the buttons off. In 2.3 that was the second pickup. It happened in any walk with
+  two or more cut-ins.
+- **The fix** (`story/step.ts`): a `ResumeStep` never wraps another one (it keeps the step
+  itself), and it passes `resume` on. Tested (`tests/resumeStep.test.ts`).
+- **The guard**: `npm run playtest` now checks, frame by frame, that a walk always has its
+  controls on, and fails if not. Checked both ways: with the old `ResumeStep` it fails on 2.3, and
+  with the fix the whole campaign passes.
