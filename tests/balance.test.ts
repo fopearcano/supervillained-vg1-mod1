@@ -1,25 +1,24 @@
 import { describe, expect, it } from 'vitest';
 import { DIGESTION, HUNGER, PLAYER, TREAT } from '../src/config';
 import { GREEN_ZONE_ROAD, LEVEL_1 } from '../src/levels/level1';
-import { Hunger } from '../src/systems/needs';
+import { Digestion, Hunger } from '../src/systems/needs';
 import { placeTreats } from '../src/systems/placement';
-import { loadLevel, type SpawnSettings } from '../src/world/level';
+import { loadLevel } from '../src/world/level';
 import { GameMap } from '../src/world/map';
-import { Ground } from '../src/world/tiles';
 
 /** The road's corners in world units (its tile coordinates name tile centres). */
 const ROAD = GREEN_ZONE_ROAD.map((p) => ({ x: p.x + 0.5, y: p.y + 0.5 }));
-const ROAD_LENGTH = ROAD.slice(1).reduce((sum, p, k) => sum + Math.hypot(p.x - ROAD[k]!.x, p.y - ROAD[k]!.y), 0);
 
 /**
  * Balancing sanity check: a simple bot walks Level 1 from S to E at walking speed, detouring to
  * treats within `greed` tiles. The 'spine' bot follows the BFS gradient to the exit (west first,
  * so it takes the gravel spine along the park's west and south edges); the 'road' bot follows
- * the main road, the diagonal a player holding "up" walks.
+ * the main road, the diagonal a player holding "up" walks. `fast` is the longest walk (tiles)
+ * between two treats eaten.
  */
-function simulate(greed: number, walker: 'spine' | 'road' = 'spine', treatSettings: SpawnSettings['treats'] = LEVEL_1.spawns.treats) {
+function simulate(greed: number, walker: 'spine' | 'road' = 'spine') {
   const map = new GameMap(loadLevel(LEVEL_1));
-  const treats = placeTreats(map, treatSettings, LEVEL_1.seed);
+  const treats = placeTreats(map, LEVEL_1.spawns.treats, LEVEL_1.seed);
   const hunger = new Hunger();
   let x = map.start.x;
   let y = map.start.y;
@@ -27,6 +26,9 @@ function simulate(greed: number, walker: 'spine' | 'road' = 'spine', treatSettin
   let eaten = 0;
   let minHunger: number = HUNGER.MAX;
   let corner = 1;
+  let walked = 0;
+  let sinceFood = 0;
+  let fast = 0;
   const dt = 0.05;
   while (t < 400) {
     if (Math.hypot(x - map.exit.x, y - map.exit.y) < 0.8) break;
@@ -66,18 +68,23 @@ function simulate(greed: number, walker: 'spine' | 'road' = 'spine', treatSettin
       x += (dx / len) * step;
       y += (dy / len) * step;
     }
+    walked += step;
+    sinceFood += step;
     for (let k = treats.length - 1; k >= 0; k--) {
       if (Math.hypot(treats[k]!.x - x, treats[k]!.y - y) < TREAT.PICKUP_RADIUS) {
         treats.splice(k, 1);
         hunger.feed(TREAT.HUNGER);
         eaten++;
+        fast = Math.max(fast, sinceFood);
+        sinceFood = 0;
       }
     }
     hunger.update(dt, 'walk');
     minHunger = Math.min(minHunger, hunger.value);
     t += dt;
   }
-  return { time: t, eaten, minHunger, poops: Math.floor((eaten * TREAT.DIGESTION) / DIGESTION.MAX) };
+  fast = Math.max(fast, sinceFood);
+  return { time: t, eaten, minHunger, walked, fast, poops: Math.floor((eaten * TREAT.DIGESTION) / DIGESTION.MAX) };
 }
 
 describe('level 1 balance (bot)', () => {
@@ -89,51 +96,63 @@ describe('level 1 balance (bot)', () => {
     expect(HUNGER.START - HUNGER.DRAIN_WALK * r.time).toBeLessThan(0);
   });
 
-  it('eating treats along the way keeps Zampanò alive, at the cost of poops to clean', () => {
-    // Measured with the doubled treats (88, the owner's call): the spine bot eats 21 (5 poops: the
-    // lane treats out on the spine and a few road treats near S and E), the road bot all 48 on the
-    // trail (12 poops: 48 × 26 / 100; it was 32 and 8). The road bot sits on the poop bound on
-    // purpose: more food should never quietly mean more poops than this.
+  it('eating treats along the way keeps Zampanò alive, with few poops to clean', () => {
+    // Measured with the 160 treats in groups: at 2.5 tiles of greed the spine bot eats 19 (0
+    // poops, hunger never below 44), the road bot 61 (2 poops: 61 × 3.5 / 100; never below 82).
+    // With the old 88 treats and 26 digestion it was 21 and 48 eaten, 5 and 12 poops.
     for (const walker of ['spine', 'road'] as const) {
       const r = simulate(2.5, walker);
       expect(r.minHunger, walker).toBeGreaterThan(0);
-      expect(r.eaten, walker).toBeGreaterThanOrEqual(4);
-      expect(r.poops, walker).toBeGreaterThanOrEqual(1);
-      expect(r.poops, walker).toBeLessThanOrEqual(12);
+      expect(r.eaten, walker).toBeGreaterThanOrEqual(10);
+      expect(r.poops, walker).toBeLessThanOrEqual(2);
       expect(r.time, walker).toBeLessThan(LEVEL_1.parTime);
     }
+    // Eating still costs poops: the dog that eats what he meets on the road poops on the way.
+    expect(simulate(2.5, 'road').poops).toBeGreaterThanOrEqual(1);
   });
 
-  it('a dog walking the road meets a treat about every 2.5 tiles', () => {
-    // Fails on the old placement: every treat lay on the spine and this walk found one.
-    const r = simulate(2.5, 'road');
-    expect(r.eaten * 3).toBeGreaterThanOrEqual(ROAD_LENGTH);
-    // Why the level names its road: the shortest-route trail alone still misses the road.
-    const { count, maxOffset, minSpacing } = LEVEL_1.spawns.treats;
-    expect(simulate(2.5, 'road', { count, maxOffset, minSpacing }).eaten).toBeLessThan(r.eaten / 3);
+  it('a dog meets a group every so often, never a long stretch without food', () => {
+    // `fast`, the longest walk between two treats eaten. Measured: the road bot 25.7 tiles at 2.5
+    // tiles of greed; a dog going for any group within 5 tiles (on screen) 32.3 on the spine and
+    // 18.5 on the road, eating 49 and 89 of the 160 (1 and 3 poops). The spine bot at 2.5 tiles
+    // goes 82 tiles without food along the hedges (the groups keep to the open) and is still
+    // never below 44 hunger.
+    expect(simulate(2.5, 'road').fast).toBeLessThanOrEqual(30);
+    for (const walker of ['spine', 'road'] as const) {
+      const r = simulate(5, walker);
+      expect(r.fast, walker).toBeLessThanOrEqual(35);
+      expect(r.eaten, walker).toBeGreaterThanOrEqual(40);
+      expect(r.poops, walker).toBeLessThanOrEqual(3);
+    }
   });
 
-  it('the lane treats cover the whole park: no gravel far from a treat', () => {
-    // Placed farthest-first over all the lanes (placement.ts). Measured: 88 treats, no gravel tile
-    // more than 6 tiles from one, 91 % within 4 tiles (the per-band placement of the same 88 left
-    // gaps of 8.3 tiles and 81 %; the 44 before the doubling, 14.3 tiles and 60 %).
+  it('eating every treat of the walk makes about 5 poops, not 22', () => {
     const map = new GameMap(loadLevel(LEVEL_1));
-    const treats = placeTreats(map, LEVEL_1.spawns.treats, LEVEL_1.seed);
-    const { count, side } = LEVEL_1.spawns.treats;
-    expect(treats.length).toBe(count + (side ?? 0));
-    expect(treats.length).toBe(88);
-    const gaps: number[] = [];
-    for (let j = 0; j < map.height; j++) {
-      for (let i = 0; i < map.width; i++) {
-        if (map.groundAt(i, j) !== Ground.Path || map.exitDistance[map.index(i, j)]! < 0) continue;
-        gaps.push(Math.min(...treats.map((p) => Math.hypot(p.x - i - 0.5, p.y - j - 0.5))));
+    const n = placeTreats(map, LEVEL_1.spawns.treats, LEVEL_1.seed).length;
+    // 160 × 3.5 = 560: 5 poops and a meter at 60 (88 × 26 = 2288 made 22 before).
+    const poops = Math.floor((n * TREAT.DIGESTION) / DIGESTION.MAX);
+    expect(poops).toBeGreaterThanOrEqual(5);
+    expect(poops).toBeLessThanOrEqual(6);
+    // The same through the real meter, one treat at a time, each poop done as soon as it is due.
+    const d = new Digestion();
+    let made = 0;
+    for (let k = 0; k < n; k++) {
+      d.add(TREAT.DIGESTION);
+      while (d.warning || d.due) {
+        if (d.update(DIGESTION.WARNING_TIME) === 'poop' || d.due) {
+          made++;
+          d.done();
+        }
       }
     }
-    expect(Math.max(...gaps)).toBeLessThanOrEqual(6.5);
-    expect(gaps.filter((g) => g <= 4).length / gaps.length).toBeGreaterThanOrEqual(0.88);
-    // No two treats on top of each other.
-    for (const [k, p] of treats.entries()) {
-      for (const q of treats.slice(k + 1)) expect(Math.hypot(p.x - q.x, p.y - q.y)).toBeGreaterThanOrEqual(LEVEL_1.spawns.treats.minSpacing - 1e-9);
-    }
+    expect(made).toBe(poops);
+  });
+
+  it('still offers far more food than a walk at par time burns', () => {
+    // Hunger per treat is unchanged (16): 160 treats offer 2560, while walking for the whole
+    // par time (240 s) burns 715 and running 1085.
+    const map = new GameMap(loadLevel(LEVEL_1));
+    const offer = placeTreats(map, LEVEL_1.spawns.treats, LEVEL_1.seed).length * TREAT.HUNGER;
+    expect(offer).toBeGreaterThan(2 * HUNGER.DRAIN_RUN * LEVEL_1.parTime);
   });
 });

@@ -66,11 +66,11 @@ The briefing text in the video summarizes the rules: *"MAKE A WALK. COLLECT ENOU
 
 **Hunger**
 - 0–100 bar that depletes over time (faster if Zampanò is running).
-- **Treats** (bones) are scattered along and near the path: +hunger, +points, TREATS +1.
+- **Treats** (bones) are scattered over the whole park in small groups, like the rings of a Sonic level (short rows, arcs, little circles and diamonds, a few alone): +hunger, +points, TREATS +1. Level 1 has 160.
 - If hunger reaches 0, Zampanò loses a life and the bar refills halfway.
 
 **Digestion → Poops**
-- Each treat fills a hidden digestion meter. When full, a warning appears (icon above head, ~3 seconds) and then Zampanò poops automatically.
+- Each treat fills a hidden digestion meter. When full, a warning appears (icon above head, ~3 seconds) and then Zampanò poops automatically. The meter fills slowly (a poop every ~29 treats): eating all 160 treats of Level 1 makes 5 poops.
 - During the warning, the player can reposition him: pooping **in bushes or tall grass** causes little pollution, whereas **on the path** causes heavy pollution.
 - Pooping leaves a **pollution** stain (tiles turning brown within a radius). POOPS +1, popup with the pixel poop icon.
 - This creates the core trade-off of the game: eating is necessary for hunger, but it produces poop.

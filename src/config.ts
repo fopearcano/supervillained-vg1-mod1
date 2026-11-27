@@ -303,17 +303,50 @@ export const HUNGER = {
 
 export const TREAT = {
   HUNGER: 16,
-  DIGESTION: 26,
+  /**
+   * Digestion per treat (DIGESTION.MAX makes a poop): one poop every ~29 treats, so eating all
+   * 160 of the Green Zone makes 5 (560 / 100). It was 26, a poop every 4 treats.
+   */
+  DIGESTION: 3.5,
   SCORE: 50,
   PICKUP_RADIUS: 0.55,
-  /** Placement along a level's route: no trail treat within this distance of the start or exit. */
+  /** No treat within this distance (tiles) of the start or the exit, the two ends of the walk. */
   ROUTE_END_GAP: 2.5,
-  /** Random sideways wander (tiles) of a trail treat, so the trail weaves on the gravel. */
-  ROUTE_WANDER: 0.6,
-  /** Side treats lie on gravel at least this far (tiles) from the route: the loops and spine. */
-  SIDE_MIN_ROUTE_DISTANCE: 6,
-  /** Side treats go only on lane tiles within this progress range (farthest-first over all of them). */
-  SIDE_PROGRESS: [0.05, 0.95],
+  /**
+   * Treats lie in groups, like the rings of a Sonic level (systems/placement.ts): a shape is
+   * drawn by weight, at one of its sizes (treats). A diamond is a square on the grid: 8 round
+   * its outline, or 5 (corners and middle).
+   */
+  GROUPS: [
+    { shape: 'row', weight: 5, sizes: [3, 4, 5] },
+    { shape: 'arc', weight: 3, sizes: [4, 5, 6] },
+    { shape: 'circle', weight: 2, sizes: [6, 7, 8] },
+    { shape: 'diamond', weight: 2, sizes: [5, 8] },
+  ],
+  /** The last treats of a level go one by one, alone, into the widest gaps left. */
+  LONE: 6,
+  /** Tiles between neighbouring treats of a group. */
+  GROUP_SPACING: 0.9,
+  /** Radius (tiles) of the circle an arc's treats sit on. */
+  ARC_RADIUS: 2.2,
+  /** Every treat of a group is at least this far (tiles) from every treat of another group. */
+  GROUP_GAP: 4,
+  /**
+   * A group goes round a spot drawn among those at least this fraction of the farthest one's
+   * distance from every treat: even coverage of the park, but no lattice.
+   */
+  CENTRE_SLACK: 0.85,
+  /**
+   * The park's edge counts as a treat this many times a spot's distance to the hedge (a mirror),
+   * so groups sit out in the open rather than against the hedges; the hedge is looked for only
+   * within EDGE_SCAN tiles.
+   */
+  EDGE_WEIGHT: 1.5,
+  EDGE_SCAN: 8,
+  /** Shifts (tiles, in 8 directions) tried when a shape does not fit round its spot. */
+  FIT_SHIFTS: [0.5, 1, 1.5],
+  /** Free ground (tiles) round a treat: no hedge, trunk, prop or water within it. */
+  CLEARANCE: 0.3,
 } as const;
 
 export const DIGESTION = {

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { BLADDER, DIGESTION, ENERGY, HUNGER, SCORE, TREAT, ZONE } from '../src/config';
 import { GREEN_ZONE_ROAD, LEVEL_1 } from '../src/levels/level1';
 import { Bladder, Digestion, Energy, Hunger } from '../src/systems/needs';
-import { placeTreats } from '../src/systems/placement';
+import { groupShape, placeTreats, treatGroups } from '../src/systems/placement';
 import { finalHealth, formatScore, formatTime, starBonus, starsFromHealth, timeBonus } from '../src/systems/scoring';
 import { loadLevel } from '../src/world/level';
 import { GameMap } from '../src/world/map';
@@ -135,79 +135,160 @@ function onRoad(x: number, y: number): { dist: number; along: number; side: numb
   return best;
 }
 
+/** Sizes of the chains of treats each within `link` tiles of the next (connected components). */
+function chains(points: ReadonlyArray<{ x: number; y: number }>, link: number): number[] {
+  const seen = new Array<boolean>(points.length).fill(false);
+  const sizes: number[] = [];
+  for (let a = 0; a < points.length; a++) {
+    if (seen[a]) continue;
+    seen[a] = true;
+    const stack = [a];
+    let size = 0;
+    while (stack.length) {
+      const k = stack.pop()!;
+      size++;
+      for (let b = 0; b < points.length; b++) {
+        if (seen[b] || Math.hypot(points[k]!.x - points[b]!.x, points[k]!.y - points[b]!.y) > link) continue;
+        seen[b] = true;
+        stack.push(b);
+      }
+    }
+    sizes.push(size);
+  }
+  return sizes;
+}
+
+describe('treat group shapes', () => {
+  const nearest = (pts: Array<{ x: number; y: number }>, k: number) =>
+    Math.min(...pts.filter((_, m) => m !== k).map((q) => Math.hypot(q.x - pts[k]!.x, q.y - pts[k]!.y)));
+
+  it('puts every treat one spacing from its nearest neighbour, whatever the turn', () => {
+    for (const { shape, sizes } of TREAT.GROUPS) {
+      for (const n of sizes) {
+        for (const angle of [0, Math.PI / 4, 1.1]) {
+          const pts = groupShape(shape, n, shape === 'diamond' ? 0 : angle);
+          expect(pts.length, `${shape} ${n}`).toBe(n);
+          for (let k = 0; k < n; k++) expect(nearest(pts, k), `${shape} ${n} #${k}`).toBeCloseTo(TREAT.GROUP_SPACING, 6);
+        }
+      }
+    }
+    expect(groupShape('lone', 1, 0)).toEqual([{ x: 0, y: 0 }]);
+  });
+
+  it('draws a row straight, an arc bent, a circle closed round its middle', () => {
+    const row = groupShape('row', 5, 0);
+    expect(row.every((p) => Math.abs(p.y) < 1e-9)).toBe(true);
+    const arc = groupShape('arc', 5, 0);
+    // The middle treat sits at the group's spot, the ends curve back the same way.
+    expect(arc[2]!.x).toBeCloseTo(0, 9);
+    expect(arc[0]!.x).toBeLessThan(-0.2);
+    expect(arc[4]!.x).toBeCloseTo(arc[0]!.x, 9);
+    const circle = groupShape('circle', 8, 0.3);
+    const r = Math.hypot(circle[0]!.x, circle[0]!.y);
+    for (const p of circle) expect(Math.hypot(p.x, p.y)).toBeCloseTo(r, 9);
+  });
+});
+
 describe('treat placement', () => {
   const map = new GameMap(loadLevel(LEVEL_1));
+  const groups = treatGroups(map, LEVEL_1.spawns.treats, LEVEL_1.seed);
   const treats = placeTreats(map, LEVEL_1.spawns.treats, LEVEL_1.seed);
-  const { count, maxOffset, minSpacing, side = 0 } = LEVEL_1.spawns.treats;
+  const reach = map.bfs(map.startTile.i, map.startTile.j);
 
-  it('places most of the requested treats, deterministically', () => {
-    expect(treats.length).toBeGreaterThanOrEqual(LEVEL_1.spawns.treats.count * 0.8);
+  it('places every requested treat (160, 88 before), deterministically from the seed', () => {
+    expect(treats.length).toBe(LEVEL_1.spawns.treats.count);
+    expect(treats.length).toBeGreaterThanOrEqual(150);
+    expect(treats.length).toBeLessThanOrEqual(170);
+    expect(treats).toEqual(groups.flatMap((g) => g.points));
     expect(placeTreats(map, LEVEL_1.spawns.treats, LEVEL_1.seed)).toEqual(treats);
     expect(placeTreats(map, LEVEL_1.spawns.treats, LEVEL_1.seed + 1)).not.toEqual(treats);
   });
 
-  it('places every trail and side treat of Level 1 (more than the 30 of before)', () => {
-    expect(treats.length).toBe(count + side);
-    expect(treats.length).toBeGreaterThanOrEqual(40);
-  });
-
-  it('lays the trail on the road, a treat every few tiles from start to exit', () => {
-    const trail = treats.map((t) => onRoad(t.x, t.y)).filter((r) => r.dist <= maxOffset + 0.5);
-    expect(trail.length).toBe(count);
-    for (let band = 0; band < 10; band++) {
-      expect(trail.some((r) => r.along >= band / 10 && r.along < (band + 1) / 10), `road band ${band}`).toBe(true);
-    }
-    // No stretch of road longer than 5 tiles without food (the trail is ~2.5 tiles apart).
-    const along = trail.map((r) => r.along).sort((a, b) => a - b);
-    const length = GREEN_ZONE_ROAD.slice(1).reduce((sum, p, k) => sum + Math.hypot(p.x - GREEN_ZONE_ROAD[k]!.x, p.y - GREEN_ZONE_ROAD[k]!.y), 0);
-    for (let k = 1; k < along.length; k++) expect((along[k]! - along[k - 1]!) * length).toBeLessThan(5);
-  });
-
-  it('puts the side treats out on the loops and the spine, on both sides of the road', () => {
-    const away = treats.filter((t) => onRoad(t.x, t.y).dist >= 6);
-    expect(away.length).toBe(side);
-    for (const t of away) expect(map.groundAt(Math.floor(t.x), Math.floor(t.y))).toBe(Ground.Path);
-    const west = away.filter((t) => onRoad(t.x, t.y).side < 0);
-    const east = away.filter((t) => onRoad(t.x, t.y).side > 0);
-    expect(west.length).toBeGreaterThanOrEqual(2);
-    expect(east.length).toBeGreaterThanOrEqual(2);
-    // West of the road means x < y on this diagonal park (the spine); east means x > y (loops).
-    for (const t of west) expect(t.x).toBeLessThan(t.y);
-    for (const t of east) expect(t.x).toBeGreaterThan(t.y);
-  });
-
-  it('places exactly as before for a level without a route', () => {
-    const old = placeTreats(map, { count: 30, maxOffset, minSpacing }, LEVEL_1.seed);
-    expect(old.map((p) => [+p.x.toFixed(2), +p.y.toFixed(2)])).toEqual([
-      [87.58, 90.55], [81.42, 90.59], [76.36, 90.38], [75.39, 85.43], [73.49, 82.42],
-      [68.41, 81.45], [64.58, 79.44], [62.42, 76.52], [59.55, 73.36], [57.4, 70.5], [51.52, 70.37],
-      [45.55, 70.37], [40.6, 70.56], [37.57, 67.56], [37.46, 62.45], [37.58, 56.58],
-      [37.46, 50.35], [34.48, 48.45], [32.37, 44.56], [31.36, 40.49], [27.47, 38.46],
-      [21.48, 38.6], [18.56, 36.46], [15.57, 33.63], [13.44, 30.64], [13.57, 24.59], [7.49, 24.65],
-      [5.61, 21.56], [4.59, 16.51], [4.65, 11.48],
-    ]);
-  });
-
-  it('keeps them on walkable land near the path, spaced out', () => {
+  it('puts every treat on dry ground reachable from the start, off props, clear of hedges', () => {
     for (const t of treats) {
       const i = Math.floor(t.x);
       const j = Math.floor(t.y);
       expect(map.isWalkable(i, j)).toBe(true);
       expect(map.groundAt(i, j)).not.toBe(Ground.Water);
-      let nearPath = false;
-      const r = LEVEL_1.spawns.treats.maxOffset;
-      for (let b = -r; b <= r; b++) for (let a = -r; a <= r; a++) if (map.groundAt(i + a, j + b) === Ground.Path) nearPath = true;
-      expect(nearPath).toBe(true);
+      expect(map.propAt(i, j)).toBe(null);
+      expect(reach[map.index(i, j)]).toBeGreaterThanOrEqual(0);
+      // The dog's body fits where the treat is, so he can always eat it.
+      expect(map.circleBlocked(t.x, t.y, TREAT.CLEARANCE)).toBe(false);
     }
-    for (let a = 0; a < treats.length; a++)
-      for (let b = a + 1; b < treats.length; b++)
-        expect(Math.hypot(treats[a]!.x - treats[b]!.x, treats[a]!.y - treats[b]!.y)).toBeGreaterThanOrEqual(LEVEL_1.spawns.treats.minSpacing);
   });
 
-  it('spreads them along the whole walk', () => {
+  it('leaves the start and the exit clear', () => {
+    for (const t of treats) {
+      expect(Math.hypot(t.x - map.start.x, t.y - map.start.y)).toBeGreaterThanOrEqual(TREAT.ROUTE_END_GAP);
+      expect(Math.hypot(t.x - map.exit.x, t.y - map.exit.y)).toBeGreaterThanOrEqual(TREAT.ROUTE_END_GAP);
+    }
+  });
+
+  it('lays them in groups like rings: close inside a group, groups well apart', () => {
+    for (const g of groups) {
+      expect(g.points.length).toBeLessThanOrEqual(8);
+      if (g.points.length < 2) continue;
+      // Neighbours about one tile apart inside a group.
+      for (const [k, p] of g.points.entries()) {
+        const near = Math.min(...g.points.filter((_, m) => m !== k).map((q) => Math.hypot(q.x - p.x, q.y - p.y)));
+        expect(near).toBeGreaterThanOrEqual(0.8);
+        expect(near).toBeLessThanOrEqual(1.0);
+      }
+    }
+    for (let a = 0; a < groups.length; a++) {
+      for (let b = a + 1; b < groups.length; b++) {
+        for (const p of groups[a]!.points) {
+          for (const q of groups[b]!.points) expect(Math.hypot(p.x - q.x, p.y - q.y)).toBeGreaterThanOrEqual(TREAT.GROUP_GAP);
+        }
+      }
+    }
+    // Every kind of group shows up, and a few treats lie alone. Measured: 36 groups, 6 alone.
+    const kinds = new Set(groups.map((g) => g.shape));
+    for (const { shape } of TREAT.GROUPS) expect(kinds.has(shape), shape).toBe(true);
+    const lone = groups.filter((g) => g.points.length === 1).length;
+    expect(lone).toBeGreaterThanOrEqual(3);
+    expect(lone).toBeLessThanOrEqual(10);
+    expect(groups.length).toBeGreaterThanOrEqual(25);
+  });
+
+  it('is not a trail to follow', () => {
+    // Treats each within 1.6 tiles of the next chain no further than one group (8 at most).
+    expect(Math.max(...chains(treats, 1.6))).toBeLessThanOrEqual(8);
+    // Nor at 3 tiles: the old road trail (a treat every ~2.5 tiles) chained all 48 of its treats.
+    expect(Math.max(...chains(treats, 3))).toBeLessThanOrEqual(8);
+  });
+
+  it('covers the whole park: no reachable ground far from a treat', () => {
+    // Measured: no dry reachable tile more than 9.5 tiles from a treat, 90 % within 6 (the 88
+    // single treats before: 10.1 and 96 %; grouping them leaves wider gaps between groups).
+    const gaps: number[] = [];
+    for (let j = 0; j < map.height; j++) {
+      for (let i = 0; i < map.width; i++) {
+        const k = map.index(i, j);
+        if (!map.playable[k] || reach[k]! < 0) continue;
+        gaps.push(Math.min(...treats.map((p) => Math.hypot(p.x - i - 0.5, p.y - j - 0.5))));
+      }
+    }
+    expect(Math.max(...gaps)).toBeLessThanOrEqual(10);
+    expect(gaps.filter((g) => g <= 6).length / gaps.length).toBeGreaterThanOrEqual(0.88);
+  });
+
+  it('scatters them over the road, the loops, the lawns and the spine, start to exit', () => {
     const progress = treats.map((t) => map.progressAt(t.x, t.y));
-    expect(Math.min(...progress)).toBeLessThan(0.15);
-    expect(Math.max(...progress)).toBeGreaterThan(0.85);
+    expect(Math.min(...progress)).toBeLessThan(0.1);
+    expect(Math.max(...progress)).toBeGreaterThan(0.9);
+    for (let band = 0; band < 5; band++) {
+      const inBand = progress.filter((p) => p >= band / 5 && p < (band + 1) / 5).length;
+      expect(inBand, `progress band ${band}`).toBeGreaterThanOrEqual(15);
+    }
+    const where = treats.map((t) => onRoad(t.x, t.y));
+    const onTheRoad = where.filter((r) => r.dist <= 2).length;
+    const away = where.filter((r) => r.dist >= 6);
+    expect(onTheRoad).toBeGreaterThanOrEqual(15);
+    expect(away.filter((r) => r.side < 0).length, 'west: the spine').toBeGreaterThanOrEqual(15);
+    expect(away.filter((r) => r.side > 0).length, 'east: the loops').toBeGreaterThanOrEqual(15);
+    const ground = new Set(treats.map((t) => map.groundAt(Math.floor(t.x), Math.floor(t.y))));
+    expect(ground.has(Ground.Path) && ground.has(Ground.Grass)).toBe(true);
   });
 });
 
