@@ -1349,3 +1349,47 @@ title's strobes to start "outside of the screen".
   where its beam used to start, so the sweep on the screen is unchanged but every beam comes in
   already wide (at least 8 px at the top edge) instead of from a visible point; the half-spread
   is narrower (0.06 rad, was 0.085) so the cones are about as wide at the bottom as before.
+
+## The bucket on his head (1.1), the great helm (2.1), and a visor slit that stays on him
+
+The owner's report on 1.1: "screen cuts if character's not moving" (on a tall phone the top
+45 % went dark, then a strip of lawn, then dark again: Zampanò was not in the strip) and "there's
+no bucket in Zampanò's head". Asked, the owner chose to keep the mechanic and fix it: draw the
+bucket, let it tip down over his eyes as the view narrows to a slit centred on him, so he never
+disappears; the same for the helmet of 2.1.
+- **The slit** (`story/visorSlit.ts`, pure, `tests/visorSlit.test.ts`): the bands were fixed
+  shares of the screen from its top and bottom edges, so the slit sat in the middle of the screen
+  wherever he was (at the start of 1.1 the camera is held by the map's edge and he stands low).
+  Now each band closes in toward his head (`VISOR_SLIT.FOCUS` px over his feet) in proportion to
+  its distance from it; together they still cover 0.91 x visor of the view (the old 0.5 + 0.41),
+  so with him in the middle the picture is the old one. They never come nearer than
+  `VISOR_SLIT.ABOVE` px over his feet and `BELOW` px under them: the dog, the gear on his head and
+  a margin always show, tested on phone-sized, tall (915 px) and short views, with him near the
+  top, the bottom or off the view. `STORY.VISOR` (when and how fast it slips) is unchanged.
+- **The bands' look** (`story/visorOverlay.ts`) follows `ctx.visorStyle`, set by what he wears:
+  `bucket` is the inside of the red bucket (dark red, a ribbed red rim with a lit edge along the
+  slit), `helmet` the old dark steel with a bevel and a row of rivets. Their own Graphics, under
+  the fog/flash overlay and under the HUD, the touch controls, the dialogue and the cards (layer
+  order unchanged for those), redrawn only when the slit, the view or the style changes. The
+  fog/flash overlay is no longer cleared every frame when it shows nothing.
+- **The gear** (`story/headGear.ts`): an entity right after him in the depth order
+  (`depthBias` 0.001: over his head, under whatever stands in front of him) that follows him, sits
+  on his eyes as measured on the delivered sheets (`HEAD_FITS` in the manifest, per skin and
+  direction, lower while he sniffs; other dogs played with `?as=` use the knight's), and slides
+  `HEAD_GEAR.DROP` (7) px down as `ctx.visor` goes to its MAX, tipping forward the way he faces;
+  it leans back when pushed up and rattles a little while he walks. Angles snap to small steps so
+  the pixel art does not shimmer. The pose is pure (`story/headGearPose.ts`);
+  `tests/headGear.test.ts` checks on the plain and armoured sheets that pushed up his eyes show
+  under it and slid down the rim covers them while its top still covers his head (and the tip of
+  his own helmet).
+- **1.1**: the bucket goes on at the CLONK (down over his eyes, as before the visor was at MAX)
+  and at the SLAP it is knocked away from Confusione's paw: it spins across the lane (2.2 tiles,
+  stopped by hedges), lands on its side, rolls a little and **stays there as a prop** until the
+  scene ends ("THE BUCKET ROLLS AWAY ACROSS THE LANE").
+- **2.1**: the great helm goes on with the stage, over his own armour, and when the walk ends
+  (`ctx.visor = 0`, as before) it **lifts off and fades** (the dream just takes it back).
+- **Sprites**: `sandBucket` (20 x 17, red plastic, upside down, yellow star and handle) and
+  `bigHelm` (26 x 20, dull steel, eye slit and cross, breaths, rivets) are procedural placeholders
+  (`assets/placeholders/headGear.ts`) registered in `SPRITES`, replaceable with a `file:` strip
+  (ASSETS.md says what the fit numbers mean). Dialogue, cards, the walk mechanic, the scene order
+  and the autopilot are unchanged; 1.1 and 2.1 are won by the playtest as before.

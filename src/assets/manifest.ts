@@ -363,7 +363,54 @@ export const SPRITES = {
   belt: { key: 'belt', w: 16, h: 9, anchorX: 8, anchorY: 7, variants: 1 },
   lamp: { key: 'lamp', w: 14, h: 13, anchorX: 7, anchorY: 11, variants: 1 },
   horse: { key: 'horse', w: 40, h: 34, anchorX: 20, anchorY: 31, variants: 3 },
+  // Worn on his head (story/headGear.ts), anchored at their middle so they can spin: the child's
+  // sand bucket of 1.1 (upside down, its handle hanging) and the far-too-big great helm of 2.1.
+  sandBucket: { key: 'sandBucket', w: 20, h: 17, anchorX: 10, anchorY: 8, variants: 1 },
+  bigHelm: { key: 'bigHelm', w: 26, h: 20, anchorX: 13, anchorY: 10, variants: 1 },
 } satisfies Record<string, SpriteDef>;
+
+/**
+ * Where a dog's eyes are in each direction, in px from its frame's anchor (the feet), and how much
+ * lower they go while it sniffs: measured on the delivered sheets (tests/headFit.test.ts checks
+ * them against the pixels). The bucket and the great helm sit on them (story/headGear.ts).
+ */
+export interface HeadFit {
+  eyes: Readonly<Record<Dir8, readonly [number, number]>>;
+  sniff: Readonly<Partial<Record<Dir8, number>>>;
+}
+
+/** Zampanò in armour: the conical helmet's tip is 11 px over the eyes, the head near the middle. */
+const KNIGHT_HEAD: HeadFit = {
+  eyes: { N: [0, -18], NE: [4, -18], E: [3, -17], SE: [3, -19], S: [0, -18], SW: [-1, -18], W: [-3, -17], NW: [-3, -19] },
+  sniff: { NE: 3, E: 7, SE: 4, SW: 6, W: 7, NW: 2 },
+};
+
+/** Per skin; the others (other dogs played with `?as=`) use the knight's, close enough. */
+const HEAD_FITS: Partial<Record<CharacterKey, HeadFit>> = {
+  // The plain Maltese: a big fluffy head, its top 10 px over the eyes; lower and pushed forward
+  // in the three-quarter views (looking down: the eyes lower still under the fringe).
+  zampano: {
+    eyes: { N: [0, -21], NE: [5, -19], E: [5, -20], SE: [7, -13], S: [0, -21], SW: [-9, -13], W: [-5, -19], NW: [-6, -18] },
+    sniff: { N: 2, NE: 4, E: 5, S: 4, W: 5, SE: 1 },
+  },
+  zampanoKnight: KNIGHT_HEAD,
+  zampanoCross: KNIGHT_HEAD,
+};
+
+export function headFit(key: CharacterKey): HeadFit {
+  return HEAD_FITS[key] ?? KNIGHT_HEAD;
+}
+
+/**
+ * How each piece of head gear sits: `rest` is the px from his eyes to the sprite's anchor while it
+ * is pushed up (its rim just over his eyes, so he can see); it slides STORY.HEAD_GEAR.DROP px lower
+ * at the visor's MAX, the rim down over his eyes and the top still over his head (and the tip of
+ * his own helmet): tests/headGear.test.ts checks both on the delivered sheets.
+ */
+export const GEAR_FIT = {
+  sandBucket: { rest: -10 },
+  bigHelm: { rest: -10 },
+} as const satisfies Partial<Record<SpriteKey, { rest: number }>>;
 
 export type SpriteKey = keyof typeof SPRITES;
 

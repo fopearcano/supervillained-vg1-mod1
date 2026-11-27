@@ -249,6 +249,21 @@ icons. Story props: `column`, `desk`, `shelf`, `house`, `tent`, `galley`, `rock`
 an anchor and a number of `variants`. To replace one, add
 `file: 'sprites/tree.png'` — a horizontal strip with the variants side by side.
 
+What Zampanò wears on his head (story/headGear.ts; procedural placeholders in
+`src/assets/placeholders/headGear.ts`, one variant each, palette-independent):
+
+| key | size (px) | anchor (px) | what it is |
+|-----|----------:|------------:|------------|
+| `sandBucket` | 20 × 17 | (10, 8), its middle | 1.1: a child's red plastic sand bucket, **upside down** (its base on top, the rolled rim at the bottom), a yellow star sticker, the yellow handle hanging just under the rim. Knocked off at the slap it spins and lies on its side (rotated 90°) |
+| `bigHelm` | 26 × 20 | (13, 10), its middle | 2.1: a crusader's great helm far too big for him, dull steel: flat top, eye slit with a cross-shaped nasal bar, breaths on the right cheek, rivets round the rim |
+
+Both are anchored at their middle so they can spin. How they sit is data in the manifest:
+`GEAR_FIT[key].rest` (px from his eyes to the anchor while it is pushed up: the lowest pixel
+must stay 2 px over his eyes) and `HEAD_FITS` (where each skin's eyes are, per direction, and how
+much lower they go when he sniffs). A replacement drawn to another size needs those two looked at;
+`tests/headGear.test.ts` checks them against the delivered sheets (pushed up his eyes show,
+slid down `STORY.HEAD_GEAR.DROP` px the rim covers them and the top still covers his head).
+
 Texture names: `${key}_${variant}` (e.g. `tree_2`); characters: `${key}_${anim}_${dir}_${frame}`
 (e.g. `zampano_walk_NE_2`).
 
