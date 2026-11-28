@@ -21,11 +21,17 @@
  */
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
+import { chromium } from 'playwright';
 
 /** The phone-sized page every lock uses (the screenshot script's viewport, at scale 1). */
 export const VIEWPORT = { width: 400, height: 860 };
 /** Date.now inside the page: 1 January 2026, 12:00 UTC. */
 export const FIXED_NOW = Date.UTC(2026, 0, 1, 12, 0, 0);
+
+/** Chromium with the software WebGL pinned (the same rasteriser on a machine with a GPU). */
+export function launchBrowser() {
+  return chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+}
 
 /** Starts the Vite dev server on `port`; resolves when it listens. */
 export async function startServer(port) {
@@ -60,13 +66,14 @@ export function stopServer(proc) {
  */
 function harnessInit({ seed, now, storage }) {
   if (window.top !== window) return;
-  const H = { pending: 0, started: 0, kinds: {} };
+  const H = { pending: 0, started: 0, kinds: {}, draws: 0 };
   Object.defineProperty(window, '__harness', { value: H });
 
   // Seeded Math.random (mulberry32).
   if (seed !== null && seed !== undefined) {
     let a = seed >>> 0;
     Math.random = function random() {
+      H.draws++;
       a = (a + 0x6d2b79f5) | 0;
       let t = Math.imul(a ^ (a >>> 15), 1 | a);
       t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
@@ -77,6 +84,15 @@ function harnessInit({ seed, now, storage }) {
   // No sound starts by itself (AudioEngine unlocks at boot where autoplay is allowed): the music's
   // wall-clock position would drive the title's disco lights.
   if (navigator.getAutoplayPolicy) navigator.getAutoplayPolicy = () => 'disallowed';
+
+  // The page never loses focus or hides (the Green Zone walk would pause itself), opens no tab,
+  // and says so if the WebGL context is lost.
+  for (const type of ['blur', 'focusout']) window.addEventListener(type, (e) => e.target === window && e.stopImmediatePropagation(), true);
+  document.addEventListener('visibilitychange', (e) => e.stopImmediatePropagation(), true);
+  Object.defineProperty(document, 'hidden', { get: () => false });
+  Object.defineProperty(document, 'visibilityState', { get: () => 'visible' });
+  window.open = () => null;
+  document.addEventListener('webglcontextlost', () => console.error('harness: the WebGL context was lost'), true);
 
   // No frame ever runs on its own: the harness steps the game.
   let rafId = 0;
@@ -208,6 +224,10 @@ export async function openStepped(browser, { port, query = '', seed = 1, storage
   page.on('requestfinished', (r) => inFlight.delete(r));
   page.on('requestfailed', (r) => inFlight.delete(r));
   page.__inFlight = inFlight;
+  let booted = false;
+  page.on('framenavigated', (f) => {
+    if (booted && f === page.mainFrame()) onError?.('harness: the page reloaded during the run (was src/ edited?)');
+  });
   if (onError) {
     page.on('pageerror', (e) => onError(e.message));
     page.on('console', (m) => {
@@ -218,6 +238,10 @@ export async function openStepped(browser, { port, query = '', seed = 1, storage
   // Polled on a timer: the page's requestAnimationFrame never calls back.
   await page.waitForFunction(() => window.__sv && window.__sv.top(), null, { timeout: 60000, polling: 50 });
   await page.evaluate(() => window.__sv.game.loop.stop());
+  booted = true;
+  // The game's loop must not have run a single step on its own.
+  const time = await page.evaluate(() => window.__sv.game.time);
+  if (time !== 0) throw new Error(`the game ran ${time} s before the harness stopped it`);
   await settle(page);
   return page;
 }
@@ -265,14 +289,23 @@ export async function stepUntil(page, pred, { arg, max = 3600, batch = 10, what 
   }
 }
 
-/** Waits for loads, renders without stepping (`step(0)`), and returns the canvas as PNG + its hash. */
+/**
+ * Waits for loads, renders without stepping (`step(0)`), and returns the canvas as PNG, its hash
+ * and the Math.random draws so far (a change in how the game uses chance shows there too).
+ */
 export async function capture(page) {
   await settle(page);
-  await page.evaluate(() => window.__sv.step(0));
+  const draws = await page.evaluate(() => {
+    window.__sv.step(0);
+    return window.__harness.draws;
+  });
   const box = await page.locator('#game').boundingBox();
   const png = await page.screenshot({ clip: box, animations: 'allow', caret: 'initial' });
-  return { png, hash: createHash('sha256').update(png).digest('hex') };
+  return { png, hash: createHash('sha256').update(png).digest('hex'), draws };
 }
+
+/** Math.random draws since the page opened. */
+export const draws = (page) => page.evaluate(() => window.__harness.draws);
 
 /** The game's saved data: every localStorage key it owns, parsed where it is JSON. */
 export async function savedData(page) {

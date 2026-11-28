@@ -8,7 +8,7 @@
  * - save: the saved data (campaign, settings, records) at the end of those two runs is the same.
  * - pixels: stepped captures of the screens in the lock list (title, menus, glossary, the Green
  *   Zone, story stages with the visor, the bleach, the fog, the snap, the pause, both art banks)
- *   hash the same.
+ *   hash the same, with the same number of Math.random draws up to each.
  *
  *   npm run lock -- record [playtest|save|pixels]   write the baselines into docs/baselines/
  *   npm run lock -- check  [playtest|save|pixels]   compare with the baselines (exit 1 on a change)
@@ -24,8 +24,7 @@ import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { chromium } from 'playwright';
-import { capture, openStepped, settle, startServer, step, stepUntil, stopServer } from './harness.mjs';
+import { capture, launchBrowser, openStepped, settle, startServer, step, stepUntil, stopServer } from './harness.mjs';
 import { CAPTURES } from './lockCaptures.mjs';
 
 const BASE = 'docs/baselines';
@@ -68,7 +67,7 @@ async function runPlaytests(dir, portBase) {
 /** Makes every capture of the lock list into `dir` (PNG files and captures.json with the hashes). */
 async function runCaptures(dir, port) {
   const server = await startServer(port);
-  const browser = await chromium.launch();
+  const browser = await launchBrowser();
   const hashes = {};
   const errors = [];
   try {
@@ -85,10 +84,10 @@ async function runCaptures(dir, port) {
         settle: () => settle(page),
         shot: async (name) => {
           if (!wanted.includes(name)) return;
-          const { png, hash } = await capture(page);
+          const { png, hash, draws } = await capture(page);
           writeFileSync(join(dir, `${name}.png`), png);
-          hashes[name] = hash;
-          process.stdout.write(`  ${name} ${hash.slice(0, 12)}\n`);
+          hashes[name] = `${hash} draws ${draws}`;
+          process.stdout.write(`  ${name} ${hash.slice(0, 12)} (${draws} draws)\n`);
         },
       };
       try {
@@ -123,7 +122,12 @@ function compare(a, b) {
     const hb = existsSync(join(b, 'captures.json')) ? JSON.parse(readFileSync(join(b, 'captures.json'), 'utf8')) : {};
     for (const name of Object.keys(hb)) {
       if (!(name in ha)) diffs.push(`capture ${name}: no baseline`);
-      else if (ha[name] !== hb[name]) diffs.push(`capture ${name} differs (${join(a, name + '.png')} vs ${join(b, name + '.png')})`);
+      else if (ha[name] !== hb[name]) {
+        const [pa, , da] = ha[name].split(' ');
+        const [pb, , db] = hb[name].split(' ');
+        const what = [pa !== pb && 'pixels', da !== db && `Math.random draws ${da} -> ${db}`].filter(Boolean).join(', ');
+        diffs.push(`capture ${name}: ${what} differ (${join(a, name + '.png')} vs ${join(b, name + '.png')})`);
+      }
     }
     if (!ONLY) for (const name of Object.keys(ha)) if (!(name in hb)) diffs.push(`capture ${name}: not made this time`);
   }
