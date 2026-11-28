@@ -41,3 +41,5 @@ these files): it checks the harness itself. It must pass before any baseline mea
   2026, 12:00 UTC), requestAnimationFrame never calls back (time moves only by `__sv.step(n)`),
   loads finished between batches of steps, a 400 x 860 touch viewport at scale 1, input only
   through the game's Input object.
+
+Recorded by `npm run lock -- prove` (run A of two byte-identical runs) at commit `abc7662` (src/ as at that commit), on SwiftShader (ANGLE, Vulkan 1.3.0).
