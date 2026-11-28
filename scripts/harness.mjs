@@ -5,7 +5,8 @@
  * It changes nothing in src/. Before the game loads, an init script:
  * - replaces Math.random with a seeded generator (mulberry32), so all 47 calls draw the same
  *   numbers in the same order;
- * - fixes Date.now (saves stamp `savedAt` with it);
+ * - fixes Date.now (saves stamp `savedAt` with it) and reports autoplay as disallowed (no music
+ *   starts without a gesture, and the harness never makes one);
  * - stops requestAnimationFrame from calling back, so the game's own loop (core/loop.ts) never
  *   runs on wall-clock time: time moves only through `__sv.step(n)` (n fixed 1/60 s updates, then
  *   one render; `step(0)` renders without updating);
@@ -73,6 +74,9 @@ function harnessInit({ seed, now, storage }) {
     };
   }
   Date.now = () => now;
+  // No sound starts by itself (AudioEngine unlocks at boot where autoplay is allowed): the music's
+  // wall-clock position would drive the title's disco lights.
+  if (navigator.getAutoplayPolicy) navigator.getAutoplayPolicy = () => 'disallowed';
 
   // No frame ever runs on its own: the harness steps the game.
   let rafId = 0;
@@ -141,7 +145,21 @@ function harnessInit({ seed, now, storage }) {
       this.addEventListener('error', finish);
     },
   });
-  if (window.ImageDecoder) wrapMethod(window.ImageDecoder.prototype, 'decode', 'gifFrame');
+  // The title's GIF: a decoder is busy from its creation (it awaits tracks.ready and completed,
+  // then decodes frame after frame) until it is closed.
+  if (window.ImageDecoder) {
+    const Decoder0 = window.ImageDecoder;
+    window.ImageDecoder = class HarnessImageDecoder extends Decoder0 {
+      constructor(...args) {
+        super(...args);
+        this.__end = begin('gif');
+      }
+      close() {
+        this.__end();
+        return super.close();
+      }
+    };
+  }
   if (window.FontFace) wrapMethod(window.FontFace.prototype, 'load', 'font');
   if (document.fonts) {
     const load0 = document.fonts.load.bind(document.fonts);
