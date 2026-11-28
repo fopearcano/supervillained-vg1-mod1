@@ -4,6 +4,7 @@
 > - Analysed commit: `0090696` on `claude/relaxed-wright-e0mdk7`. Checked again at HEAD `ee9756d`, where 21 src files differ from it (15 modified, 6 added: story/headGear.ts, story/headGearPose.ts, story/visorOverlay.ts, story/visorSlit.ts, assets/placeholders/headGear.ts, scenes/glossaryEntries.ts). The symbol map is brought up to HEAD.
 > - The owner's rules for the restructure are in "The owner's three rules", and they override older text: PixiJS v8 syntax only; no change to mechanics, speeds or coordinates (only the structure is reorganised); game objects extend `PIXI.Container` instead of raw sprites being passed between functions.
 > - **Verdict: not ready to start, but close.** Before step 1, two things are needed. First, a deterministic Step 0 harness, in scripts only, proven at HEAD. Second, the owner's sign-off on three points. See section 15.
+> - **Step 0 is done** (commits `30d3147` to `9255001`): the deterministic harness (`scripts/harness.mjs`), the playtest, save and pixel locks (`npm run lock -- check`), the controls checks (`npm run smoke -- controls`) and the baselines in `docs/baselines/`, proven by two byte-identical runs. The lock list's "6.4 with the bleach" and "7.4 with the fog" do not exist: the bleach is in 7.1 and the smoke in 7.5, both captured. The seeded playtest found one bug at once (the fire's frames left of the map's centre line), fixed before the baselines. What remains before step 1 is the owner's sign-off.
 
 ## Contents
 
