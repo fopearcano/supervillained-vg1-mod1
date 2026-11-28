@@ -1524,3 +1524,36 @@ as well)".
 - **The guard**: `npm run playtest` now checks, frame by frame, that a walk always has its
   controls on, and fails if not. Checked both ways: with the old `ResumeStep` it fails on 2.3, and
   with the fix the whole campaign passes.
+
+## Step 0 of the restructure: a deterministic harness, the locks and their baselines
+
+BLUEPRINT.md asks for proof that each restructure step changes nothing the game does or shows.
+Two runs of the old scripts could not prove it: Math.random was unseeded, the game's loop ran on
+wall-clock time between the scripts' waits, and textures arrived whenever their loads finished.
+
+- **The harness** (`scripts/harness.mjs`) changes nothing in `src/`. An init script, installed
+  before the game loads, seeds Math.random (mulberry32), fixes Date.now, keeps
+  requestAnimationFrame from ever calling back (so time moves only by `__sv.step(n)`) and counts
+  the asynchronous work the game starts (fetch and bodies, image loads and decodes,
+  createImageBitmap, ImageDecoder, fonts, audio decoding, worker round trips). Between batches of
+  steps the harness waits for that work, and for the network, to go quiet, so a texture always
+  lands at the same step. Fixed viewport (400 x 860, touch, scale 1), locale and time zone; input
+  only through the game's Input object. Playwright's waits poll on a timer, since the page's rAF
+  never fires.
+- **The playtest** now runs in the harness: seeded by default (`--seed N`, `--seed off`), and
+  `--save file.json` dumps the saved data. The same options give the same report, byte for byte;
+  the autopilot's exploration of chance is now one seed at a time (pass other seeds to vary it).
+- **The locks** (`npm run lock -- record|check|prove`, `scripts/lock.mjs`): the playtest lock (the
+  whole campaign, choices "first" and "random"), the save lock (the saved JSON after those runs)
+  and the pixel lock (stepped captures of the lock list, `scripts/lockCaptures.mjs`: title,
+  options, controls, couch, glossary pages; the Green Zone walk, digestion, attack, ambush,
+  briefing, pause, snap and level end; the story with the bucket and the helm's visor down, 2.3
+  after the second pickup, 3.4, 4.1, 5.4, 6.2, 6.3, 7.1 saturated, 7.5 and its smoke, 8.1, the
+  story pause and the level-end snap; and the other art bank). Baselines in `docs/baselines/`.
+  The lock list of BLUEPRINT.md named "6.4 with the bleach": there is no 6.4; the filter is used
+  in 7.1 (saturated), which is captured.
+- **The controls checks** (`npm run smoke -- controls`): the joystick and buttons come back after
+  the story pause (Back and RESUME), after two cut-ins in one walk (2.3) and in the Green Zone after
+  the briefing and the pause. Put back the old ResumeStep and the 2.3 check fails.
+- **The captures depend on the machine** (software WebGL): on another machine, `prove` and then
+  `record` at the same commit before checking.

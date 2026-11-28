@@ -35,10 +35,14 @@ npm run screens:environments     # every chapter's stage in both art banks → d
 npm run smoke        # plays every story sub-level start to finish (fails on errors / missing textures),
                      # then the flow checks: saving (restart / quit / skip) and menus / Back button
 npm run smoke -- 7.3 8.1         # selected sub-levels
-npm run smoke -- progress menus keys  # only the flow checks (any group alone works too)
+npm run smoke -- progress menus keys  # only the flow checks (any group alone works too; also walk, controls)
 npm run playtest     # the autopilot plays the whole campaign for real → report (fails if a sub-level can't be won)
+                     # (seeded and stepped: the same options give the same report; --seed N, --seed off, --save f.json)
 npm run playtest -- --skill 0.4 --ending alpha --choice random --from 5.1 --out docs/PLAYTEST.md
 npm run playtest -- --from 3.1 --to 3.4          # one level
+npm run lock -- check   # the locks of BLUEPRINT.md: playtest, save and pixel output identical to docs/baselines/
+npm run lock -- check pixels --only title,gz-walk # some captures only (scripts/lockCaptures.mjs)
+npm run lock -- prove   # the harness itself: two runs byte-identical;  npm run lock -- record  rewrites the baselines
 npm run android:apk  # web build + cap sync + Gradle debug APK (needs JDK 21 + Android SDK 36)
 npm run android:release  # the same, shrunk with R8 (about 23 MB less code): the APK to hand out
 npm run ios:sync     # web build + cap sync ios (the Xcode project in ios/; building it needs a Mac)
@@ -204,7 +208,9 @@ server, which reloads the page on every change and breaks the run.
 - **Which checks**: every change: `npm run build` and `npm test`. Story or maps: `npm run smoke`
   for the touched sub-levels. Gameplay, walks, mini-games: `npm run playtest` (whole campaign,
   about 10 minutes) and read the report. Menus, flow, saving, Back, keys: `npm run smoke --
-  progress menus keys`. Anything visible: `npm run screens` and look at the PNGs. Android code or config:
+  progress menus keys controls`. Anything visible: `npm run screens` and look at the PNGs.
+  A change that must not change behaviour (the BLUEPRINT.md restructure): `npm run lock -- check`
+  (scripts/harness.mjs, docs/baselines/README.md); the names scripts reach are in docs/SCRIPT-CONTRACT.md. Android code or config:
   `npm run android:apk`. Known gaps and open bugs: `docs/BACKLOG.md`.
 
 ## Conventions

@@ -5,12 +5,13 @@
  * (what a scene saves on restart / quit / skip), `menus` (double presses during a transition,
  * Escape and the Android Back button on each kind of screen, the MENU button after a resize, the
  * continue / confirm keys, OPTIONS' MUSIC and SOUNDS levels and ART), `keys` (the letter and rumour
- * mini-games played from the keyboard) and `walk` (the Green Zone: Bagnaskiz's band rushing in
- * from off-screen half way, at a big NOW!).
+ * mini-games played from the keyboard), `walk` (the Green Zone: Bagnaskiz's band rushing in
+ * from off-screen half way, at a big NOW!) and `controls` (the joystick and buttons come back after
+ * the pause menu, two cut-ins in one walk, the Green Zone's briefing and pause).
  *
  *   npm run smoke                 all sub-levels, then the four groups of checks
  *   npm run smoke -- 7.3 8.1      selected sub-levels
- *   npm run smoke -- progress menus keys walk   only those checks (any of them)
+ *   npm run smoke -- progress menus keys walk controls   only those checks (any of them)
  *   SMOKE_SHOTS=dir npm run smoke one screenshot per sub-level (first walk / mini-game / choice)
  */
 import { spawn } from 'node:child_process';
@@ -662,6 +663,120 @@ async function walkChecks(page) {
  * through every kind of button (change a word, send, write it again, accept), 6.2 (the rumour)
  * to the end. Returns the number of failures.
  */
+/**
+ * The joystick and buttons come back after everything that hides them: in a story walk after the
+ * pause menu (closed with Back and with RESUME), after two cut-ins in a row (2.3, the second
+ * pickup), and in the Green Zone after the briefing and after the pause. Played by steps with the
+ * loop stopped (the game's Input, no wall-clock waits). Returns the number of failures.
+ */
+async function controlsChecks(page) {
+  let fails = 0;
+  const check = (ok, what) => {
+    if (!ok) fails++;
+    console.log(`${ok ? 'ok  ' : 'FAIL'} controls: ${what}`);
+  };
+  const ev = (fn, arg) => page.evaluate(fn, arg);
+  const steps = (n) => ev((n) => window.__sv.step(n), n);
+  const press = async (action, after) => {
+    await ev((a) => window.__sv.game.input.trigger(a), action);
+    await steps(after);
+  };
+  const top = () => ev(() => window.__sv.top().constructor.name);
+  /** What the player can touch now: the controls drawn, the joystick and the round button live. */
+  const live = () =>
+    ev(() => {
+      const s = window.__sv.top();
+      const input = window.__sv.game.input;
+      return { visible: !!s.controls?.root.visible, joystick: input.joystickEnabled, button: !!input.buttons.get('bark')?.enabled };
+    });
+  const isLive = (c) => c.visible && c.joystick && c.button;
+  const show = (c) => `visible ${c.visible}, joystick ${c.joystick}, button ${c.button}`;
+  /** Story: debugSkip (and a few steps) until the current step, unwrapped, is a walk. */
+  const toWalk = async (nth = 1) => {
+    let seen = 0;
+    for (let k = 0; k < 80; k++) {
+      const st = await ev(() => window.__sv.top().debugState?.().step ?? null);
+      if (st === 'WalkStep' && ++seen >= nth) return true;
+      await ev(() => window.__sv.top().debugSkip?.());
+      await steps(6);
+    }
+    return false;
+  };
+  const walkStep = () =>
+    ev(() => {
+      let c = window.__sv.top().current;
+      while (c && c.constructor.name === 'ResumeStep') c = c.inner;
+      return c?.constructor.name ?? null;
+    });
+
+  await ev(() => {
+    localStorage.clear();
+    window.__sv.game.loop.stop();
+    window.__sv.flow.story.debugReset();
+    window.__sv.flow.story.debugPlay('1.2');
+  });
+  await steps(30);
+  check(await toWalk(), 'a walk starts in 1.2');
+  await steps(30);
+  let c = await live();
+  check(isLive(c), `the walk has its controls (${show(c)})`);
+  for (const [how, close] of [['Back', 'back'], ['RESUME', 'confirm']]) {
+    await press('menu', 24);
+    const paused = await top();
+    await press(close, 40);
+    c = await live();
+    check(paused !== 'StoryScene' && (await top()) === 'StoryScene' && (await walkStep()) === 'WalkStep' && isLive(c), `the pause menu (${paused}) closed with ${how}: the walk has its controls again (${show(c)})`);
+  }
+  // Two cut-ins in one walk: the sword and the belt in 2.3.
+  await ev(() => window.__sv.flow.story.debugPlay('2.3'));
+  await steps(30);
+  check(await toWalk(2), 'the pickups walk starts in 2.3');
+  for (const m of ['2', '3']) {
+    await ev((m) => {
+      const s = window.__sv.top();
+      const p = s.marker(m);
+      s.player.setPosition(p.x, p.y);
+    }, m);
+    await steps(30);
+    for (let k = 0; k < 30 && (await walkStep()) !== 'WalkStep'; k++) await press('confirm', 20);
+  }
+  await steps(30);
+  c = await live();
+  check((await walkStep()) === 'WalkStep' && isLive(c), `after the second pickup's card the walk has its controls (${show(c)})`);
+
+  // The Green Zone (the story's 1.0): the briefing, then the pause.
+  await ev(() => window.__sv.flow.playGreenZone(1, () => {}));
+  await steps(30);
+  const briefing = await top();
+  c = await live();
+  check(briefing === 'BriefingScene', `the briefing comes first (${briefing})`);
+  await press('confirm', 40);
+  const gz = () =>
+    ev(() => {
+      const s = window.__sv.scene();
+      const input = window.__sv.game.input;
+      return {
+        visible: s.controls.root.visible && s.hud.root.visible,
+        joystick: input.joystickEnabled,
+        button: !!input.buttons.get('bark')?.enabled && !!input.buttons.get('menu')?.enabled,
+      };
+    });
+  c = await gz();
+  check((await top()) === 'GameScene' && isLive(c), `after the briefing the walk has its controls and HUD (${show(c)})`);
+  for (const [how, close] of [['Back', 'back'], ['RESUME', 'confirm']]) {
+    await press('menu', 24);
+    const paused = await top();
+    await press(close, 40);
+    c = await gz();
+    check(paused === 'PauseScene' && (await top()) === 'GameScene' && isLive(c), `the pause (${paused}) closed with ${how}: the controls and HUD are back (${show(c)})`);
+  }
+  await ev(() => {
+    window.__sv.flow.toTitle();
+    window.__sv.game.loop.start();
+  });
+  return fails;
+}
+
 async function keyChecks(page) {
   let fails = 0;
   const check = (ok, what) => {
@@ -781,7 +896,7 @@ try {
   await page.waitForFunction(() => window.__sv && window.__sv.top(), null, { timeout: 30000 });
   await page.evaluate(() => localStorage.clear());
   const all = await page.evaluate(() => window.__sv.storyIds());
-  const GROUPS = ['progress', 'menus', 'keys', 'walk'];
+  const GROUPS = ['progress', 'menus', 'keys', 'walk', 'controls'];
   const named = process.argv.slice(2).filter((a) => !GROUPS.includes(a));
   const groups = process.argv.slice(2).length ? GROUPS.filter((g) => process.argv.includes(g)) : GROUPS;
   const ids = named.length ? named : groups.length && process.argv.slice(2).length ? [] : all;
@@ -831,6 +946,7 @@ try {
   if (groups.includes('menus')) failures += await menuChecks(page);
   if (groups.includes('keys')) failures += await keyChecks(page);
   if (groups.includes('walk')) failures += await walkChecks(page);
+  if (groups.includes('controls')) failures += await controlsChecks(page);
   await page.close();
 } catch (err) {
   console.error(err);

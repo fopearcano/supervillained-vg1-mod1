@@ -14,6 +14,7 @@
     "screens:environments": "node scripts/capture_environment_screens.mjs",
     "smoke": "node scripts/story-smoke.mjs",
     "playtest": "node scripts/playtest.mjs",
+    "lock": "node scripts/lock.mjs",
     "android:sync": "npm run build && cap sync android",
     "android:apk": "npm run android:sync && cd android && ./gradlew assembleDebug",
     "android:release": "npm run android:sync && cd android && ./gradlew assembleRelease",
