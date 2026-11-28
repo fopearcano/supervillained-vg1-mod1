@@ -1557,3 +1557,8 @@ wall-clock time between the scripts' waits, and textures arrived whenever their 
   the briefing and the pause. Put back the old ResumeStep and the 2.3 check fails.
 - **The captures depend on the machine** (software WebGL): on another machine, `prove` and then
   `record` at the same commit before checking.
+- **A bug the seeded playtest found at once:** the fire's frame (`walk.ts`) was
+  `floor((time * 8 + x) % 3)` with `x` the flame's screen x, negative left of the map's centre
+  line, so those flames asked for `flame_-1`..`flame_-3` (missing textures) whenever the 7.5 fire
+  spread there (the "random" choices run, every time). The remainder is now taken positive. Fixed
+  before the baselines were recorded.

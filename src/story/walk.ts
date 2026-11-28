@@ -489,7 +489,9 @@ class WalkStep implements Step {
         this.ignite(ctx, i + di!, j + dj!);
       }
     }
-    for (const s of this.fire.values()) s.texture = textures.get(spriteName('flame', Math.floor((ctx.time * 8 + s.x) % 3)));
+    // The frame (0-2) from the time and the flame's screen x, which is negative left of the map's
+    // centre line: the remainder is taken positive (a negative one asked for 'flame_-1').
+    for (const s of this.fire.values()) s.texture = textures.get(spriteName('flame', Math.floor((((ctx.time * 8 + s.x) % 3) + 3) % 3)));
     const p = ctx.player;
     const here = map.index(Math.floor(p.gx), Math.floor(p.gy));
     if (this.fire.has(here) && p.state !== 'hurt') {
